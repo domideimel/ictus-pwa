@@ -92,10 +92,6 @@ import { ToggleSwitch } from '../ui/toggle-switch';
             </label>
           }
           <hr />
-          <app-settings-row label="Visual flash">
-            <app-toggle-switch label="Visual flash" [formField]="settingsForm.visualFlash" />
-          </app-settings-row>
-          <hr />
           <app-settings-row label="Vibration">
             <app-toggle-switch label="Vibration" [formField]="settingsForm.vibration" />
           </app-settings-row>
@@ -133,7 +129,7 @@ export class SettingsSheet {
   private readonly store = inject(SettingsStore);
   readonly closed = output();
 
-  protected readonly settingsForm = form(this.store.settings, (path) => {
+  protected readonly settingsForm = form(this.store.editable, (path) => {
     min(path.referencePitch, REFERENCE_PITCH_RANGE.min);
     max(path.referencePitch, REFERENCE_PITCH_RANGE.max);
     for (const volume of [path.accentVolume, path.beatVolume, path.subdivisionVolume]) {

@@ -1,4 +1,13 @@
-import { DestroyRef, Service, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, computed, effect, inject } from '@angular/core';
+import {
+  patchState,
+  signalStore,
+  withComputed,
+  withHooks,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { setAudioSession } from '../audio/audio-context';
 import { Microphone } from '../audio/microphone';
 import { readNote } from '../music/note';
@@ -56,116 +65,124 @@ function median(values: readonly number[]): number | null {
   return sorted[sorted.length >> 1];
 }
 
+interface TunerState {
+  /** Set by the shell: the tuner tab is open, or the combined tablet/desktop layout is showing. */
+  readonly onScreen: boolean;
+  readonly switchedOn: boolean;
+  readonly isListening: boolean;
+  readonly microphoneDenied: boolean;
+  readonly frequency: number | null;
+  readonly strike: { readonly count: number; readonly frequency: number | null };
+}
+
 /**
  * The tuner listens only after Start is pressed, while it is on screen and the page is visible.
  * The click would drown the microphone, so a playing metronome pauses it.
  */
-@Service()
-export class TunerStore {
-  private readonly settings = inject(SettingsStore);
-  private readonly metronome = inject(MetronomeStore);
-  private readonly visibility = inject(PageVisibility);
-
-  /** Set by the shell: the tuner tab is open, or the combined tablet/desktop layout is showing. */
-  readonly onScreen = signal(false);
-  private readonly switchedOnState = signal(false);
-  readonly switchedOn = this.switchedOnState.asReadonly();
-
-  private readonly listening = signal(false);
-  private readonly denied = signal(false);
-  private readonly frequencyState = signal<number | null>(null);
-  private readonly strike = signal<{ count: number; frequency: number | null }>({
-    count: 0,
+export const TunerStore = signalStore(
+  { providedIn: 'root' },
+  withState<TunerState>({
+    onScreen: false,
+    switchedOn: false,
+    isListening: false,
+    microphoneDenied: false,
     frequency: null,
-  });
-
-  readonly isListening = this.listening.asReadonly();
-  readonly microphoneDenied = this.denied.asReadonly();
-  readonly frequency = this.frequencyState.asReadonly();
-  readonly strikeCount = computed(() => this.strike().count);
-  readonly strikeFrequency = computed(() => this.strike().frequency);
-
-  readonly isPausedForClick = computed(
-    () => this.onScreen() && this.switchedOn() && this.metronome.isPlaying(),
-  );
-
-  readonly reading = computed(() => {
-    const frequency = this.frequencyState();
-    return frequency === null ? null : readNote(frequency, this.settings.referencePitch());
-  });
-
-  readonly isInTune = computed(() => {
-    const reading = this.reading();
-    return reading !== null && Math.abs(reading.cents) <= this.settings.tolerance();
-  });
-
-  private readonly smoother = new PitchSmoother();
-  private readonly microphone = new Microphone((frequency) => this.ingest(frequency));
-  private wanted = false;
-
-  constructor() {
-    effect(() => {
-      const wanted =
-        this.onScreen() &&
-        this.switchedOn() &&
-        this.visibility.visible() &&
-        !this.metronome.isPlaying();
-      if (wanted) void this.listen();
-      else this.silence();
+    strike: { count: 0, frequency: null },
+  }),
+  withProps(() => ({
+    _settings: inject(SettingsStore),
+    _metronome: inject(MetronomeStore),
+    _visibility: inject(PageVisibility),
+  })),
+  withComputed(({ onScreen, switchedOn, frequency, strike, _settings, _metronome }) => {
+    const reading = computed(() => {
+      const value = frequency();
+      return value === null ? null : readNote(value, _settings.referencePitch());
     });
-    // Leaving the tuner switches it off, so the microphone is only used after pressing Start.
-    effect(() => {
-      if (!this.onScreen()) this.switchedOnState.set(false);
-    });
-    inject(DestroyRef).onDestroy(() => this.microphone.dispose());
-  }
+    return {
+      strikeCount: computed(() => strike().count),
+      strikeFrequency: computed(() => strike().frequency),
+      isPausedForClick: computed(() => onScreen() && switchedOn() && _metronome.isPlaying()),
+      reading,
+      isInTune: computed(() => {
+        const value = reading();
+        return value !== null && Math.abs(value.cents) <= _settings.tolerance();
+      }),
+    };
+  }),
+  withMethods((store) => {
+    const smoother = new PitchSmoother();
+    let wanted = false;
 
-  /** Start / stop button. Starting stops the click, which would drown the microphone. */
-  toggle(): void {
-    if (!this.switchedOn()) this.metronome.stop();
-    this.switchedOnState.update((on) => !on);
-  }
-
-  private async listen(): Promise<void> {
-    this.wanted = true;
-    if (this.listening()) return;
-    try {
-      setAudioSession('play-and-record');
-      await this.microphone.start();
-      this.denied.set(false);
-      if (!this.wanted) {
-        this.microphone.stop();
-        return;
+    const ingest = (detected: number | null): void => {
+      if (!store.isListening()) return;
+      const before = smoother.strikeCount;
+      smoother.ingest(detected, performance.now());
+      patchState(store, { frequency: smoother.frequency });
+      if (smoother.strikeCount !== before) {
+        patchState(store, {
+          strike: { count: smoother.strikeCount, frequency: smoother.strikeFrequency },
+        });
       }
-      this.listening.set(true);
-    } catch (error) {
-      console.warn('Tuner start failed', error);
-      this.denied.set(error instanceof DOMException && error.name === 'NotAllowedError');
-      this.switchedOnState.set(false);
-      setAudioSession('playback');
-    }
-  }
+    };
+    const microphone = new Microphone(ingest);
+    inject(DestroyRef).onDestroy(() => microphone.dispose());
 
-  private silence(): void {
-    this.wanted = false;
-    if (!this.listening()) return;
-    this.microphone.stop();
-    this.listening.set(false);
-    this.smoother.reset();
-    this.frequencyState.set(null);
-    setAudioSession('playback');
-  }
+    return {
+      setOnScreen(onScreen: boolean): void {
+        // Leaving the tuner switches it off, so the microphone is only used after pressing Start.
+        patchState(store, onScreen ? { onScreen } : { onScreen, switchedOn: false });
+      },
 
-  private ingest(detected: number | null): void {
-    if (!this.listening()) return;
-    const before = this.smoother.strikeCount;
-    this.smoother.ingest(detected, performance.now());
-    this.frequencyState.set(this.smoother.frequency);
-    if (this.smoother.strikeCount !== before) {
-      this.strike.set({
-        count: this.smoother.strikeCount,
-        frequency: this.smoother.strikeFrequency,
+      /** Start / stop button. Starting stops the click, which would drown the microphone. */
+      toggle(): void {
+        if (!store.switchedOn()) store._metronome.stop();
+        patchState(store, ({ switchedOn }) => ({ switchedOn: !switchedOn }));
+      },
+
+      async _listen(): Promise<void> {
+        wanted = true;
+        if (store.isListening()) return;
+        try {
+          setAudioSession('play-and-record');
+          await microphone.start();
+          patchState(store, { microphoneDenied: false });
+          if (!wanted) {
+            microphone.stop();
+            return;
+          }
+          patchState(store, { isListening: true });
+        } catch (error) {
+          console.warn('Tuner start failed', error);
+          patchState(store, {
+            microphoneDenied: error instanceof DOMException && error.name === 'NotAllowedError',
+            switchedOn: false,
+          });
+          setAudioSession('playback');
+        }
+      },
+
+      _silence(): void {
+        wanted = false;
+        if (!store.isListening()) return;
+        microphone.stop();
+        smoother.reset();
+        patchState(store, { isListening: false, frequency: null });
+        setAudioSession('playback');
+      },
+    };
+  }),
+  withHooks({
+    onInit(store) {
+      effect(() => {
+        const wanted =
+          store.onScreen() &&
+          store.switchedOn() &&
+          store._visibility.visible() &&
+          !store._metronome.isPlaying();
+        if (wanted) void store._listen();
+        else store._silence();
       });
-    }
-  }
-}
+    },
+  }),
+);

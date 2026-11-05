@@ -36,16 +36,6 @@
   --color-paper: #f4f1ea;
   --color-ink: #1c1c1f;
   --color-paper-label: #55555c;
-
-  --animate-flash: flash 250ms ease-out;
-  @keyframes flash {
-    from {
-      opacity: 0.3;
-    }
-    to {
-      opacity: 0;
-    }
-  }
 }
 
 @media (prefers-color-scheme: light) {

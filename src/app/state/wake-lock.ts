@@ -16,7 +16,7 @@ export class WakeLock {
 
   private readonly wanted = computed(
     () =>
-      this.settings.settings().keepAwake &&
+      this.settings.keepAwake() &&
       this.visibility.visible() &&
       (this.metronome.isPlaying() || this.tuner.isListening()),
   );

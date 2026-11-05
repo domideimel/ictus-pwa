@@ -15,7 +15,7 @@ import { HeaderIconButton } from '../ui/header-icon-button';
         headerEnd
         icon="settings"
         label="Settings"
-        (pressed)="ui.showSettings.set(true)"
+        (pressed)="ui.openSettings()"
       />
     </app-tuner-panel>
   `,

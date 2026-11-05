@@ -1,8 +1,15 @@
-import { Service, computed } from '@angular/core';
+import {
+  getState,
+  patchState,
+  signalStore,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { ClickSound } from '../audio/click-synth';
 import { AccidentalStyle } from '../music/note';
 import { ClefSetting } from '../music/staff';
-import { persistedSignal, withDefaults } from './storage';
+import { withDefaults, withPersistence, writableState } from './storage';
 
 export type PedalMode = 'tapAndStartStop' | 'previousAndNext';
 export type TunerMode = 'chromatic' | 'drum';
@@ -16,7 +23,6 @@ export interface Settings {
   readonly accentVolume: number;
   readonly beatVolume: number;
   readonly subdivisionVolume: number;
-  readonly visualFlash: boolean;
   readonly vibration: boolean;
   readonly keepAwake: boolean;
   readonly pedalMode: PedalMode;
@@ -36,7 +42,6 @@ export const DEFAULT_SETTINGS: Settings = {
   accentVolume: 1,
   beatVolume: 0.8,
   subdivisionVolume: 0.5,
-  visualFlash: true,
   vibration: true,
   keepAwake: true,
   pedalMode: 'tapAndStartStop',
@@ -49,15 +54,23 @@ export const PEDAL_MODES: readonly { value: PedalMode; label: string }[] = [
   { value: 'previousAndNext', label: 'Previous · Next piece' },
 ];
 
-/** Every setting, saved the moment it changes. The settings sheet edits `settings` through a signal form. */
-@Service()
-export class SettingsStore {
-  readonly settings = persistedSignal('settings', DEFAULT_SETTINGS, withDefaults(DEFAULT_SETTINGS));
-
-  readonly referencePitch = computed(() => this.settings().referencePitch);
-  readonly tolerance = computed(() => this.settings().tolerance);
-
-  update(changes: Partial<Settings>): void {
-    this.settings.update((current) => ({ ...current, ...changes }));
-  }
-}
+/**
+ * Every setting, each exposed as a signal and saved the moment it changes.
+ * Signal forms edit the settings through `editable`.
+ */
+export const SettingsStore = signalStore(
+  { providedIn: 'root' },
+  withState<Settings>(DEFAULT_SETTINGS),
+  withPersistence<Settings>('settings', withDefaults(DEFAULT_SETTINGS)),
+  withMethods((store) => ({
+    update(changes: Partial<Settings>): void {
+      patchState(store, changes);
+    },
+  })),
+  withProps((store) => ({
+    editable: writableState<Settings>(
+      () => getState(store),
+      (settings) => store.update(settings),
+    ),
+  })),
+);

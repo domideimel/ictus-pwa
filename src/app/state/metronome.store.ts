@@ -1,4 +1,12 @@
-import { DestroyRef, Service, computed, inject, signal, untracked } from '@angular/core';
+import { DestroyRef, computed, inject, signal, untracked } from '@angular/core';
+import {
+  patchState,
+  signalStore,
+  withComputed,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { ClickParams, ScheduledBeat } from '../audio/click-scheduler';
 import { setAudioSession } from '../audio/audio-context';
 import { MetronomeEngine } from '../audio/metronome-engine';
@@ -28,7 +36,7 @@ import {
   trainerTempo,
 } from '../music/practice';
 import { SettingsStore } from './settings.store';
-import { Parser, persistedSignal, withDefaults } from './storage';
+import { Parser, withDefaults, withPersistence, writableState } from './storage';
 
 /** What a saved piece stores, and what the metronome screen edits. */
 export interface MetronomeSetup {
@@ -94,210 +102,231 @@ const parseSetup: Parser<MetronomeSetup> = (value) => {
   return merged ? sanitizeSetup(merged) : null;
 };
 
-@Service()
-export class MetronomeStore {
-  private readonly settings = inject(SettingsStore);
-
-  readonly setup = persistedSignal('metronome', DEFAULT_SETUP, parseSetup);
-  readonly practice = persistedSignal('practice', DEFAULT_PRACTICE, withDefaults(DEFAULT_PRACTICE));
-
-  readonly bpm = computed(() => this.setup().bpm);
-  readonly timeSignature = computed(() => this.setup().timeSignature);
-  readonly grouping = computed(() => this.setup().grouping);
-  readonly levels = computed(() => this.setup().levels);
-  readonly subdivision = computed(() => this.setup().subdivision);
-  readonly swing = computed(() => this.setup().swing);
-  readonly groupStarts = computed(() => groupStarts(this.grouping()));
-  readonly tempoMarking = computed(() => tempoMarking(this.bpm()));
-
-  private readonly playing = signal(false);
-  private readonly beat = signal<number | null>(null);
-  private readonly bar = signal(0);
-  private readonly downbeats = signal(0);
-  private readonly restCounter = signal<RestCounter | null>(null);
-
-  readonly isPlaying = this.playing.asReadonly();
-  /** Beat currently sounding, reported once it is audible so the light matches what you hear. */
-  readonly currentBeat = this.beat.asReadonly();
-  /** Bars completed since start (0 during the first bar). */
-  readonly currentBar = this.bar.asReadonly();
-  /** Increments on every audible downbeat; drives the full-screen flash. */
-  readonly downbeatCount = this.downbeats.asReadonly();
-  readonly rest = this.restCounter.asReadonly();
-
-  /** Tempo of the bar that is playing, with the speed trainer applied. */
-  readonly currentTempo = computed(() => {
-    const trainer = this.practice().speedTrainer;
-    if (!this.playing() || this.restCounter() || !trainer.enabled) return this.bpm();
-    return Math.round(trainerTempo(this.bpm(), this.bar(), trainer));
-  });
-
-  /** True while the current bar is a muted bar of the gap click. */
-  readonly isInGap = computed(
-    () => this.playing() && !this.restCounter() && isGapBar(this.practice().gapClick, this.bar()),
-  );
-
-  /** Practice tools are paused while the rest counter runs. */
-  private readonly clickParams = computed<ClickParams>(() => {
-    const setup = this.setup();
-    const practice = this.practice();
-    const rest = this.restCounter();
-    const settings = this.settings.settings();
-    return {
-      bpm: setup.bpm,
-      levels: setup.levels,
-      groupStarts: this.groupStarts(),
-      subdivision: setup.subdivision,
-      swing: setup.swing,
-      gap: rest ? DEFAULT_GAP_CLICK : practice.gapClick,
-      trainer: rest ? DEFAULT_SPEED_TRAINER : practice.speedTrainer,
-      polyrhythm: rest ? 'off' : practice.polyrhythm,
-      silent: rest !== null && !rest.audible,
-      accentVolume: settings.accentVolume,
-      beatVolume: settings.beatVolume,
-      subdivisionVolume: settings.subdivisionVolume,
-    };
-  });
-
-  private readonly engine = new MetronomeEngine(
-    () => untracked(this.clickParams),
-    () => untracked(this.settings.settings).clickSound,
-    (beat) => this.showBeat(beat),
-  );
-
-  private tapTimes: number[] = [];
-
-  constructor() {
-    inject(DestroyRef).onDestroy(() => this.engine.dispose());
-  }
-
-  // MARK: Editing
-
-  setBpm(bpm: number): void {
-    this.patch({ bpm: clamp(Math.round(bpm), BPM_RANGE.min, BPM_RANGE.max) });
-  }
-
-  nudge(delta: number): void {
-    this.setBpm(this.bpm() + delta);
-  }
-
-  setTimeSignature(timeSignature: TimeSignature): void {
-    if (!isValidSignature(timeSignature) || sameSignature(timeSignature, this.timeSignature()))
-      return;
-    this.patch({
-      timeSignature,
-      grouping: defaultGrouping(timeSignature),
-      levels: defaultLevels(timeSignature.beats),
-    });
-  }
-
-  setGrouping(grouping: readonly number[]): void {
-    if (grouping.reduce((sum, size) => sum + size, 0) !== this.timeSignature().beats) return;
-    this.patch({ grouping });
-  }
-
-  cycleLevel(index: number): void {
-    this.patch({
-      levels: this.levels().map((level, i) => (i === index ? nextLevel(level) : level)),
-    });
-  }
-
-  setSubdivision(subdivision: Subdivision): void {
-    this.patch({ subdivision });
-  }
-
-  setSwing(swing: number): void {
-    this.patch({ swing: clamp(swing, SWING_RANGE.min, SWING_RANGE.max) });
-  }
-
-  /** Loads a saved piece; while playing, the change takes effect on the next click. */
-  apply(setup: MetronomeSetup): void {
-    this.setup.set(sanitizeSetup(setup));
-  }
-
-  /** Tap tempo: average interval of the last four taps; a pause over two seconds starts over. */
-  tap(now = performance.now()): void {
-    const last = this.tapTimes.at(-1);
-    if (last !== undefined && now - last > 2000) this.tapTimes = [];
-    this.tapTimes = [...this.tapTimes, now].slice(-5);
-    if (this.tapTimes.length < 2) return;
-    const average = (now - this.tapTimes[0]) / (this.tapTimes.length - 1);
-    this.setBpm(60000 / average);
-  }
-
-  // MARK: Transport
-
-  toggle(): void {
-    if (this.playing()) this.stop();
-    else void this.start();
-  }
-
-  async start(): Promise<void> {
-    if (this.playing()) return;
-    setAudioSession('playback');
-    this.playing.set(true);
-    this.bar.set(0);
-    try {
-      await this.engine.start();
-      // Stopped again while the audio context was resuming.
-      if (!this.playing()) this.engine.stop();
-    } catch (error) {
-      console.error('Metronome start failed', error);
-      this.playing.set(false);
-    }
-  }
-
-  stop(): void {
-    if (!this.playing()) return;
-    this.engine.stop();
-    this.playing.set(false);
-    this.beat.set(null);
-  }
-
-  // MARK: Rest counter
-
-  /** Counts `bars` bars at the current tempo and meter, silently unless `audible`, then stops on the entrance. */
-  startRest(bars: number, audible: boolean): void {
-    this.stop();
-    this.restCounter.set({ bars: Math.max(1, bars), audible, finished: false });
-    void this.start();
-  }
-
-  endRest(): void {
-    this.stop();
-    this.restCounter.set(null);
-  }
-
-  // MARK: Private
-
-  private patch(changes: Partial<MetronomeSetup>): void {
-    this.setup.update((current) => ({ ...current, ...changes }));
-  }
-
-  private showBeat({ index, bar }: ScheduledBeat): void {
-    const rest = this.restCounter();
-    if (rest && !rest.finished && bar >= rest.bars) {
-      this.finishRest(rest);
-      return;
-    }
-    this.beat.set(index);
-    this.bar.set(bar);
-    const level = this.levels()[index] ?? BeatLevel.Normal;
-    if (level === BeatLevel.Mute || this.isInGap()) return;
-    if (index === 0) this.downbeats.update((count) => count + 1);
-    if (this.settings.settings().vibration) {
-      vibrate(index === 0 ? 35 : this.groupStarts().has(index) ? 20 : 12);
-    }
-  }
-
-  /** The downbeat after the last rest bar is the entrance: stop and signal it. */
-  private finishRest(rest: RestCounter): void {
-    this.stop();
-    this.restCounter.set({ ...rest, finished: true });
-    this.downbeats.update((count) => count + 1);
-    vibrate([60, 40, 60]);
-  }
+interface MetronomeState {
+  readonly setup: MetronomeSetup;
+  readonly practice: PracticeSetup;
 }
+
+const parseState: Parser<MetronomeState> = (value) => {
+  if (typeof value !== 'object' || value === null) return null;
+  const stored = value as Partial<Record<keyof MetronomeState, unknown>>;
+  return {
+    setup: parseSetup(stored.setup) ?? DEFAULT_SETUP,
+    practice: withDefaults(DEFAULT_PRACTICE)(stored.practice) ?? DEFAULT_PRACTICE,
+  };
+};
+
+/**
+ * Setup and practice tools are saved; playback state lives in private signals so the click doesn't
+ * write to storage on every beat. Signal forms edit the practice tools through `editablePractice`.
+ */
+export const MetronomeStore = signalStore(
+  { providedIn: 'root' },
+  withState<MetronomeState>({ setup: DEFAULT_SETUP, practice: DEFAULT_PRACTICE }),
+  withPersistence<MetronomeState>('metronome', parseState),
+  withProps(() => ({
+    _settings: inject(SettingsStore),
+    _playing: signal(false),
+    _beat: signal<number | null>(null),
+    _bar: signal(0),
+    _rest: signal<RestCounter | null>(null),
+  })),
+  withComputed(({ setup, practice, _settings, _playing, _beat, _bar, _rest }) => {
+    const bpm = computed(() => setup().bpm);
+    const levels = computed(() => setup().levels);
+    const grouping = computed(() => setup().grouping);
+    const memberGroupStarts = computed(() => groupStarts(grouping()));
+    return {
+      bpm,
+      timeSignature: computed(() => setup().timeSignature),
+      grouping,
+      levels,
+      subdivision: computed(() => setup().subdivision),
+      swing: computed(() => setup().swing),
+      groupStarts: memberGroupStarts,
+      tempoMarking: computed(() => tempoMarking(bpm())),
+
+      isPlaying: _playing.asReadonly(),
+      /** Beat currently sounding, reported once it is audible so the light matches what you hear. */
+      currentBeat: _beat.asReadonly(),
+      /** Bars completed since start (0 during the first bar). */
+      currentBar: _bar.asReadonly(),
+      rest: _rest.asReadonly(),
+
+      /** Tempo of the bar that is playing, with the speed trainer applied. */
+      currentTempo: computed(() => {
+        const trainer = practice().speedTrainer;
+        if (!_playing() || _rest() || !trainer.enabled) return bpm();
+        return Math.round(trainerTempo(bpm(), _bar(), trainer));
+      }),
+
+      /** True while the current bar is a muted bar of the gap click. */
+      isInGap: computed(() => _playing() && !_rest() && isGapBar(practice().gapClick, _bar())),
+
+      /** Practice tools are paused while the rest counter runs. */
+      _clickParams: computed<ClickParams>(() => {
+        const current = setup();
+        const tools = practice();
+        const rest = _rest();
+        return {
+          bpm: current.bpm,
+          levels: current.levels,
+          groupStarts: memberGroupStarts(),
+          subdivision: current.subdivision,
+          swing: current.swing,
+          gap: rest ? DEFAULT_GAP_CLICK : tools.gapClick,
+          trainer: rest ? DEFAULT_SPEED_TRAINER : tools.speedTrainer,
+          polyrhythm: rest ? 'off' : tools.polyrhythm,
+          silent: rest !== null && !rest.audible,
+          accentVolume: _settings.accentVolume(),
+          beatVolume: _settings.beatVolume(),
+          subdivisionVolume: _settings.subdivisionVolume(),
+        };
+      }),
+    };
+  }),
+  withProps((store) => ({
+    editablePractice: writableState(store.practice, (practice) => patchState(store, { practice })),
+  })),
+  withMethods((store) => {
+    const patch = (changes: Partial<MetronomeSetup>): void =>
+      patchState(store, ({ setup }) => ({ setup: { ...setup, ...changes } }));
+
+    const setBpm = (bpm: number): void =>
+      patch({ bpm: clamp(Math.round(bpm), BPM_RANGE.min, BPM_RANGE.max) });
+
+    const stop = (): void => {
+      if (!store._playing()) return;
+      engine.stop();
+      store._playing.set(false);
+      store._beat.set(null);
+    };
+
+    const start = async (): Promise<void> => {
+      if (store._playing()) return;
+      setAudioSession('playback');
+      store._playing.set(true);
+      store._bar.set(0);
+      try {
+        await engine.start();
+        // Stopped again while the audio context was resuming.
+        if (!store._playing()) engine.stop();
+      } catch (error) {
+        console.error('Metronome start failed', error);
+        store._playing.set(false);
+      }
+    };
+
+    /** The downbeat after the last rest bar is the entrance: stop and signal it. */
+    const finishRest = (rest: RestCounter): void => {
+      stop();
+      store._rest.set({ ...rest, finished: true });
+      vibrate([60, 40, 60]);
+    };
+
+    const showBeat = ({ index, bar }: ScheduledBeat): void => {
+      const rest = store._rest();
+      if (rest && !rest.finished && bar >= rest.bars) {
+        finishRest(rest);
+        return;
+      }
+      store._beat.set(index);
+      store._bar.set(bar);
+      const level = store.levels()[index] ?? BeatLevel.Normal;
+      if (level === BeatLevel.Mute || store.isInGap()) return;
+      if (store._settings.vibration()) {
+        vibrate(index === 0 ? 35 : store.groupStarts().has(index) ? 20 : 12);
+      }
+    };
+
+    const engine = new MetronomeEngine(
+      () => untracked(store._clickParams),
+      () => untracked(store._settings.clickSound),
+      showBeat,
+    );
+    inject(DestroyRef).onDestroy(() => engine.dispose());
+
+    let tapTimes: number[] = [];
+
+    return {
+      // MARK: Editing
+
+      setBpm,
+
+      nudge(delta: number): void {
+        setBpm(store.bpm() + delta);
+      },
+
+      setTimeSignature(timeSignature: TimeSignature): void {
+        if (!isValidSignature(timeSignature) || sameSignature(timeSignature, store.timeSignature()))
+          return;
+        patch({
+          timeSignature,
+          grouping: defaultGrouping(timeSignature),
+          levels: defaultLevels(timeSignature.beats),
+        });
+      },
+
+      setGrouping(grouping: readonly number[]): void {
+        if (grouping.reduce((sum, size) => sum + size, 0) !== store.timeSignature().beats) return;
+        patch({ grouping });
+      },
+
+      cycleLevel(index: number): void {
+        patch({
+          levels: store.levels().map((level, i) => (i === index ? nextLevel(level) : level)),
+        });
+      },
+
+      setSubdivision(subdivision: Subdivision): void {
+        patch({ subdivision });
+      },
+
+      setSwing(swing: number): void {
+        patch({ swing: clamp(swing, SWING_RANGE.min, SWING_RANGE.max) });
+      },
+
+      /** Loads a saved piece; while playing, the change takes effect on the next click. */
+      apply(setup: MetronomeSetup): void {
+        patchState(store, { setup: sanitizeSetup(setup) });
+      },
+
+      /** Tap tempo: average interval of the last four taps; a pause over two seconds starts over. */
+      tap(now = performance.now()): void {
+        const last = tapTimes.at(-1);
+        if (last !== undefined && now - last > 2000) tapTimes = [];
+        tapTimes = [...tapTimes, now].slice(-5);
+        if (tapTimes.length < 2) return;
+        const average = (now - tapTimes[0]) / (tapTimes.length - 1);
+        setBpm(60000 / average);
+      },
+
+      // MARK: Transport
+
+      toggle(): void {
+        if (store._playing()) stop();
+        else void start();
+      },
+
+      start,
+      stop,
+
+      // MARK: Rest counter
+
+      /** Counts `bars` bars at the current tempo and meter, silently unless `audible`, then stops on the entrance. */
+      startRest(bars: number, audible: boolean): void {
+        stop();
+        store._rest.set({ bars: Math.max(1, bars), audible, finished: false });
+        void start();
+      },
+
+      endRest(): void {
+        stop();
+        store._rest.set(null);
+      },
+    };
+  }),
+);
 
 /** Android buzzes; iOS Safari has no vibration API, so this is a no-op there. */
 function vibrate(pattern: number | number[]): void {

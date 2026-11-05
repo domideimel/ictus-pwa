@@ -77,7 +77,7 @@ export class StaffCard {
   protected readonly glyph = GLYPH;
   protected readonly staffLines = [0, 2, 4, 6, 8].map(y);
 
-  private readonly clefSetting = computed(() => this.settings.settings().clef);
+  private readonly clefSetting = computed(() => this.settings.clef());
   private readonly clef = computed(() => clefFor(this.clefSetting(), this.tuner.reading()?.midi));
   protected readonly clefGlyph = computed(() =>
     this.clef() === 'treble' ? GLYPH.gClef : GLYPH.fClef,
@@ -89,7 +89,7 @@ export class StaffCard {
 
   private readonly spelling = computed(() => {
     const reading = this.tuner.reading();
-    return reading ? spell(reading.midi, this.settings.settings().accidentals) : null;
+    return reading ? spell(reading.midi, this.settings.accidentals()) : null;
   });
 
   private readonly placement = computed(() => {

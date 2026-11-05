@@ -1,9 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { form } from '@angular/forms/signals';
 import { BeatLevel } from '../music/meter';
 import { LibraryStore } from './library.store';
 import { MetronomeSetup, MetronomeStore, sanitizeSetup } from './metronome.store';
 import { PitchSmoother } from './tuner.store';
-import { loadValue, withDefaults } from './storage';
+import { SettingsStore } from './settings.store';
+import { withDefaults } from './storage';
 
 const sevenEight: MetronomeSetup = {
   bpm: 72,
@@ -46,7 +48,7 @@ describe('stores', () => {
     const setlist = store.addSetlist('Concert');
     const one = store.addPiece(setlist.id, 'One', { ...sevenEight, bpm: 60 });
     store.addPiece(setlist.id, 'Two', { ...sevenEight, bpm: 90 });
-    store.activePiece.set({ setlistId: setlist.id, pieceId: one.id });
+    store.setActivePiece({ setlistId: setlist.id, pieceId: one.id });
     expect(store.step(1)?.name).toBe('Two');
     expect(store.step(1)).toBeNull();
     expect(store.activePosition()?.index).toBe(1);
@@ -85,10 +87,52 @@ describe('stores', () => {
   });
 
   it('fills in keys added by later versions', () => {
-    localStorage.setItem('ictus.test', JSON.stringify({ a: 5, b: 'wrong type' }));
-    expect(
-      loadValue('test', { a: 1, b: 2, c: true }, withDefaults({ a: 1, b: 2, c: true })),
-    ).toEqual({ a: 5, b: 2, c: true });
+    expect(withDefaults({ a: 1, b: 2, c: true })({ a: 5, b: 'wrong type', d: 1 })).toEqual({
+      a: 5,
+      b: 2,
+      c: true,
+    });
+  });
+
+  it('stores setlists in the same format as before', () => {
+    TestBed.inject(LibraryStore).addSetlist('Concert');
+    const stored = JSON.parse(localStorage.getItem('ictus.setlists') ?? 'null');
+    expect(stored).toEqual([expect.objectContaining({ name: 'Concert', pieces: [] })]);
+  });
+
+  it('keeps defaults when stored settings are corrupt', () => {
+    localStorage.setItem('ictus.settings', '{not json');
+    expect(TestBed.inject(SettingsStore).referencePitch()).toBe(442);
+  });
+
+  it('saves settings edited through the form model', () => {
+    const store = TestBed.inject(SettingsStore);
+    store.editable.update((settings) => ({ ...settings, referencePitch: 440 }));
+    TestBed.tick();
+    expect(store.referencePitch()).toBe(440);
+
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(SettingsStore).referencePitch()).toBe(440);
+  });
+
+  it('lets a signal form edit nested practice settings', () => {
+    const store = TestBed.inject(MetronomeStore);
+    const practice = TestBed.runInInjectionContext(() => form(store.editablePractice));
+    practice.gapClick.enabled().value.set(true);
+    TestBed.tick();
+    expect(store.practice().gapClick.enabled).toBe(true);
+  });
+
+  it('saves the metronome setup and practice tools', () => {
+    const store = TestBed.inject(MetronomeStore);
+    store.setBpm(96);
+    store.editablePractice.update((practice) => ({ ...practice, restBars: 12 }));
+    TestBed.tick();
+
+    TestBed.resetTestingModule();
+    const restored = TestBed.inject(MetronomeStore);
+    expect(restored.bpm()).toBe(96);
+    expect(restored.practice().restBars).toBe(12);
   });
 });
 

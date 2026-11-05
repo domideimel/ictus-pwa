@@ -125,14 +125,14 @@ export class DrumTuning {
   private readonly tuner = inject(TunerStore);
   protected readonly settings = inject(SettingsStore);
 
-  protected readonly lugForm = form(this.settings.settings, (path) => {
+  protected readonly lugForm = form(this.settings.editable, (path) => {
     min(path.drumLugs, LUG_RANGE.min);
     max(path.drumLugs, LUG_RANGE.max);
   });
 
   /** Readings start over whenever the lug count changes; the target is kept. */
   protected readonly tuning = linkedSignal<number, ReturnType<typeof emptyTuning>>({
-    source: () => this.settings.settings().drumLugs,
+    source: () => this.settings.drumLugs(),
     computation: (lugCount, previous) => emptyTuning(lugCount, previous?.value.target ?? null),
   });
 
@@ -203,7 +203,7 @@ export class DrumTuning {
 
   protected readonly targetNotes = computed(() => {
     const reference = this.settings.referencePitch();
-    const style = this.settings.settings().accidentals;
+    const style = this.settings.accidentals();
     return Array.from({ length: 37 }, (_, i) => 72 - i).map((midi) => {
       const spelling = spell(midi, style);
       return {

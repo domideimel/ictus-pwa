@@ -165,7 +165,7 @@ export class SetlistSheet {
   protected load(setlist: Setlist, piece: Piece): void {
     if (this.editing()) return;
     this.metronome.apply(piece);
-    this.library.activePiece.set({ setlistId: setlist.id, pieceId: piece.id });
+    this.library.setActivePiece({ setlistId: setlist.id, pieceId: piece.id });
     this.sheet().close();
   }
 
@@ -206,7 +206,7 @@ export class SetlistSheet {
         break;
       case 'newPiece': {
         const piece = this.library.addPiece(naming.setlistId, name, this.metronome.setup());
-        this.library.activePiece.set({ setlistId: naming.setlistId, pieceId: piece.id });
+        this.library.setActivePiece({ setlistId: naming.setlistId, pieceId: piece.id });
         break;
       }
     }

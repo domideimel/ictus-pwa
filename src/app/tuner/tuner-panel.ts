@@ -129,8 +129,8 @@ export class TunerPanel {
     { value: 'chromatic', label: 'Chromatic' },
     { value: 'drum', label: 'Drum lugs' },
   ];
-  protected readonly modeForm = form(this.settings.settings);
-  protected readonly mode = computed(() => this.settings.settings().tunerMode);
+  protected readonly modeForm = form(this.settings.editable);
+  protected readonly mode = computed(() => this.settings.tunerMode());
   protected readonly micHelpText =
     'Microphone access is off. Allow it for this site in your browser or system settings, then press Start again.';
 }

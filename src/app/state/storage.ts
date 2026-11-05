@@ -1,38 +1,50 @@
-import { WritableSignal, effect, signal } from '@angular/core';
+import { WritableSignal, effect, linkedSignal, untracked } from '@angular/core';
+import { withStorageSync } from '@ngrx-toolkit/core';
+import { EmptyFeatureResult } from '@ngrx/signals';
 
 const PREFIX = 'ictus.';
 
 /** Turns stored JSON back into a value, or null when it doesn't fit (then the default is used). */
 export type Parser<T> = (value: unknown) => T | null;
 
-/** Reads a saved value; storage can be missing or blocked (private mode), so failures fall back to the default. */
-export function loadValue<T>(key: string, fallback: T, parse: Parser<T>): T {
-  try {
-    const raw = localStorage.getItem(PREFIX + key);
-    return raw === null ? fallback : (parse(JSON.parse(raw)) ?? fallback);
-  } catch {
-    return fallback;
-  }
+/**
+ * Saves the store state (or the part `select` picks) to localStorage on every change and restores it on
+ * startup. Values that fail to parse are dropped, so the store keeps its initial state.
+ */
+export function withPersistence<State extends object>(
+  key: string,
+  parse: Parser<Partial<State>>,
+  select: (state: State) => unknown = (state) => state,
+) {
+  return withStorageSync<EmptyFeatureResult & { state: State }>({
+    key: PREFIX + key,
+    select,
+    parse: (stored: string) => {
+      try {
+        return (parse(JSON.parse(stored)) ?? {}) as State;
+      } catch {
+        return {} as State;
+      }
+    },
+  });
 }
 
-export function saveValue(key: string, value: unknown): void {
-  try {
-    localStorage.setItem(PREFIX + key, JSON.stringify(value));
-  } catch {
-    // Storage full or blocked: the app keeps working, the value just isn't remembered.
-  }
-}
-
-/** A signal saved to localStorage the moment it changes. Call in an injection context. */
-export function persistedSignal<T>(key: string, fallback: T, parse: Parser<T>): WritableSignal<T> {
-  const state = signal(loadValue(key, fallback, parse));
-  effect(() => saveValue(key, state()));
-  return state;
+/**
+ * A writable copy of store state for signal forms, which need a `WritableSignal`.
+ * Form edits are written back with `write`; store changes flow into the copy. Call in an injection context.
+ */
+export function writableState<T>(source: () => T, write: (value: T) => void): WritableSignal<T> {
+  const model = linkedSignal(source);
+  effect(() => {
+    const value = model();
+    untracked(() => write(value));
+  });
+  return model;
 }
 
 /**
  * Merges a stored object over `defaults`, so values saved by an older version gain newer keys.
- * Keys whose stored type differs from the default's are dropped.
+ * Keys whose stored type differs from the default's, or that no longer exist, are dropped.
  */
 export function withDefaults<T extends object>(defaults: T): Parser<T> {
   return (value) => {

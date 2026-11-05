@@ -46,7 +46,7 @@ export class NoteName {
   protected readonly symbol = accidentalSymbol;
   protected readonly spelling = computed(() => {
     const reading = this.tuner.reading();
-    return reading ? spell(reading.midi, this.settings.settings().accidentals) : null;
+    return reading ? spell(reading.midi, this.settings.accidentals()) : null;
   });
   protected readonly label = computed(() => {
     const spelling = this.spelling();

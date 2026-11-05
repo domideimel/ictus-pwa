@@ -1,12 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  computed,
-  effect,
-  inject,
-  untracked,
-  viewChild,
-} from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -25,7 +17,7 @@ import { Viewport } from './ui/viewport';
 
 /**
  * Two tabs on phones, one combined screen on tablets and desktops, plus everything that spans both:
- * settings, the rest counter, the downbeat flash and hardware keys (Space, T, page-turner pedals).
+ * settings, the rest counter and hardware keys (Space, T, page-turner pedals).
  */
 @Component({
   selector: 'app-root',
@@ -68,14 +60,8 @@ import { Viewport } from './ui/viewport';
       </nav>
     }
 
-    <div
-      #flash
-      class="pointer-events-none fixed inset-0 bg-accent opacity-0"
-      aria-hidden="true"
-    ></div>
-
     @if (ui.showSettings()) {
-      <app-settings-sheet (closed)="ui.showSettings.set(false)" />
+      <app-settings-sheet (closed)="ui.closeSettings()" />
     }
     @if (metronome.rest()) {
       <app-rest-counter />
@@ -108,14 +94,10 @@ export class App {
   private readonly tunerOnScreen = computed(
     () => this.viewport.isWide() || this.url().startsWith('/tuner'),
   );
-  private readonly flash = viewChild.required<ElementRef<HTMLElement>>('flash');
 
   constructor() {
     inject(WakeLock);
-    effect(() => this.tuner.onScreen.set(this.tunerOnScreen()));
-    effect(() => {
-      if (this.metronome.downbeatCount() > 0) untracked(() => this.flashDownbeat());
-    });
+    effect(() => this.tuner.setOnScreen(this.tunerOnScreen()));
   }
 
   /** Space starts/stops, T taps; arrow and page keys are what Bluetooth page-turner pedals send. */
@@ -146,7 +128,7 @@ export class App {
 
   /** Left pedal: tap tempo or previous piece. Right pedal: start/stop or next piece. */
   private pedal(side: -1 | 1): void {
-    if (this.settings.settings().pedalMode === 'previousAndNext') {
+    if (this.settings.pedalMode() === 'previousAndNext') {
       const piece = this.library.step(side);
       if (piece) this.metronome.apply(piece);
     } else if (side === -1) {
@@ -154,14 +136,6 @@ export class App {
     } else {
       this.metronome.toggle();
     }
-  }
-
-  private flashDownbeat(): void {
-    if (!this.settings.settings().visualFlash) return;
-    this.flash().nativeElement.animate([{ opacity: 0.3 }, { opacity: 0 }], {
-      duration: 250,
-      easing: 'ease-out',
-    });
   }
 }
 

@@ -139,7 +139,7 @@ export class PracticeSheet {
     label: value === 'off' ? 'Off' : value,
   }));
 
-  protected readonly practice = form(this.store.practice, (path) => {
+  protected readonly practice = form(this.store.editablePractice, (path) => {
     min(path.gapClick.play, GAP_BAR_RANGE.min);
     max(path.gapClick.play, GAP_BAR_RANGE.max);
     min(path.gapClick.mute, GAP_BAR_RANGE.min);

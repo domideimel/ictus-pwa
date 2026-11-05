@@ -39,11 +39,7 @@ import { Viewport } from '../ui/viewport';
                 : 'Mic off'
           }}
         </span>
-        <app-header-icon-button
-          icon="settings"
-          label="Settings"
-          (pressed)="ui.showSettings.set(true)"
-        />
+        <app-header-icon-button icon="settings" label="Settings" (pressed)="ui.openSettings()" />
       </div>
     </header>
 

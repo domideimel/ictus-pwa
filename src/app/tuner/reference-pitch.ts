@@ -46,7 +46,7 @@ export class ReferencePitchSheet {
   readonly closed = output();
 
   protected readonly quickPicks = [440, 441, 442, 443];
-  protected readonly pitchForm = form(this.settings.settings, (path) => {
+  protected readonly pitchForm = form(this.settings.editable, (path) => {
     min(path.referencePitch, REFERENCE_PITCH_RANGE.min);
     max(path.referencePitch, REFERENCE_PITCH_RANGE.max);
   });
