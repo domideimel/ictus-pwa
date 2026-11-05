@@ -16,16 +16,16 @@ It installs to the home screen on iPhone, iPad, Android and desktop, works offli
 ## Develop
 
 ```bash
-npm install
-npm start          # http://localhost:4200
-npm test           # unit tests (Vitest)
-npm run build      # production build in dist/ictus-pwa/browser
+pnpm install
+pnpm start          # http://localhost:4200
+pnpm test           # unit tests (Vitest)
+pnpm build          # production build in dist/ictus-pwa/browser
 ```
 
 The service worker only runs in production builds. To try offline mode and installing locally:
 
 ```bash
-npm run build && npx http-server dist/ictus-pwa/browser -p 8080
+pnpm build && pnpm dlx http-server dist/ictus-pwa/browser -p 8080
 ```
 
 ## Install on iPhone or iPad
