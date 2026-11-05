@@ -3,3 +3,13 @@ allowBuilds:
   esbuild: false
   lmdb: false
   msgpackr-extract: false
+
+# Temporary: Angular CLI 22.2.6 was published on 2026-11-04 and is still inside the
+# minimumReleaseAge window. Remove after 2026-11-05 22:45 UTC.
+minimumReleaseAgeExclude:
+  - '@angular-devkit/architect@0.2202.6'
+  - '@angular-devkit/core@22.2.6'
+  - '@angular-devkit/schematics@22.2.6'
+  - '@angular/build@22.2.6'
+  - '@angular/cli@22.2.6'
+  - '@schematics/angular@22.2.6'
