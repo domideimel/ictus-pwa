@@ -1,3 +1,121 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource/noto-music/music.css';
+@import '@fontsource/noto-music/latin.css';
+
+/* Bravura (SMuFL, SIL Open Font License) draws clefs, notes and accidentals on the staff. */
+@font-face {
+  font-family: 'Bravura';
+  src: url('/fonts/Bravura.otf') format('opentype');
+  font-display: block;
+}
+
+/*
+ * Design tokens from the concept. Dark is the stage look; light follows the system setting,
+ * with the same values as the native app.
+ */
+@theme {
+  --font-sans: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  --font-music: 'Noto Music', serif;
+  --font-bravura: 'Bravura';
+
+  --color-bg: #0e0e10;
+  --color-panel: #141417;
+  --color-surface: #1a1a1e;
+  --color-stroke: #2a2a30;
+  --color-kbd: #3a3a42;
+  --color-segment: #3a3a42;
+  --color-fg: #f2f2f0;
+  --color-muted: #a1a1a8;
+  --color-faint: #8a8a92;
+  --color-ring: #5a5a62;
+  --color-accent: #f2a33a;
+  --color-accent-text: #f2a33a;
+  --color-on-accent: #0e0e10;
+  --color-in-tune: #3fc1a5;
+  --color-paper: #f4f1ea;
+  --color-ink: #1c1c1f;
+  --color-paper-label: #55555c;
+
+  --animate-flash: flash 250ms ease-out;
+  @keyframes flash {
+    from {
+      opacity: 0.3;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #f6f5f2;
+    --color-panel: #fdfcfa;
+    --color-surface: #ffffff;
+    --color-stroke: #dedcd6;
+    --color-kbd: #cfcdc6;
+    --color-segment: #d9d7d1;
+    --color-fg: #141416;
+    --color-muted: #5f5f66;
+    --color-faint: #707077;
+    --color-ring: #a6a6ad;
+    --color-accent: #e08e1f;
+    --color-accent-text: #a9620a;
+    --color-in-tune: #16866f;
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body {
+    @apply h-full bg-bg font-sans text-fg antialiased;
+  }
+
+  body {
+    /* No rubber-band scrolling or double-tap zoom; the app should feel like the native one. */
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  button,
+  [role='switch'] {
+    @apply cursor-pointer select-none;
+  }
+
+  button:disabled {
+    @apply cursor-default;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  dialog::backdrop {
+    @apply bg-black/60;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
