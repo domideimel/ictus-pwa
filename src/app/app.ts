@@ -12,7 +12,7 @@ import { TunerStore } from './state/tuner.store';
 import { UiStore } from './state/ui.store';
 import { WakeLock } from './state/wake-lock';
 import { Icon } from './ui/icon';
-import { UpdateBanner } from './ui/update-banner';
+import { UpdatePrompt } from './ui/update-prompt';
 import { Viewport } from './ui/viewport';
 
 /**
@@ -29,7 +29,7 @@ import { Viewport } from './ui/viewport';
     SettingsSheet,
     RestCounter,
     Icon,
-    UpdateBanner,
+    UpdatePrompt,
   ],
   host: {
     class: 'flex h-dvh flex-col overflow-hidden safe-top',
@@ -66,7 +66,7 @@ import { Viewport } from './ui/viewport';
     @if (metronome.rest()) {
       <app-rest-counter />
     }
-    <app-update-banner />
+    <app-update-prompt />
   `,
 })
 export class App {
