@@ -1,0 +1,62 @@
+# Checks every pull request and every push to main: formatting, unit tests with coverage
+# thresholds, and a production build. The Deploy workflow runs after this one succeeds.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  verify:
+    name: Format, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      # Uses the pnpm version from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Unit tests with coverage
+        run: pnpm test:ci
+
+      - name: Coverage summary
+        if: always() && hashFiles('coverage/ictus-pwa/coverage-summary.json') != ''
+        run: |
+          node -e '
+            const { total } = require("./coverage/ictus-pwa/coverage-summary.json");
+            const rows = ["statements", "branches", "functions", "lines"]
+              .map((key) => `| ${key} | ${total[key].pct}% | ${total[key].covered}/${total[key].total} |`);
+            console.log(["### Coverage", "", "| | % | covered |", "|---|---:|---:|", ...rows].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always() && hashFiles('coverage/ictus-pwa/lcov.info') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage/ictus-pwa
+          retention-days: 14
+
+      - name: Production build
+        run: pnpm build

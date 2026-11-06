@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist/ictus-pwa/browser",
+  "git": {
+    "deploymentEnabled": false
+  },
+  "rewrites": [{ "source": "/((?!.*\\.).*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/(ngsw-worker\\.js|ngsw\\.json|index\\.html|manifest\\.webmanifest)",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
+}
