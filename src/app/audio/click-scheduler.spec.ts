@@ -147,4 +147,76 @@ describe('ClickScheduler', () => {
     expect(beats[8].time).toBeCloseTo(4 * 0.6 + (4 * 60) / 110, 9);
     expect(beats[9].time - beats[8].time).toBeCloseTo(0.5, 9);
   });
+  it('places subdivision clicks between the beats at their own volume', () => {
+    const { clicks } = run(0.49, { subdivision: 3 });
+    expect(clicks.map((click) => [click.kind, click.gain])).toEqual([
+      ['accent', 1],
+      ['subdivision', 0.5],
+      ['subdivision', 0.5],
+    ]);
+    expect(times(clicks, 'subdivision')).toEqual([1 / 6, 2 / 6].map((t) => expect.closeTo(t, 9)));
+  });
+
+  it('mutes the subdivisions of a muted beat', () => {
+    const levels = [BeatLevel.Accent, BeatLevel.Mute, BeatLevel.Normal, BeatLevel.Normal];
+    const { clicks, beats } = run(0.99, { subdivision: 2, levels });
+    expect(times(clicks)).toEqual([0, 0.25]);
+    expect(beats.map((beat) => beat.index)).toEqual([0, 1]);
+  });
+
+  it('ignores swing for subdivisions that cannot swing', () => {
+    expect(times(run(0.49, { subdivision: 3, swing: 0.75 }).clicks, 'subdivision')).toEqual(
+      [1 / 6, 2 / 6].map((t) => expect.closeTo(t, 9)),
+    );
+  });
+
+  it('picks up a new tempo on the next click', () => {
+    const scheduler = new ClickScheduler(0);
+    const first = scheduler.advance(0.6, base).beats.map((beat) => beat.time);
+    const second = scheduler.advance(2.1, { ...base, bpm: 60 }).beats.map((beat) => beat.time);
+    expect(first).toEqual([0, 0.5]);
+    expect(second).toEqual([1, 2]);
+  });
+
+  it('wraps to a shorter bar when the meter changes mid-bar', () => {
+    const scheduler = new ClickScheduler(0);
+    scheduler.advance(1.4, base);
+    // Beats 1-3 of a 4/4 bar have played; with two beats per bar, beat 4 becomes a new bar.
+    const { beats } = scheduler.advance(2.6, { ...base, levels: defaultLevels(2) });
+    expect(beats.map((beat) => [beat.time, beat.index, beat.bar])).toEqual([
+      [1.5, 0, 1],
+      [2, 1, 1],
+      [2.5, 0, 2],
+    ]);
+  });
+
+  it('starts at the given time and schedules nothing before it', () => {
+    const scheduler = new ClickScheduler(10);
+    expect(scheduler.advance(9.9, base).clicks).toEqual([]);
+    expect(times(scheduler.advance(10.6, base).clicks)).toEqual([10, 10.5]);
+  });
+
+  it('keeps counting silently with the polyrhythm on', () => {
+    const { clicks, beats } = run(1.99, { polyrhythm: '3:2', silent: true });
+    expect(clicks).toEqual([]);
+    expect(beats).toHaveLength(4);
+  });
+
+  it('plays 5 against 4 at the polyrhythm volume', () => {
+    const poly = run(1.99, { polyrhythm: '5:4', polyVolume: 0.3 }).clicks.filter(
+      (click) => click.kind === 'poly',
+    );
+    expect(poly.map((click) => click.time)).toEqual(
+      [0, 0.4, 0.8, 1.2, 1.6].map((t) => expect.closeTo(t, 9)),
+    );
+    expect(poly.every((click) => click.gain === 0.3)).toBe(true);
+  });
+
+  it('stops the polyrhythm on the next beat when it is switched off', () => {
+    const scheduler = new ClickScheduler(0);
+    const on = times(scheduler.advance(0.1, { ...base, polyrhythm: '3:2' }).clicks, 'poly');
+    const off = times(scheduler.advance(2, base).clicks, 'poly');
+    expect(on).toEqual([0, expect.closeTo(1 / 3, 9)]);
+    expect(off).toEqual([]);
+  });
 });
