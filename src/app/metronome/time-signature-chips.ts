@@ -1,13 +1,22 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { QUICK_PICKS, groupingOptions, sameSignature, signatureLabel } from '../music/meter';
+import type { Pulse } from '../music/meter';
+import {
+  QUICK_PICKS,
+  durationTitle,
+  groupingOptions,
+  sameSignature,
+  signatureLabel,
+} from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
+import type { PillOption } from '../ui/segmented-pills';
+import { SegmentedPills } from '../ui/segmented-pills';
 import { Surface } from '../ui/surface';
 import { TimeSignatureSheet } from './time-signature-sheet';
 
 /** Quick picks plus "More" for any meter up to 16 beats; scrolls on phones, wraps on wider screens. */
 @Component({
   selector: 'app-time-signature-chips',
-  imports: [Surface, TimeSignatureSheet],
+  imports: [SegmentedPills, Surface, TimeSignatureSheet],
   template: `
     <div class="flex gap-2" [class]="wraps() ? 'flex-wrap' : 'no-scrollbar overflow-x-auto px-5'">
       @for (signature of quickPicks; track label(signature)) {
@@ -56,6 +65,16 @@ import { TimeSignatureSheet } from './time-signature-sheet';
           </button>
         }
       </div>
+      <div class="flex items-center gap-3" [class.px-5]="!wraps()">
+        <span class="text-sm text-muted" aria-hidden="true">Count</span>
+        <app-segmented-pills
+          class="max-w-72 flex-1"
+          label="Count"
+          [options]="pulses()"
+          [value]="store.pulse()"
+          (valueChange)="store.setPulse($event)"
+        />
+      </div>
     }
 
     @if (showCustom()) {
@@ -76,8 +95,19 @@ export class TimeSignatureChips {
   );
   /** Grouping for odd meters, e.g. 7/8 as 2+2+3 or 3+2+2. Empty for simple meters. */
   protected readonly groupings = computed(() => groupingOptions(this.store.timeSignature()));
+  /** Every note (11 in 11/8) or every group (4 for 3+3+3+2), which makes the beats uneven. */
+  protected readonly pulses = computed<PillOption<Pulse>[]>(() => {
+    const { beats, unit } = this.store.timeSignature();
+    const notes = unit === 2 ? 'Halves' : `${capitalize(durationTitle(1, unit))}s`;
+    return [
+      { value: 'unit', label: `${notes} · ${beats}` },
+      { value: 'group', label: `Groups · ${this.store.grouping().length}` },
+    ];
+  });
 
   protected isSelected(signature: Parameters<typeof signatureLabel>[0]): boolean {
     return sameSignature(signature, this.store.timeSignature());
   }
 }
+
+const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);

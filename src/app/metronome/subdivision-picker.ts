@@ -1,12 +1,14 @@
 import { Component, inject, input } from '@angular/core';
-import { SUBDIVISIONS } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
 
-/** Quarter to sextuplet. Symbol above the label on phones, beside it on wider screens. */
+/**
+ * The note of the meter down to sextuplets, named after what plays: Quarter … in 4/4, Eighth … in 11/8,
+ * and Beat first when counting in groups. Symbol above the label on phones, beside it on wider screens.
+ */
 @Component({
   selector: 'app-subdivision-picker',
   template: `
-    @for (option of options; track option.value) {
+    @for (option of store.subdivisionOptions(); track option.value) {
       @let selected = store.subdivision() === option.value;
       <button
         type="button"
@@ -51,5 +53,4 @@ export class SubdivisionPicker {
   protected readonly store = inject(MetronomeStore);
   /** Symbol beside the label (tablet/desktop) instead of above it (phone). */
   readonly horizontal = input(false);
-  protected readonly options = SUBDIVISIONS;
 }

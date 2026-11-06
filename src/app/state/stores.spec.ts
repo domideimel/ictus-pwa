@@ -12,6 +12,7 @@ const sevenEight: MetronomeSetup = {
   bpm: 72,
   timeSignature: { beats: 7, unit: 8 },
   grouping: [2, 2, 3],
+  pulse: 'unit',
   levels: [
     BeatLevel.Accent,
     BeatLevel.Normal,
@@ -81,6 +82,7 @@ describe('stores', () => {
     const repaired = sanitizeSetup({
       ...sevenEight,
       grouping: [3, 3],
+      pulse: 'unit',
       levels: [],
       bpm: 999,
       swing: 2,

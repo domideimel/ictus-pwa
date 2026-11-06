@@ -84,6 +84,54 @@ describe('MetronomeStore editing', () => {
     expect(store.swing()).toBe(0.5);
   });
 
+  it('counts an odd meter in groups and back, keeping the speed of the notes', () => {
+    store.setTimeSignature({ beats: 11, unit: 8 });
+    store.setBpm(240);
+    store.setGrouping([3, 3, 3, 2]);
+    expect(store.subdivisionInfo().title).toBe('Eighth');
+    store.setPulse('group');
+    expect(store.beatLengths()).toEqual([3, 3, 3, 2]);
+    expect(store.levels()).toEqual(defaultLevels(4));
+    expect(store.groupStarts().size).toBe(0);
+    // Uneven groups keep ♪ = 240.
+    expect(store.bpm()).toBe(240);
+    expect(store.tempoUnits()).toBe(1);
+    store.setSubdivision(0);
+    expect(store.subdivisionInfo()).toEqual(
+      expect.objectContaining({ title: 'Beat', symbol: '♩.♩' }),
+    );
+    store.setPulse('unit');
+    expect(store.levels()).toEqual(defaultLevels(11));
+    // "Beat" only exists when counting groups.
+    expect(store.subdivision()).toBe(1);
+  });
+
+  it('keeps eighths eighths when switching from 4/4 to 11/8', () => {
+    store.setSubdivision(2);
+    expect(store.subdivisionInfo().title).toBe('Eighth');
+    store.setTimeSignature({ beats: 11, unit: 8 });
+    expect(store.subdivision()).toBe(1);
+    expect(store.subdivisionInfo().title).toBe('Eighth');
+    store.setTimeSignature({ beats: 4, unit: 4 });
+    expect(store.subdivisionInfo().title).toBe('Eighth');
+  });
+
+  it('converts the BPM to the beat when the groups are even', () => {
+    store.setTimeSignature({ beats: 6, unit: 8 });
+    store.setBpm(180);
+    store.setPulse('group');
+    expect(store.tempoUnits()).toBe(3);
+    expect(store.bpm()).toBe(60);
+    store.setGrouping([2, 2, 2]);
+    expect(store.bpm()).toBe(90);
+    expect(store.levels()).toHaveLength(3);
+    store.setPulse('unit');
+    expect(store.bpm()).toBe(180);
+    store.setPulse('group');
+    store.setTimeSignature({ beats: 4, unit: 4 });
+    expect(store.pulse()).toBe('unit');
+  });
+
   it('loads a piece and repairs it', () => {
     store.apply({ ...sanitizeSetup(store.setup()), bpm: 64, grouping: [9] });
     expect(store.bpm()).toBe(64);
@@ -118,6 +166,7 @@ describe('setup parsing', () => {
     bpm: 72,
     timeSignature: { beats: 7, unit: 8 },
     grouping: [2, 2, 3],
+    pulse: 'unit',
     levels: defaultLevels(7),
     subdivision: 2,
     swing: 0.6,
@@ -141,6 +190,7 @@ describe('setup parsing', () => {
       bpm: 120,
       timeSignature: { beats: 4, unit: 4 },
       grouping: [4],
+      pulse: 'unit',
       levels: defaultLevels(4),
       subdivision: 1,
       swing: 0.5,
@@ -338,4 +388,34 @@ describe('MetronomeStore playback', () => {
     driver.playUntil(0.1);
     expect(driver.context.started.length).toBeGreaterThan(0);
   });
+});
+
+describe('MetronomeStore in 11/8', () => {
+  it.each([
+    ['unit', 1, 11],
+    ['unit', 2, 22],
+    ['unit', 3, 33],
+    ['group', 0, 4],
+    ['group', 1, 11],
+    ['group', 2, 22],
+  ] as const)(
+    'counting %s notes, subdivision %i plays %i clicks a bar',
+    async (pulse, subdivision, clicks) => {
+      localStorage.clear();
+      TestBed.resetTestingModule();
+      const store = TestBed.inject(MetronomeStore);
+      const driver = new MetronomeDriver();
+      store.setTimeSignature({ beats: 11, unit: 8 });
+      store.setPulse(pulse);
+      store.setSubdivision(subdivision);
+      store.toggle();
+      await driver.settle();
+      // ♪ = 120: the bar lasts 5.5 s from the first click at 0.06 s.
+      driver.playUntil(5.5);
+      expect(driver.context.started.filter((source) => source.when < 5.56 - 1e-6)).toHaveLength(
+        clicks,
+      );
+      store.stop();
+    },
+  );
 });

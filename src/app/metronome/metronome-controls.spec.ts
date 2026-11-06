@@ -32,7 +32,7 @@ describe('TempoDial', () => {
     expect(element.getAttribute('aria-valuenow')).toBe('120');
     expect(element.getAttribute('aria-valuemin')).toBe('20');
     expect(element.getAttribute('aria-valuemax')).toBe('300');
-    expect(element.getAttribute('aria-valuetext')).toBe('120 BPM, Allegro');
+    expect(element.getAttribute('aria-valuetext')).toBe('120 BPM, quarter notes, Allegro');
     expect(element.textContent).toContain('120');
   });
 
@@ -112,6 +112,17 @@ describe('BeatDots', () => {
     driver.playUntil(0.6);
     await fixture.whenStable();
     expect(byLabel(element, 'Beat 2, normal, playing')).toBeTruthy();
+  });
+
+  it('draws long counts wider when counting uneven groups', async () => {
+    store.setTimeSignature({ beats: 7, unit: 8 });
+    store.setPulse('group');
+    const { element } = await render(BeatDots);
+    expect(byLabel(element, 'Beat 3, dotted quarter, normal')).toBeTruthy();
+    const widths = [...element.querySelectorAll('button > span:first-child')].map(
+      (dot) => (dot as HTMLElement).style.width,
+    );
+    expect(widths).toEqual(['52px', '52px', '78px']);
   });
 
   it('marks group starts and wraps after eight beats', async () => {
@@ -239,6 +250,16 @@ describe('TimeSignatureChips', () => {
     await click(fixture, byLabel(element, 'Grouping 3 plus 2 plus 2'));
     expect(store.grouping()).toEqual([3, 2, 2]);
     expect(byLabel(element, 'Grouping 3 plus 2 plus 2').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('counts odd meters in notes or in groups', async () => {
+    store.setTimeSignature({ beats: 11, unit: 8 });
+    const { fixture, element } = await render(TimeSignatureChips);
+    const count = element.querySelector('[aria-label="Count"]')!;
+    expect(queryAllText(count, 'button')).toEqual(['Eighths · 11', 'Groups · 4']);
+    await click(fixture, byLabel(element, 'Groups · 4'));
+    expect(store.pulse()).toBe('group');
+    expect(store.levels()).toHaveLength(4);
   });
 
   it('shows a custom meter on the More chip and opens the sheet', async () => {

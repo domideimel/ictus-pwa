@@ -10,19 +10,25 @@ import {
 import type { ClickParams, ScheduledBeat } from '../audio/click-scheduler';
 import { setAudioSession } from '../audio/audio-context';
 import { MetronomeEngine } from '../audio/metronome-engine';
-import type { Subdivision, TimeSignature } from '../music/meter';
+import type { Pulse, Subdivision, TimeSignature } from '../music/meter';
 import {
   BPM_RANGE,
   BeatLevel,
   SWING_RANGE,
+  beatLengths,
+  canCountInGroups,
   clamp,
   defaultGrouping,
   defaultLevels,
   groupStarts,
   isValidSignature,
+  keepNoteValue,
   nextLevel,
   sameSignature,
+  subdivisionInfo,
+  subdivisionOptions,
   tempoMarking,
+  tempoUnits,
 } from '../music/meter';
 import type { GapClick, Polyrhythm, RestCounter, SpeedTrainer } from '../music/practice';
 import {
@@ -40,6 +46,9 @@ export interface MetronomeSetup {
   readonly bpm: number;
   readonly timeSignature: TimeSignature;
   readonly grouping: readonly number[];
+  /** Count every note of the meter, or every group of the grouping. */
+  readonly pulse: Pulse;
+  /** One per count, so one per group when counting in groups. */
   readonly levels: readonly BeatLevel[];
   readonly subdivision: Subdivision;
   readonly swing: number;
@@ -58,6 +67,7 @@ const DEFAULT_SETUP: MetronomeSetup = {
   bpm: 120,
   timeSignature: { beats: 4, unit: 4 },
   grouping: [4],
+  pulse: 'unit',
   levels: defaultLevels(4),
   subdivision: 1,
   swing: 0.5,
@@ -83,16 +93,20 @@ export function sanitizeSetup(setup: MetronomeSetup): MetronomeSetup {
     setup.grouping.reduce((sum, size) => sum + size, 0) === timeSignature.beats
       ? setup.grouping
       : defaultGrouping(timeSignature);
+  const pulse: Pulse =
+    setup.pulse === 'group' && canCountInGroups(timeSignature, grouping) ? 'group' : 'unit';
+  const lengths = beatLengths(timeSignature, grouping, pulse);
   const levels =
-    setup.levels.length === timeSignature.beats && setup.levels.every(isBeatLevel)
+    setup.levels.length === lengths.length && setup.levels.every(isBeatLevel)
       ? setup.levels
-      : defaultLevels(timeSignature.beats);
+      : defaultLevels(lengths.length);
   return {
     bpm: clamp(Math.round(setup.bpm) || DEFAULT_SETUP.bpm, BPM_RANGE.min, BPM_RANGE.max),
     timeSignature,
     grouping,
+    pulse,
     levels,
-    subdivision: ([1, 2, 3, 4, 5, 6] as const).find((value) => value === setup.subdivision) ?? 1,
+    subdivision: subdivisionInfo(setup.subdivision, timeSignature.unit, lengths).value,
     swing: clamp(setup.swing, SWING_RANGE.min, SWING_RANGE.max),
   };
 }
@@ -136,13 +150,33 @@ export const MetronomeStore = signalStore(
     const bpm = computed(() => setup().bpm);
     const levels = computed(() => setup().levels);
     const grouping = computed(() => setup().grouping);
-    const memberGroupStarts = computed(() => groupStarts(grouping()));
+    const timeSignature = computed(() => setup().timeSignature);
+    const memberBeatLengths = computed(() =>
+      beatLengths(timeSignature(), grouping(), setup().pulse),
+    );
+    const countsInGroups = computed(() => memberBeatLengths().some((length) => length > 1));
+    /** Counting in groups, every count starts a group, so only the downbeat stands out. */
+    const memberGroupStarts = computed(() =>
+      countsInGroups() ? new Set<number>() : groupStarts(grouping()),
+    );
+    const subdivision = computed(() => setup().subdivision);
     return {
       bpm,
-      timeSignature: computed(() => setup().timeSignature),
+      timeSignature,
       grouping,
+      pulse: computed(() => setup().pulse),
       levels,
-      subdivision: computed(() => setup().subdivision),
+      beatLengths: memberBeatLengths,
+      countsInGroups,
+      /** Notes of the time signature the BPM counts. */
+      tempoUnits: computed(() => tempoUnits(memberBeatLengths())),
+      subdivision,
+      subdivisionOptions: computed(() =>
+        subdivisionOptions(timeSignature().unit, memberBeatLengths()),
+      ),
+      subdivisionInfo: computed(() =>
+        subdivisionInfo(subdivision(), timeSignature().unit, memberBeatLengths()),
+      ),
       swing: computed(() => setup().swing),
       groupStarts: memberGroupStarts,
       tempoMarking: computed(() => tempoMarking(bpm())),
@@ -172,6 +206,8 @@ export const MetronomeStore = signalStore(
         return {
           bpm: current.bpm,
           levels: current.levels,
+          beatLengths: memberBeatLengths(),
+          tempoUnits: tempoUnits(memberBeatLengths()),
           groupStarts: memberGroupStarts(),
           subdivision: current.subdivision,
           swing: current.swing,
@@ -195,6 +231,26 @@ export const MetronomeStore = signalStore(
   withMethods((store) => {
     const patch = (changes: Partial<MetronomeSetup>): void => {
       patchState(store, ({ setup }) => ({ setup: { ...setup, ...changes } }));
+    };
+
+    /**
+     * Changes how the bar is counted. Accents reset when the number of counts changes, and the BPM is
+     * converted so the notes keep their speed: 6/8 at ♪ = 180 becomes ♩. = 60.
+     */
+    const recount = (grouping: readonly number[], pulse: Pulse): void => {
+      const current = store.setup();
+      const before = beatLengths(current.timeSignature, current.grouping, current.pulse);
+      const after = beatLengths(current.timeSignature, grouping, pulse);
+      const sameCounts = before.join('+') === after.join('+');
+      patchState(store, {
+        setup: sanitizeSetup({
+          ...current,
+          grouping,
+          pulse,
+          levels: sameCounts ? current.levels : defaultLevels(after.length),
+          bpm: (current.bpm * tempoUnits(before)) / tempoUnits(after),
+        }),
+      });
     };
 
     const setBpm = (bpm: number): void => {
@@ -271,13 +327,24 @@ export const MetronomeStore = signalStore(
         patch({
           timeSignature,
           grouping: defaultGrouping(timeSignature),
+          pulse: 'unit',
           levels: defaultLevels(timeSignature.beats),
+          subdivision: keepNoteValue(
+            store.subdivision(),
+            store.timeSignature().unit,
+            timeSignature.unit,
+          ),
         });
       },
 
       setGrouping(grouping: readonly number[]): void {
         if (grouping.reduce((sum, size) => sum + size, 0) !== store.timeSignature().beats) return;
-        patch({ grouping });
+        recount(grouping, store.pulse());
+      },
+
+      setPulse(pulse: Pulse): void {
+        if (pulse === store.pulse()) return;
+        recount(store.grouping(), pulse);
       },
 
       cycleLevel(index: number): void {

@@ -13,6 +13,7 @@ const setup = (bpm: number): MetronomeSetup => ({
   bpm,
   timeSignature: { beats: 3, unit: 4 },
   grouping: [3],
+  pulse: 'unit',
   levels: defaultLevels(3),
   subdivision: 1,
   swing: 0.5,

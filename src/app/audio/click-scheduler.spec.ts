@@ -6,6 +6,8 @@ import { ClickScheduler } from './click-scheduler';
 const base: ClickParams = {
   bpm: 120,
   levels: defaultLevels(4),
+  beatLengths: [1, 1, 1, 1],
+  tempoUnits: 1,
   groupStarts: groupStarts([4]),
   subdivision: 1,
   swing: 0.5,
@@ -28,7 +30,12 @@ function run(
   const clicks: ScheduledClick[] = [];
   const beats: ScheduledBeat[] = [];
   for (let t = 0.025; t <= seconds + 1e-9; t += 0.025) {
-    const result = scheduler.advance(t, { ...base, ...params });
+    const result = scheduler.advance(t, {
+      ...base,
+      // One count per beat level unless a test sets uneven counts.
+      beatLengths: (params.levels ?? base.levels).map(() => 1),
+      ...params,
+    });
     clicks.push(...result.clicks);
     beats.push(...result.beats);
   }
@@ -183,12 +190,71 @@ describe('ClickScheduler', () => {
     const scheduler = new ClickScheduler(0);
     scheduler.advance(1.4, base);
     // Beats 1-3 of a 4/4 bar have played; with two beats per bar, beat 4 becomes a new bar.
-    const { beats } = scheduler.advance(2.6, { ...base, levels: defaultLevels(2) });
+    const { beats } = scheduler.advance(2.6, {
+      ...base,
+      levels: defaultLevels(2),
+      beatLengths: [1, 1],
+    });
     expect(beats.map((beat) => [beat.time, beat.index, beat.bar])).toEqual([
       [1.5, 0, 1],
       [2, 1, 1],
       [2.5, 0, 2],
     ]);
+  });
+
+  it('plays every eighth of 11/8 with group accents', () => {
+    // ♪ = 120: 11 clicks half a second apart, then the next bar.
+    const { clicks, beats } = run(5.99, {
+      levels: defaultLevels(11),
+      groupStarts: groupStarts([3, 3, 3, 2]),
+    });
+    expect(beats).toHaveLength(12);
+    expect(beats.at(-1)).toEqual({ time: 5.5, index: 0, bar: 1 });
+    expect(clicks.filter((click) => click.kind === 'accent').map((click) => click.time)).toEqual([
+      0, 1.5, 3, 4.5, 5.5,
+    ]);
+  });
+
+  it('counts 11/8 in uneven groups of 3+3+3+2 eighths', () => {
+    const groups = { beatLengths: [3, 3, 3, 2], levels: defaultLevels(4) };
+    // Groups only: long, long, long, short at ♪ = 120.
+    const counts = run(5.99, { ...groups, subdivision: 0 });
+    expect(times(counts.clicks)).toEqual([0, 1.5, 3, 4.5, 5.5]);
+    expect(counts.beats.map((beat) => beat.index)).toEqual([0, 1, 2, 3, 0]);
+    // Eighths: three clicks in each long count and two in the short one, 11 per bar.
+    const eighths = run(5.49, { ...groups, subdivision: 1 });
+    expect(times(eighths.clicks)).toEqual(Array.from({ length: 11 }, (_, i) => i * 0.5));
+    expect(times(eighths.clicks, 'subdivision')).toHaveLength(7);
+    // Sixteenths: 22 per bar.
+    expect(run(5.49, { ...groups, subdivision: 2 }).clicks).toHaveLength(22);
+  });
+
+  it('counts the BPM in groups when they are even', () => {
+    // 6/8 in two at ♩. = 60: a beat per second, three eighths in each.
+    const { clicks, beats } = run(1.99, {
+      bpm: 60,
+      beatLengths: [3, 3],
+      tempoUnits: 3,
+      levels: defaultLevels(2),
+      subdivision: 1,
+    });
+    expect(beats.map((beat) => beat.time)).toEqual([0, 1]);
+    expect(times(clicks)).toEqual(
+      [0, 1 / 3, 2 / 3, 1, 4 / 3, 5 / 3].map((t) => expect.closeTo(t, 9)),
+    );
+  });
+
+  it('swings sixteenth pairs inside a beat of three eighths', () => {
+    const { clicks } = run(0.99, {
+      beatLengths: [3, 2],
+      levels: defaultLevels(2),
+      subdivision: 2,
+      swing: 2 / 3,
+    });
+    // ♪ = 120: each eighth is 0.5 s, split 1/3 s long and 1/6 s short.
+    expect(times(clicks).slice(0, 4)).toEqual(
+      [0, 1 / 3, 0.5, 0.5 + 1 / 3].map((t) => expect.closeTo(t, 9)),
+    );
   });
 
   it('starts at the given time and schedules nothing before it', () => {

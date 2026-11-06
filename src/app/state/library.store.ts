@@ -1,6 +1,6 @@
 import { computed } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { canSwing, signatureLabel, subdivisionInfo } from '../music/meter';
+import { beatLengths, canSwing, signatureLabel, subdivisionInfo } from '../music/meter';
 import type { MetronomeSetup } from './metronome.store';
 import { parseSetup } from './metronome.store';
 import type { Parser } from './storage';
@@ -20,7 +20,9 @@ export interface Setlist {
 
 export const pieceSummary = (piece: Piece): string => {
   const swung = piece.swing > 0.5 && canSwing(piece.subdivision) ? ' swing' : '';
-  return `${piece.bpm} BPM · ${signatureLabel(piece.timeSignature)} · ${subdivisionInfo(piece.subdivision).symbol}${swung}`;
+  const lengths = beatLengths(piece.timeSignature, piece.grouping, piece.pulse);
+  const subdivision = subdivisionInfo(piece.subdivision, piece.timeSignature.unit, lengths);
+  return `${piece.bpm} BPM · ${signatureLabel(piece.timeSignature)} · ${subdivision.symbol}${swung}`;
 };
 
 /** A saved object with an id and a name; everything else still has to be checked. */

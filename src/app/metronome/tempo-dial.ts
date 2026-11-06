@@ -1,5 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { BPM_RANGE } from '../music/meter';
+import { BPM_RANGE, durationSymbol, durationTitle } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
 
 const SPAN = BPM_RANGE.max - BPM_RANGE.min;
@@ -40,7 +40,9 @@ const SPAN = BPM_RANGE.max - BPM_RANGE.min;
       >
         {{ store.bpm() }}
       </span>
-      <span class="mt-1 text-sm tracking-[0.12em] text-muted">BPM</span>
+      <span class="mt-1 text-sm tracking-[0.12em] text-muted"
+        ><span class="font-music tracking-normal">{{ tempoNote() }}</span> BPM</span
+      >
     </div>
   `,
   host: {
@@ -53,7 +55,8 @@ const SPAN = BPM_RANGE.max - BPM_RANGE.min;
     '[attr.aria-valuemin]': 'min',
     '[attr.aria-valuemax]': 'max',
     '[attr.aria-valuenow]': 'store.bpm()',
-    '[attr.aria-valuetext]': 'store.bpm() + " BPM, " + store.tempoMarking()',
+    '[attr.aria-valuetext]':
+      'store.bpm() + " BPM, " + tempoNoteTitle() + " notes, " + store.tempoMarking()',
     '(pointerdown)': 'onPointerDown($event)',
     '(pointermove)': 'onPointerMove($event)',
     '(pointerup)': 'dragAngle = null',
@@ -67,6 +70,13 @@ export class TempoDial {
 
   protected readonly min = BPM_RANGE.min;
   protected readonly max = BPM_RANGE.max;
+  /** The note the BPM counts: ♩ in 4/4, ♪ in 7/8, ♩. in 6/8 counted in two. */
+  protected readonly tempoNote = computed(() =>
+    durationSymbol(this.store.tempoUnits(), this.store.timeSignature().unit),
+  );
+  protected readonly tempoNoteTitle = computed(() =>
+    durationTitle(this.store.tempoUnits(), this.store.timeSignature().unit),
+  );
   protected readonly center = computed(() => this.diameter() / 2);
   protected readonly radius = computed(() => this.diameter() / 2 - 12);
   protected readonly viewBox = computed(() => `0 0 ${this.diameter()} ${this.diameter()}`);
