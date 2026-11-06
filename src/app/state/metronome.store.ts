@@ -74,6 +74,9 @@ export const DEFAULT_PRACTICE: PracticeSetup = {
   restAudible: false,
 };
 
+const isBeatLevel = (level: unknown): level is BeatLevel =>
+  level === BeatLevel.Normal || level === BeatLevel.Accent || level === BeatLevel.Mute;
+
 /** Fixes anything that no longer fits together, e.g. a grouping saved for another meter. */
 export function sanitizeSetup(setup: MetronomeSetup): MetronomeSetup {
   const timeSignature = isValidSignature(setup.timeSignature)
@@ -84,7 +87,7 @@ export function sanitizeSetup(setup: MetronomeSetup): MetronomeSetup {
       ? setup.grouping
       : defaultGrouping(timeSignature);
   const levels =
-    setup.levels.length === timeSignature.beats && setup.levels.every((level) => level in BeatLevel)
+    setup.levels.length === timeSignature.beats && setup.levels.every(isBeatLevel)
       ? setup.levels
       : defaultLevels(timeSignature.beats);
   return {
@@ -97,7 +100,8 @@ export function sanitizeSetup(setup: MetronomeSetup): MetronomeSetup {
   };
 }
 
-const parseSetup: Parser<MetronomeSetup> = (value) => {
+/** Reads a saved setup, filling in missing fields and repairing what no longer fits together. */
+export const parseSetup: Parser<MetronomeSetup> = (value) => {
   const merged = withDefaults(DEFAULT_SETUP)(value);
   return merged ? sanitizeSetup(merged) : null;
 };

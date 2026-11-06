@@ -1,7 +1,7 @@
 import { computed } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { canSwing, signatureLabel, subdivisionInfo } from '../music/meter';
-import { MetronomeSetup, sanitizeSetup } from './metronome.store';
+import { MetronomeSetup, parseSetup } from './metronome.store';
 import { Parser, withPersistence } from './storage';
 
 /** Tempo, meter, subdivision, swing and accents saved for one piece. */
@@ -30,13 +30,14 @@ const parseSetlists: Parser<Setlist[]> = (value) => {
     .map((setlist) => ({
       id: setlist.id,
       name: setlist.name,
-      pieces: (Array.isArray(setlist.pieces) ? setlist.pieces : [])
-        .filter((piece) => typeof piece?.id === 'string' && typeof piece?.name === 'string')
-        .map((piece) => ({
-          ...sanitizeSetup({ swing: 0.5, ...piece }),
-          id: piece.id,
-          name: piece.name,
-        })),
+      // One damaged piece must not take the whole library down with it.
+      pieces: (Array.isArray(setlist.pieces) ? setlist.pieces : []).flatMap((piece) => {
+        const setup =
+          typeof piece?.id === 'string' && typeof piece?.name === 'string'
+            ? parseSetup(piece)
+            : null;
+        return setup ? [{ ...setup, id: piece.id, name: piece.name }] : [];
+      }),
     }));
 };
 
