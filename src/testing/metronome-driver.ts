@@ -1,5 +1,6 @@
 import { sharedAudioContext } from '../app/audio/audio-context';
-import { FakeAudioContext, FakeWorker, flushAnimationFrames, flushMicrotasks } from './fakes';
+import type { FakeAudioContext } from './fakes';
+import { FakeWorker, flushAnimationFrames, flushMicrotasks } from './fakes';
 
 /**
  * Drives the real click engine behind the metronome store: resets the shared fake audio clock,

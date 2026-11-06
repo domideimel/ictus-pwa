@@ -1,4 +1,5 @@
-import { Component, ElementRef, afterNextRender, input, output, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { Component, afterNextRender, input, output, viewChild } from '@angular/core';
 import { HeaderIconButton } from './header-icon-button';
 
 /**
@@ -10,6 +11,8 @@ import { HeaderIconButton } from './header-icon-button';
   selector: 'app-sheet',
   imports: [HeaderIconButton],
   template: `
+    <!-- Clicking the backdrop is a mouse shortcut; the native dialog closes on Escape. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <dialog
       #dialog
       class="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-hidden rounded-t-[20px] border border-stroke bg-bg p-0 text-fg sm:m-auto sm:max-w-[min(34rem,calc(100vw-2rem))] sm:rounded-[20px]"
@@ -19,7 +22,7 @@ import { HeaderIconButton } from './header-icon-button';
     >
       <div class="flex max-h-[92dvh] flex-col">
         <header class="flex shrink-0 items-center gap-2 ps-5 pe-4 pt-4 pb-2">
-          <h2 [id]="titleId" class="text-[22px] font-semibold">{{ title() }}</h2>
+          <h2 class="text-[22px] font-semibold" [id]="titleId">{{ title() }}</h2>
           <span class="flex-1"></span>
           <ng-content select="[sheetAccessory]" />
           <app-header-icon-button icon="close" [label]="closeLabel()" (pressed)="close()" />
@@ -43,7 +46,9 @@ export class Sheet {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   constructor() {
-    afterNextRender(() => this.dialog().nativeElement.showModal());
+    afterNextRender(() => {
+      this.dialog().nativeElement.showModal();
+    });
   }
 
   close(): void {

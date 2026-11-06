@@ -25,13 +25,15 @@ beforeEach(() => {
   tuner = TestBed.inject(TunerStore);
 });
 
-afterEach(() => TestBed.inject(MetronomeStore).stop());
+afterEach(() => {
+  TestBed.inject(MetronomeStore).stop();
+});
 
 describe('NoteName', () => {
   it('shows a dash without a note', async () => {
     const { element } = await render(NoteName);
     expect(element.getAttribute('aria-label')).toBe('No note');
-    expect(element.textContent?.trim()).toBe('–');
+    expect(element.textContent.trim()).toBe('–');
   });
 
   it('shows the German name with octave and accidental', async () => {
@@ -43,12 +45,12 @@ describe('NoteName', () => {
     settings.update({ accidentals: 'sharps' });
     await fixture.whenStable();
     expect(element.getAttribute('aria-label')).toBe('A♯ 4');
-    expect(element.textContent?.replace(/\s+/g, '')).toBe('A♯4');
+    expect(element.textContent.replace(/\s+/g, '')).toBe('A♯4');
   });
 });
 
 describe('TuningStatePill', () => {
-  const text = (element: HTMLElement): string => element.textContent?.trim() ?? '';
+  const text = (element: HTMLElement): string => element.textContent.trim();
 
   it('walks through off, listening, in tune, high and low', async () => {
     const { fixture, element } = await render(TuningStatePill);
@@ -108,7 +110,7 @@ describe('CentsMeter and FrequencyLabel', () => {
       'Cents meter: no reading',
     );
     expect(meter.element.querySelector('g[style]')).toBeNull();
-    expect(label.element.textContent?.trim()).toBe('');
+    expect(label.element.textContent.trim()).toBe('');
   });
 
   it('moves the needle and shows frequency and target', async () => {
@@ -123,7 +125,7 @@ describe('CentsMeter and FrequencyLabel', () => {
     );
     const needle = meter.element.querySelector('g[style]') as SVGGElement;
     expect(needle.style.transform).toBe(`translateX(${20 + (75 / 100) * 440}px)`);
-    expect(label.element.textContent?.trim()).toBe(
+    expect(label.element.textContent.trim()).toBe(
       `${cents(442, 25).toFixed(2)} Hz · target 442.00 Hz`,
     );
   });
@@ -185,13 +187,13 @@ describe('TunerToggle', () => {
     await driver.settle();
     const { fixture, element } = await render(TunerToggle);
     const button = element.querySelector('button')!;
-    expect(button.textContent?.trim()).toBe('Start tuner');
+    expect(button.textContent.trim()).toBe('Start tuner');
     expect(button.getAttribute('aria-pressed')).toBe('false');
     await click(fixture, button);
     await driver.settle();
     expect(metronome.isPlaying()).toBe(false);
     expect(tuner.isListening()).toBe(true);
-    expect(button.textContent?.trim()).toBe('Stop tuner');
+    expect(button.textContent.trim()).toBe('Stop tuner');
     await click(fixture, button);
     expect(tuner.switchedOn()).toBe(false);
   });
@@ -229,7 +231,7 @@ describe('DrumTuning', () => {
   it('starts with every lug unmeasured and lug 1 highlighted', async () => {
     const { element } = await render(DrumTuning);
     expect(lugs(element)).toHaveLength(8);
-    expect(lugs(element)[0].getAttribute('aria-label')).toBe('Lug 1, not measured');
+    expect(lugs(element)[0]!.getAttribute('aria-label')).toBe('Lug 1, not measured');
     expect(lugs(element).map((lug) => lug.getAttribute('aria-pressed'))).toEqual([
       'true',
       ...Array(7).fill('false'),
@@ -246,7 +248,7 @@ describe('DrumTuning', () => {
       await fixture.whenStable();
     }
     // The high lug pulls the average up by 10 ¢, so the other three read 10 ¢ low.
-    expect(lugs(element).map((lug) => lug.textContent?.trim())).toEqual([
+    expect(lugs(element).map((lug) => lug.textContent.trim())).toEqual([
       '▼10',
       '▼10',
       '▼10',
@@ -273,15 +275,15 @@ describe('DrumTuning', () => {
   it('lets you pick a lug to measure next and clears readings', async () => {
     settings.update({ drumLugs: 4 });
     const { fixture, element } = await render(DrumTuning);
-    await click(fixture, lugs(element)[2]);
-    expect(lugs(element)[2].getAttribute('aria-pressed')).toBe('true');
+    await click(fixture, lugs(element)[2]!);
+    expect(lugs(element)[2]!.getAttribute('aria-pressed')).toBe('true');
     await driver.switchOn();
     driver.strike(150);
     await fixture.whenStable();
-    expect(lugs(element)[2].getAttribute('aria-label')).toMatch(/Lug 3, 0 cents/);
+    expect(lugs(element)[2]!.getAttribute('aria-label')).toMatch(/Lug 3, 0 cents/);
     await click(fixture, byLabel(element, 'Clear'));
-    expect(lugs(element)[2].getAttribute('aria-label')).toBe('Lug 3, not measured');
-    expect(lugs(element)[0].getAttribute('aria-pressed')).toBe('true');
+    expect(lugs(element)[2]!.getAttribute('aria-label')).toBe('Lug 3, not measured');
+    expect(lugs(element)[0]!.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('starts over when the lug count changes', async () => {
@@ -301,7 +303,7 @@ describe('DrumTuning', () => {
     const select = element.querySelector('#drum-target') as HTMLSelectElement;
     const notes = [...select.querySelectorAll('optgroup option')];
     expect(notes).toHaveLength(37);
-    expect(notes[0].textContent?.trim()).toBe('C5 · 525.6 Hz');
+    expect(notes[0]!.textContent.trim()).toBe('C5 · 525.6 Hz');
 
     select.value = '57';
     select.dispatchEvent(new Event('change'));
@@ -311,7 +313,7 @@ describe('DrumTuning', () => {
     await driver.switchOn();
     driver.strike(cents(221, -8));
     await fixture.whenStable();
-    expect(lugs(element)[0].textContent?.trim()).toBe('▼8');
+    expect(lugs(element)[0]!.textContent.trim()).toBe('▼8');
 
     select.value = 'average';
     select.dispatchEvent(new Event('change'));

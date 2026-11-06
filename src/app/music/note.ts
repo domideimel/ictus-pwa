@@ -5,7 +5,7 @@ export const accidentalSymbol = (accidental: Accidental): string =>
   accidental === 'sharp' ? '♯' : accidental === 'flat' ? '♭' : '';
 
 /** German note names: B natural is H. */
-const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'H'] as const;
+const LETTERS = 'CDEFGAH';
 
 // Letter index and accidental for each pitch class, spelled with sharps or flats.
 const SHARPS: readonly [number, Accidental][] = [
@@ -52,10 +52,10 @@ export interface NoteSpelling {
 
 export function spell(midi: number, style: AccidentalStyle): NoteSpelling {
   const pitchClass = ((midi % 12) + 12) % 12;
-  const [letter, accidental] = (style === 'sharps' ? SHARPS : FLATS)[pitchClass];
+  const [letter, accidental] = (style === 'sharps' ? SHARPS : FLATS)[pitchClass] ?? [0, 'natural'];
   const octave = Math.floor(midi / 12) - 1;
   const germanB = letter === 6 && accidental === 'flat';
-  const letterName = germanB ? 'B' : LETTERS[letter];
+  const letterName = germanB ? 'B' : LETTERS.charAt(letter);
   const nameAccidental = germanB ? 'natural' : accidental;
   return {
     letter,

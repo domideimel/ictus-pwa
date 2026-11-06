@@ -20,9 +20,15 @@ pnpm install
 pnpm start          # http://localhost:4200
 pnpm test           # unit tests (Vitest), watch mode
 pnpm test:ci        # one run with coverage and thresholds, as in CI
+pnpm lint           # ESLint: typescript-eslint strict + stylistic (type-checked), all angular-eslint rules
+pnpm typecheck      # tsc for app, specs and workers
 pnpm format         # Prettier; CI runs pnpm format:check
 pnpm build          # production build in dist/ictus-pwa/browser
 ```
+
+TypeScript runs with every strict flag (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+`verbatimModuleSyntax`, …) and Angular with strict templates and all extended diagnostics as errors.
+Husky runs ESLint and Prettier on staged files plus the type-check before each commit, and the tests before each push.
 
 Tests run in jsdom against the real stores, scheduler and components. `src/testing` has the fakes for Web Audio,
 workers, animation frames and the microphone, and drivers that move the audio clock beat by beat

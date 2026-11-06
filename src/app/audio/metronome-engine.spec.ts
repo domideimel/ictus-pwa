@@ -1,14 +1,10 @@
-import {
-  FakeAudioContext,
-  FakeWorker,
-  flushAnimationFrames,
-  pendingAnimationFrames,
-} from '../../testing/fakes';
+import type { FakeAudioContext, StartedSource } from '../../testing/fakes';
+import { FakeWorker, flushAnimationFrames, pendingAnimationFrames } from '../../testing/fakes';
 import { DEFAULT_GAP_CLICK, DEFAULT_SPEED_TRAINER } from '../music/practice';
 import { defaultLevels, groupStarts } from '../music/meter';
 import { sharedAudioContext } from './audio-context';
-import { ClickParams, ScheduledBeat } from './click-scheduler';
-import { ClickSound } from './click-synth';
+import type { ClickParams, ScheduledBeat } from './click-scheduler';
+import type { ClickSound } from './click-synth';
 import { MetronomeEngine } from './metronome-engine';
 
 const base: ClickParams = {
@@ -57,7 +53,9 @@ describe('MetronomeEngine', () => {
     );
   });
 
-  afterEach(() => engine.dispose());
+  afterEach(() => {
+    engine.dispose();
+  });
 
   it('resumes the audio context and plays the first beat a moment after start', async () => {
     await engine.start();
@@ -101,7 +99,7 @@ describe('MetronomeEngine', () => {
     sound = 'cowbell';
     params = { ...base, beatVolume: 0.3 };
     advance(0.5);
-    const [first, second] = context.started;
+    const [first, second] = context.started as [StartedSource, StartedSource];
     expect(first.buffer?.length).toBe(Math.floor(0.09 * 48_000));
     expect(second.buffer?.length).toBe(Math.floor(0.3 * 48_000));
     expect(second.gain).toBe(0.3);

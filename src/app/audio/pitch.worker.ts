@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
-import { PitchDetector, PitchRequest } from './pitch-detector';
+import type { PitchRequest } from './pitch-detector';
+import { PitchDetector } from './pitch-detector';
 
 let detector: PitchDetector | null = null;
 

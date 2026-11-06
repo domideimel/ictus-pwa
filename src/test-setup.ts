@@ -23,5 +23,13 @@ Object.assign(globalThis, { AudioContext: FakeAudioContext, Worker: FakeWorker }
 installAnimationFrames();
 
 // Pointer capture (the tempo dial) is not in jsdom.
-Element.prototype.setPointerCapture ??= function (): void {};
-Element.prototype.releasePointerCapture ??= function (): void {};
+if (!('setPointerCapture' in Element.prototype)) {
+  Object.assign(Element.prototype, {
+    setPointerCapture(): void {
+      // Nothing to capture without real pointers.
+    },
+    releasePointerCapture(): void {
+      // Nothing to release.
+    },
+  });
+}

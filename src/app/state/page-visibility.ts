@@ -8,10 +8,12 @@ export class PageVisibility {
   readonly visible = this.state.asReadonly();
 
   constructor() {
-    const update = (): void => this.state.set(this.document.visibilityState === 'visible');
+    const update = (): void => {
+      this.state.set(this.document.visibilityState === 'visible');
+    };
     this.document.addEventListener('visibilitychange', update);
-    inject(DestroyRef).onDestroy(() =>
-      this.document.removeEventListener('visibilitychange', update),
-    );
+    inject(DestroyRef).onDestroy(() => {
+      this.document.removeEventListener('visibilitychange', update);
+    });
   }
 }

@@ -62,7 +62,7 @@ export class PitchSmoother {
 function median(values: readonly number[]): number | null {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
-  return sorted[sorted.length >> 1];
+  return sorted[sorted.length >> 1] ?? null;
 }
 
 interface TunerState {
@@ -113,6 +113,8 @@ export const TunerStore = signalStore(
   withMethods((store) => {
     const smoother = new PitchSmoother();
     let wanted = false;
+    // Read through a function: `wanted` can change while the microphone starts.
+    const stillWanted = (): boolean => wanted;
 
     const ingest = (detected: number | null): void => {
       if (!store.isListening()) return;
@@ -126,7 +128,9 @@ export const TunerStore = signalStore(
       }
     };
     const microphone = new Microphone(ingest);
-    inject(DestroyRef).onDestroy(() => microphone.dispose());
+    inject(DestroyRef).onDestroy(() => {
+      microphone.dispose();
+    });
 
     return {
       setOnScreen(onScreen: boolean): void {
@@ -147,7 +151,7 @@ export const TunerStore = signalStore(
           setAudioSession('play-and-record');
           await microphone.start();
           patchState(store, { microphoneDenied: false });
-          if (!wanted) {
+          if (!stillWanted()) {
             microphone.stop();
             return;
           }

@@ -1,4 +1,5 @@
-import { Component, ElementRef, afterNextRender, computed, inject, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { Component, afterNextRender, computed, inject, viewChild } from '@angular/core';
 import { signatureLabel } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
 import { HeaderIconButton } from '../ui/header-icon-button';
@@ -83,6 +84,8 @@ export class RestCounter {
   );
 
   constructor() {
-    afterNextRender(() => this.dialog().nativeElement.showModal());
+    afterNextRender(() => {
+      this.dialog().nativeElement.showModal();
+    });
   }
 }

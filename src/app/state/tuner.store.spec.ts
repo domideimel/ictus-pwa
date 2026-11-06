@@ -32,14 +32,16 @@ describe('TunerStore', () => {
     workersBefore = FakeWorker.instances.length;
     stream = fakeStream();
     requests = 0;
-    stubGetUserMedia(async () => {
+    stubGetUserMedia(() => {
       requests += 1;
-      return stream;
+      return Promise.resolve(stream);
     });
     tuner = TestBed.inject(TunerStore);
   });
 
-  afterEach(() => TestBed.inject(MetronomeStore).stop());
+  afterEach(() => {
+    TestBed.inject(MetronomeStore).stop();
+  });
 
   it('does not touch the microphone until Start is pressed on screen', async () => {
     tuner.setOnScreen(true);
@@ -165,7 +167,7 @@ describe('TunerStore', () => {
     expect(tuner.microphoneDenied()).toBe(true);
     expect(tuner.switchedOn()).toBe(false);
 
-    stubGetUserMedia(async () => stream);
+    stubGetUserMedia(() => Promise.resolve(stream));
     tuner.toggle();
     await settle();
     expect(tuner.microphoneDenied()).toBe(false);
@@ -209,22 +211,30 @@ describe('PitchSmoother', () => {
 
   it('shows the median of the last five readings', () => {
     const smoother = new PitchSmoother();
-    [220, 230, 221, 222, 219].forEach((value, i) => smoother.ingest(value, i * 40));
+    [220, 230, 221, 222, 219].forEach((value, i) => {
+      smoother.ingest(value, i * 40);
+    });
     expect(smoother.frequency).toBe(221);
   });
 
   it('starts a new note on a jump of more than 60 cents', () => {
     const smoother = new PitchSmoother();
-    [220, 220, 220].forEach((value, i) => smoother.ingest(value, i * 40));
+    [220, 220, 220].forEach((value, i) => {
+      smoother.ingest(value, i * 40);
+    });
     expect(smoother.strikeCount).toBe(1);
-    [330, 330, 330].forEach((value, i) => smoother.ingest(value, 200 + i * 40));
+    [330, 330, 330].forEach((value, i) => {
+      smoother.ingest(value, 200 + i * 40);
+    });
     expect(smoother.strikeCount).toBe(2);
     expect(smoother.strikeFrequency).toBe(330);
   });
 
   it('holds the last note for 1.5 s of silence', () => {
     const smoother = new PitchSmoother();
-    [220, 220].forEach((value, i) => smoother.ingest(value, i * 40));
+    [220, 220].forEach((value, i) => {
+      smoother.ingest(value, i * 40);
+    });
     smoother.ingest(null, 1500);
     expect(smoother.frequency).toBe(220);
     smoother.ingest(null, 1600);
@@ -233,7 +243,9 @@ describe('PitchSmoother', () => {
 
   it('forgets everything on reset', () => {
     const smoother = new PitchSmoother();
-    [220, 220].forEach((value, i) => smoother.ingest(value, i * 40));
+    [220, 220].forEach((value, i) => {
+      smoother.ingest(value, i * 40);
+    });
     smoother.reset();
     expect(smoother.frequency).toBeNull();
     smoother.ingest(220, 100);

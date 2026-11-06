@@ -1,5 +1,7 @@
+import type { Mock } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { SwUpdate, UnrecoverableStateEvent, VersionEvent } from '@angular/service-worker';
+import type { UnrecoverableStateEvent, VersionEvent } from '@angular/service-worker';
+import { SwUpdate } from '@angular/service-worker';
 import { Subject } from 'rxjs';
 import { byLabel, click } from '../../testing/dom';
 import { MetronomeDriver } from '../../testing/metronome-driver';
@@ -16,7 +18,7 @@ const ready: VersionEvent = {
 describe('UpdatePrompt', () => {
   let versionUpdates: Subject<VersionEvent>;
   let unrecoverable: Subject<UnrecoverableStateEvent>;
-  let checkForUpdate: ReturnType<typeof vi.fn>;
+  let checkForUpdate: Mock<() => Promise<boolean>>;
 
   const create = async (isEnabled = true) => {
     TestBed.configureTestingModule({

@@ -1,5 +1,7 @@
-import { CLICK_SOUNDS, ClickKind, ClickSound, synthesizeClick } from './click-synth';
-import { ClickParams, ClickScheduler, ScheduledBeat } from './click-scheduler';
+import type { ClickKind, ClickSound } from './click-synth';
+import { CLICK_SOUNDS, synthesizeClick } from './click-synth';
+import type { ClickParams, ScheduledBeat } from './click-scheduler';
+import { ClickScheduler } from './click-scheduler';
 import { sharedAudioContext } from './audio-context';
 
 /** Seconds of audio scheduled ahead of the playhead; the ticker wakes every 25 ms. */
@@ -39,7 +41,7 @@ export class MetronomeEngine {
     this.context = context;
     if (context.state !== 'running') await context.resume();
     // A second start while the context was resuming may have won the race.
-    if (this.scheduler) return;
+    if (this.isRunning) return;
     this.prepareBuffers(context);
     this.scheduler = new ClickScheduler(context.currentTime + START_DELAY);
     this.pendingBeats = [];
@@ -67,7 +69,9 @@ export class MetronomeEngine {
 
   private createTicker(): Worker {
     const worker = new Worker(new URL('./ticker.worker', import.meta.url), { type: 'module' });
-    worker.onmessage = () => this.schedule();
+    worker.onmessage = () => {
+      this.schedule();
+    };
     return worker;
   }
 
@@ -117,16 +121,19 @@ export class MetronomeEngine {
     const context = this.context;
     if (!this.scheduler || !context) return;
     const playing = audibleTime(context);
-    while (this.pendingBeats.length > 0 && this.pendingBeats[0].time <= playing) {
-      const beat = this.pendingBeats.shift();
-      if (beat) this.onBeat(beat);
+    let next = this.pendingBeats[0];
+    while (next && next.time <= playing) {
+      this.pendingBeats.shift();
+      this.onBeat(next);
+      next = this.pendingBeats[0];
     }
     this.frame = requestAnimationFrame(this.reportBeats);
   };
 }
 
 function audibleTime(context: AudioContext): number {
-  const stamp = context.getOutputTimestamp?.();
+  // Safari before 14.1 has no getOutputTimestamp.
+  const stamp = 'getOutputTimestamp' in context ? context.getOutputTimestamp() : undefined;
   if (stamp?.contextTime !== undefined && stamp.contextTime > 0) return stamp.contextTime;
   return context.currentTime - (context.outputLatency || context.baseLatency || 0);
 }

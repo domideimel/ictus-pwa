@@ -7,7 +7,6 @@ import { HeaderIconButton } from '../ui/header-icon-button';
 @Component({
   selector: 'app-metronome-page',
   imports: [MetronomePanel, HeaderIconButton],
-  host: { class: 'flex min-h-0 flex-1 flex-col' },
   template: `
     <app-metronome-panel class="flex-1">
       <app-header-icon-button
@@ -18,6 +17,7 @@ import { HeaderIconButton } from '../ui/header-icon-button';
       />
     </app-metronome-panel>
   `,
+  host: { class: 'flex min-h-0 flex-1 flex-col' },
 })
 export default class MetronomePage {
   protected readonly ui = inject(UiStore);

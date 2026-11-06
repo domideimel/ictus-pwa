@@ -18,7 +18,6 @@ import { Surface } from '../ui/surface';
 @Component({
   selector: 'app-drum-tuning',
   imports: [NumberStepper, Surface, FormField],
-  host: { class: 'flex flex-col gap-5' },
   template: `
     <div class="flex items-center justify-between text-[15px]">
       <span id="lug-count-label">Lugs</span>
@@ -65,9 +64,10 @@ import { Surface } from '../ui/surface';
     <div class="flex items-center justify-between gap-3 text-[15px]">
       <label for="drum-target">Compare with</label>
       <select
+        #target
         id="drum-target"
         class="h-11 max-w-[60%] rounded-[10px] border border-stroke bg-surface px-3 text-muted"
-        (change)="setTarget($any($event.target).value)"
+        (change)="setTarget(target.value)"
       >
         <!-- [selected] per option: a select-level [value] runs before an option added in the same
              change (the locked average) exists, and would show the wrong choice. -->
@@ -92,7 +92,8 @@ import { Surface } from '../ui/surface';
 
     <div class="flex flex-col gap-1.5 text-[15px] tabular" aria-live="polite">
       @if (advice(); as advice) {
-        @switch (advice.kind) {
+        @let kind = advice.kind;
+        @switch (kind) {
           @case ('empty') {
             <p class="text-muted">
               Tap in front of lug {{ tuning().currentLug + 1 }}. Each strike is stored and the next
@@ -109,6 +110,7 @@ import { Surface } from '../ui/surface';
               <p class="text-accent-text">{{ line }}</p>
             }
           }
+          @default never;
         }
       }
       @if (spread(); as spread) {
@@ -125,6 +127,7 @@ import { Surface } from '../ui/surface';
       Clear
     </button>
   `,
+  host: { class: 'flex flex-col gap-5' },
 })
 export class DrumTuning {
   private readonly tuner = inject(TunerStore);
@@ -240,7 +243,9 @@ export class DrumTuning {
       const frequency = this.tuner.strikeFrequency();
       if (count === lastStrike || frequency === null) return;
       lastStrike = count;
-      untracked(() => this.tuning.update((tuning) => recordStrike(tuning, frequency)));
+      untracked(() => {
+        this.tuning.update((tuning) => recordStrike(tuning, frequency));
+      });
     });
   }
 

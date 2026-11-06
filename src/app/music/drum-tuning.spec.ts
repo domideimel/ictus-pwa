@@ -38,7 +38,7 @@ describe('drum tuning', () => {
     for (const frequency of [200, 200, 200, cents(200, 20)])
       tuning = recordStrike(tuning, frequency);
     const values = deviations(tuning) as number[];
-    expect(values[3] - values[0]).toBeCloseTo(20, 6);
+    expect(values[3]! - values[0]!).toBeCloseTo(20, 6);
     expect(values.reduce((sum, value) => sum + value, 0)).toBeCloseTo(0, 6);
     expect(spread(tuning)).toBeCloseTo(20, 6);
   });

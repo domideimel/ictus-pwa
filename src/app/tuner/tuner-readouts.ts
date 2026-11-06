@@ -6,12 +6,6 @@ import { TunerStore } from '../state/tuner.store';
 /** Large note letter (German names) with accidental and a smaller octave number. */
 @Component({
   selector: 'app-note-name',
-  host: {
-    class: 'flex items-start leading-none',
-    role: 'img',
-    '[style.height.px]': 'size()',
-    '[attr.aria-label]': 'label()',
-  },
   template: `
     @if (spelling(); as spelling) {
       <span class="font-semibold tracking-[-0.04em]" [style.font-size.px]="size()">{{
@@ -37,6 +31,12 @@ import { TunerStore } from '../state/tuner.store';
       <span class="font-semibold text-stroke" [style.font-size.px]="size()">–</span>
     }
   `,
+  host: {
+    class: 'flex items-start leading-none',
+    role: 'img',
+    '[style.height.px]': 'size()',
+    '[attr.aria-label]': 'label()',
+  },
 })
 export class NoteName {
   private readonly tuner = inject(TunerStore);
@@ -57,12 +57,12 @@ export class NoteName {
 /** High / in tune / low, with symbol and text so it never relies on colour alone. */
 @Component({
   selector: 'app-tuning-state-pill',
+  template: '{{ state().text }}',
   host: {
     class: 'inline-flex h-9 items-center self-center rounded-full px-4 text-base font-bold tabular',
     role: 'status',
     '[class]': 'state().classes',
   },
-  template: '{{ state().text }}',
 })
 export class TuningStatePill {
   private readonly tuner = inject(TunerStore);
@@ -88,17 +88,16 @@ export class TuningStatePill {
 /** Needle from −50 to +50 cents with the in-tune band shaded. */
 @Component({
   selector: 'app-cents-meter',
-  host: { class: 'block w-full max-w-[480px]' },
   template: `
     <svg viewBox="0 0 480 96" class="w-full" role="img" [attr.aria-label]="label()">
       <rect
-        [attr.x]="x(-tolerance())"
         y="14"
-        [attr.width]="x(tolerance()) - x(-tolerance())"
         height="44"
         rx="6"
         class="fill-in-tune"
         fill-opacity="0.22"
+        [attr.x]="x(-tolerance())"
+        [attr.width]="x(tolerance()) - x(-tolerance())"
       />
       <g class="stroke-ring" stroke-width="1.5">
         @for (tick of ticks; track tick) {
@@ -139,6 +138,7 @@ export class TuningStatePill {
       </g>
     </svg>
   `,
+  host: { class: 'block w-full max-w-[480px]' },
 })
 export class CentsMeter {
   private readonly tuner = inject(TunerStore);
@@ -162,12 +162,12 @@ export class CentsMeter {
 
 @Component({
   selector: 'app-frequency-label',
-  host: { class: 'block min-h-5 text-sm text-muted tabular' },
   template: `
     @if (tuner.reading(); as reading) {
       {{ reading.frequency.toFixed(2) }} Hz · target {{ reading.targetFrequency.toFixed(2) }} Hz
     }
   `,
+  host: { class: 'block min-h-5 text-sm text-muted tabular' },
 })
 export class FrequencyLabel {
   protected readonly tuner = inject(TunerStore);

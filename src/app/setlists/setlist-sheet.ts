@@ -1,5 +1,6 @@
 import { Component, inject, output, signal, viewChild } from '@angular/core';
-import { LibraryStore, Piece, Setlist, pieceSummary } from '../state/library.store';
+import type { Piece, Setlist } from '../state/library.store';
+import { LibraryStore, pieceSummary } from '../state/library.store';
 import { MetronomeStore } from '../state/metronome.store';
 import { Icon } from '../ui/icon';
 import { Sheet } from '../ui/sheet';

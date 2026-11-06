@@ -19,7 +19,6 @@ const y = (position: number): number => BOTTOM_LINE_Y - (position * SPACE) / 2;
  */
 @Component({
   selector: 'app-staff-card',
-  host: { class: 'flex flex-col items-center rounded-[20px] bg-paper px-2 pt-2 pb-3' },
   template: `
     <svg
       viewBox="0 0 310 150"
@@ -67,6 +66,7 @@ const y = (position: number): number => BOTTOM_LINE_Y - (position * SPACE) / 2;
     </svg>
     <span class="text-xs uppercase tracking-[0.06em] text-paper-label">{{ caption() }}</span>
   `,
+  host: { class: 'flex flex-col items-center rounded-[20px] bg-paper px-2 pt-2 pb-3' },
 })
 export class StaffCard {
   private readonly tuner = inject(TunerStore);

@@ -1,13 +1,7 @@
 import { BeatLevel } from '../music/meter';
-import {
-  GapClick,
-  Polyrhythm,
-  SpeedTrainer,
-  isGapBar,
-  polyrhythmCycle,
-  trainerTempo,
-} from '../music/practice';
-import { ClickKind } from './click-synth';
+import type { GapClick, Polyrhythm, SpeedTrainer } from '../music/practice';
+import { isGapBar, polyrhythmCycle, trainerTempo } from '../music/practice';
+import type { ClickKind } from './click-synth';
 
 /** Everything the scheduler reads on each tick; the metronome store replaces it whenever a setting changes. */
 export interface ClickParams {

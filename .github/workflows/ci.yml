@@ -1,5 +1,6 @@
-# Checks every pull request and every push to main: formatting, unit tests with coverage
-# thresholds, and a production build. The Deploy workflow runs after this one succeeds.
+# Checks every pull request and every push to main: formatting, ESLint, type-check, unit tests
+# with coverage thresholds, and a production build (strict Angular template checks).
+# The Deploy workflow runs after this one succeeds.
 name: CI
 
 on:
@@ -17,7 +18,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Format, test, build
+    name: Format, lint, type-check, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -36,6 +37,12 @@ jobs:
 
       - name: Check formatting
         run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm typecheck
 
       - name: Unit tests with coverage
         run: pnpm test:ci

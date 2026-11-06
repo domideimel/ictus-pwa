@@ -13,7 +13,7 @@ export class TunerDriver {
     setPageVisible(true);
     new MetronomeDriver();
     this.workersBefore = FakeWorker.instances.length;
-    stubGetUserMedia(async () => this.stream);
+    stubGetUserMedia(() => Promise.resolve(this.stream));
   }
 
   async switchOn(): Promise<void> {

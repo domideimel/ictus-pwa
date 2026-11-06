@@ -1,12 +1,5 @@
-import {
-  Component,
-  ElementRef,
-  afterNextRender,
-  input,
-  linkedSignal,
-  output,
-  viewChild,
-} from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { Component, afterNextRender, input, linkedSignal, output, viewChild } from '@angular/core';
 import { FormField, form, maxLength, required, submit, validate } from '@angular/forms/signals';
 import { Surface } from '../ui/surface';
 
@@ -32,14 +25,14 @@ import { Surface } from '../ui/surface';
             autocomplete="off"
             enterkeyhint="done"
             class="h-11 rounded-[10px] border border-stroke bg-bg px-3 text-base text-fg"
+            aria-describedby="name-dialog-error"
             [formField]="nameForm.name"
             [attr.aria-invalid]="showError()"
-            aria-describedby="name-dialog-error"
           />
         </label>
         <p id="name-dialog-error" class="-mt-2 min-h-4 text-xs text-accent-text" aria-live="polite">
           @if (showError()) {
-            {{ nameForm.name().errors()[0].message }}
+            {{ nameForm.name().errors()[0]?.message }}
           }
         </p>
         <div class="grid grid-cols-2 gap-2">
@@ -93,9 +86,10 @@ export class NameDialog {
 
   protected save(event: Event): void {
     event.preventDefault();
-    void submit(this.nameForm, async () => {
+    void submit(this.nameForm, () => {
       this.saved.emit(this.model().name.trim());
       this.dialog().nativeElement.close();
+      return Promise.resolve();
     });
   }
 }

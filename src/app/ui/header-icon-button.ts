@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
-import { Icon, IconName } from './icon';
+import type { IconName } from './icon';
+import { Icon } from './icon';
 import { Surface } from './surface';
 
 /** Round 44 px icon button used in screen headers. */

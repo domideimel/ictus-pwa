@@ -7,7 +7,6 @@ import { HeaderIconButton } from '../ui/header-icon-button';
 @Component({
   selector: 'app-tuner-page',
   imports: [TunerPanel, HeaderIconButton],
-  host: { class: 'flex min-h-0 flex-1 flex-col' },
   template: `
     <h1 class="sr-only">Tuner</h1>
     <app-tuner-panel class="flex-1">
@@ -19,6 +18,7 @@ import { HeaderIconButton } from '../ui/header-icon-button';
       />
     </app-tuner-panel>
   `,
+  host: { class: 'flex min-h-0 flex-1 flex-col' },
 })
 export default class TunerPage {
   protected readonly ui = inject(UiStore);

@@ -1,8 +1,10 @@
 import { computed } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { canSwing, signatureLabel, subdivisionInfo } from '../music/meter';
-import { MetronomeSetup, parseSetup } from './metronome.store';
-import { Parser, withPersistence } from './storage';
+import type { MetronomeSetup } from './metronome.store';
+import { parseSetup } from './metronome.store';
+import type { Parser } from './storage';
+import { withPersistence } from './storage';
 
 /** Tempo, meter, subdivision, swing and accents saved for one piece. */
 export interface Piece extends MetronomeSetup {
@@ -21,24 +23,33 @@ export const pieceSummary = (piece: Piece): string => {
   return `${piece.bpm} BPM · ${signatureLabel(piece.timeSignature)} · ${subdivisionInfo(piece.subdivision).symbol}${swung}`;
 };
 
+/** A saved object with an id and a name; everything else still has to be checked. */
+interface Named {
+  readonly id: string;
+  readonly name: string;
+  readonly [key: string]: unknown;
+}
+
+function isNamed(item: unknown): item is Named {
+  if (typeof item !== 'object' || item === null) return false;
+  const { id, name } = item as Partial<Record<'id' | 'name', unknown>>;
+  return typeof id === 'string' && typeof name === 'string';
+}
+
 const parseSetlists: Parser<Setlist[]> = (value) => {
   if (!Array.isArray(value)) return null;
-  return value
-    .filter(
-      (item): item is Setlist => typeof item?.id === 'string' && typeof item?.name === 'string',
-    )
-    .map((setlist) => ({
+  return (value as unknown[]).filter(isNamed).map((setlist) => {
+    const pieces: unknown[] = Array.isArray(setlist['pieces']) ? setlist['pieces'] : [];
+    return {
       id: setlist.id,
       name: setlist.name,
       // One damaged piece must not take the whole library down with it.
-      pieces: (Array.isArray(setlist.pieces) ? setlist.pieces : []).flatMap((piece) => {
-        const setup =
-          typeof piece?.id === 'string' && typeof piece?.name === 'string'
-            ? parseSetup(piece)
-            : null;
+      pieces: pieces.filter(isNamed).flatMap((piece) => {
+        const setup = parseSetup(piece);
         return setup ? [{ ...setup, id: piece.id, name: piece.name }] : [];
       }),
-    }));
+    };
+  });
 };
 
 interface ActivePiece {
@@ -78,17 +89,17 @@ export const LibraryStore = signalStore(
         const setlist = activeSetlist();
         const index =
           setlist?.pieces.findIndex((piece) => piece.id === activePiece()?.pieceId) ?? -1;
-        return setlist && index >= 0
-          ? { index, count: setlist.pieces.length, piece: setlist.pieces[index], setlist }
-          : null;
+        const piece = setlist?.pieces[index];
+        return setlist && piece ? { index, count: setlist.pieces.length, piece, setlist } : null;
       }),
     };
   }),
   withMethods((store) => {
-    const updateSetlist = (id: string, change: (setlist: Setlist) => Setlist): void =>
+    const updateSetlist = (id: string, change: (setlist: Setlist) => Setlist): void => {
       patchState(store, ({ setlists }) => ({
         setlists: setlists.map((setlist) => (setlist.id === id ? change(setlist) : setlist)),
       }));
+    };
 
     return {
       setActivePiece(activePiece: ActivePiece | null): void {
@@ -146,6 +157,7 @@ export const LibraryStore = signalStore(
           const to = from + offset;
           if (from < 0 || to < 0 || to >= pieces.length) return setlist;
           const [piece] = pieces.splice(from, 1);
+          if (!piece) return setlist;
           pieces.splice(to, 0, piece);
           return { ...setlist, pieces };
         });

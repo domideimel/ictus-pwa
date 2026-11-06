@@ -1,5 +1,5 @@
 import { Component, input, model } from '@angular/core';
-import { FormValueControl } from '@angular/forms/signals';
+import type { FormValueControl } from '@angular/forms/signals';
 
 export interface PillOption<T> {
   readonly value: T;
@@ -12,13 +12,6 @@ export interface PillOption<T> {
  */
 @Component({
   selector: 'app-segmented-pills',
-  host: {
-    role: 'radiogroup',
-    class: 'flex gap-0.5 rounded-[9px] bg-bg p-0.5',
-    '[attr.aria-label]': 'label()',
-    '[attr.aria-disabled]': 'disabled() || null',
-    '(keydown)': 'onKeydown($event)',
-  },
   template: `
     @for (option of options(); track option.value) {
       @let selected = option.value === value();
@@ -36,6 +29,13 @@ export interface PillOption<T> {
       </button>
     }
   `,
+  host: {
+    role: 'radiogroup',
+    class: 'flex gap-0.5 rounded-[9px] bg-bg p-0.5',
+    '[attr.aria-label]': 'label()',
+    '[attr.aria-disabled]': 'disabled() || null',
+    '(keydown)': 'onKeydown($event)',
+  },
 })
 export class SegmentedPills<T> implements FormValueControl<T> {
   readonly value = model.required<T>();
@@ -60,6 +60,7 @@ export class SegmentedPills<T> implements FormValueControl<T> {
     const options = this.options();
     const index = options.findIndex((option) => option.value === this.value());
     const next = options[(index + step + options.length) % options.length];
+    if (!next) return;
     this.select(next.value);
     const buttons = (event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>(
       'button',

@@ -100,9 +100,10 @@ export class FakeAudioContext {
     return context;
   }
 
-  async resume(): Promise<void> {
+  resume(): Promise<void> {
     this.resumeCount += 1;
     this.state = 'running';
+    return Promise.resolve();
   }
 
   createBuffer(channels: number, length: number, sampleRate: number): FakeAudioBuffer {

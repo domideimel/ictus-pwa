@@ -2,7 +2,8 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { byLabel, click } from '../../testing/dom';
 import { HeaderIconButton } from './header-icon-button';
-import { Icon, IconName } from './icon';
+import type { IconName } from './icon';
+import { Icon } from './icon';
 import { SectionLabel } from './section-label';
 import { SettingsGroup, SettingsRow } from './settings-group';
 import { Sheet } from './sheet';
@@ -42,7 +43,7 @@ describe('Sheet', () => {
     const { dialog } = await setup();
     expect(dialog.open).toBe(true);
     const title = dialog.querySelector('h2')!;
-    expect(title.textContent?.trim()).toBe('Practice');
+    expect(title.textContent.trim()).toBe('Practice');
     expect(dialog.getAttribute('aria-labelledby')).toBe(title.id);
     expect(dialog.textContent).toContain('Content');
   });
@@ -50,7 +51,7 @@ describe('Sheet', () => {
   it('puts the accessory beside the round close button', async () => {
     const { dialog } = await setup();
     const header = [...dialog.querySelectorAll('header button')].map(
-      (button) => button.getAttribute('aria-label') ?? button.textContent?.trim(),
+      (button) => button.getAttribute('aria-label') ?? button.textContent.trim(),
     );
     expect(header).toEqual(['Edit', 'Close']);
   });
@@ -99,9 +100,10 @@ describe('Surface', () => {
   it('styles buttons and exposes aria-pressed only for toggle chips', async () => {
     const fixture = TestBed.createComponent(SurfaceHost);
     await fixture.whenStable();
-    const [plain, chip] = [
-      ...fixture.nativeElement.querySelectorAll('button'),
-    ] as HTMLButtonElement[];
+    const [plain, chip] = [...fixture.nativeElement.querySelectorAll('button')] as [
+      HTMLButtonElement,
+      HTMLButtonElement,
+    ];
     expect(plain.hasAttribute('aria-pressed')).toBe(false);
     expect(plain.className).toContain('bg-surface');
     expect(chip.getAttribute('aria-pressed')).toBe('false');
@@ -230,7 +232,9 @@ describe('Viewport', () => {
     resize(1024, 768);
     expect(viewport.isWide()).toBe(true);
     query.matches = true;
-    listeners.forEach((listener) => listener());
+    listeners.forEach((listener) => {
+      listener();
+    });
     expect(viewport.finePointer()).toBe(true);
 
     TestBed.resetTestingModule();

@@ -1,5 +1,5 @@
 import { sharedAudioContext } from './audio-context';
-import { PitchRequest } from './pitch-detector';
+import type { PitchRequest } from './pitch-detector';
 
 const WINDOW_SIZE = 4096;
 const HOP_SIZE = 2048;
@@ -35,7 +35,9 @@ export class Microphone {
 
     this.worker ??= this.createWorker();
     this.timer = setInterval(
-      () => this.analyse(context.sampleRate),
+      () => {
+        this.analyse(context.sampleRate);
+      },
       (HOP_SIZE / context.sampleRate) * 1000,
     );
   }

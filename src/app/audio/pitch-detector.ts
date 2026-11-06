@@ -30,7 +30,7 @@ export class PitchDetector {
     if (count < 256) return null;
 
     let squares = 0;
-    for (let i = 0; i < count; i++) squares += samples[i] * samples[i];
+    for (const value of samples) squares += value * value;
     if (Math.sqrt(squares / count) < this.silenceRms) return null;
 
     const window = count >> 1;
@@ -54,7 +54,7 @@ export class PitchDetector {
     for (let tau = 1; tau < tauMax; tau++) {
       let d = 0;
       for (let j = 0; j < window; j++) {
-        const delta = samples[j] - samples[j + tau];
+        const delta = (samples[j] ?? 0) - (samples[j + tau] ?? 0);
         d += delta * delta;
       }
       difference[tau] = d;
@@ -72,16 +72,16 @@ export class PitchDetector {
   private bestPeriod(tauMin: number, tauMax: number): number | null {
     const normalized = this.normalized;
     for (let tau = tauMin; tau < tauMax - 1; tau++) {
-      if (normalized[tau] < this.threshold) {
-        while (tau + 1 < tauMax - 1 && normalized[tau + 1] < normalized[tau]) tau++;
+      if ((normalized[tau] ?? 1) < this.threshold) {
+        while (tau + 1 < tauMax - 1 && (normalized[tau + 1] ?? 1) < (normalized[tau] ?? 1)) tau++;
         return tau;
       }
     }
     let best = tauMin;
     for (let candidate = tauMin; candidate < tauMax - 1; candidate++) {
-      if (normalized[candidate] < normalized[best]) best = candidate;
+      if ((normalized[candidate] ?? 1) < (normalized[best] ?? 1)) best = candidate;
     }
-    return normalized[best] < 0.35 ? best : null;
+    return (normalized[best] ?? 1) < 0.35 ? best : null;
   }
 
   /**
@@ -105,7 +105,7 @@ export class PitchDetector {
 
     let best = half;
     for (let candidate = half - 2; candidate <= Math.min(half + 2, tauMax - 2); candidate++) {
-      if (this.normalized[candidate] < this.normalized[best]) best = candidate;
+      if ((this.normalized[candidate] ?? 1) < (this.normalized[best] ?? 1)) best = candidate;
     }
     return best;
   }
@@ -115,8 +115,8 @@ export class PitchDetector {
     const coefficient = 2 * Math.cos((2 * Math.PI * frequency) / this.sampleRate);
     let s1 = 0;
     let s2 = 0;
-    for (let i = 0; i < samples.length; i++) {
-      const s0 = samples[i] + coefficient * s1 - s2;
+    for (const sample of samples) {
+      const s0 = sample + coefficient * s1 - s2;
       s2 = s1;
       s1 = s0;
     }
@@ -127,9 +127,9 @@ export class PitchDetector {
   /** Parabolic interpolation on the raw difference function for sub-sample precision. */
   private refined(tau: number, tauMax: number): number {
     if (tau <= 1 || tau >= tauMax - 1) return tau;
-    const s0 = this.difference[tau - 1];
-    const s1 = this.difference[tau];
-    const s2 = this.difference[tau + 1];
+    const s0 = this.difference[tau - 1] ?? 0;
+    const s1 = this.difference[tau] ?? 0;
+    const s2 = this.difference[tau + 1] ?? 0;
     const denominator = s0 + s2 - 2 * s1;
     if (Math.abs(denominator) <= Number.EPSILON) return tau;
     return tau + (s0 - s2) / (2 * denominator);

@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import type { Routes } from '@angular/router';
 
 /** Phone tabs. On tablets and desktops the shell shows both on one screen instead. */
 export const routes: Routes = [

@@ -11,7 +11,6 @@ import { Viewport } from '../ui/viewport';
 @Component({
   selector: 'app-combined-view',
   imports: [MetronomePanel, TunerPanel, HeaderIconButton, NgOptimizedImage],
-  host: { class: 'flex min-h-0 flex-1 flex-col' },
   template: `
     <header
       class="flex h-16 shrink-0 items-center justify-between border-b border-stroke bg-panel px-6 lg:px-8"
@@ -67,6 +66,7 @@ import { Viewport } from '../ui/viewport';
       </footer>
     }
   `,
+  host: { class: 'flex min-h-0 flex-1 flex-col' },
 })
 export class CombinedView {
   protected readonly tuner = inject(TunerStore);

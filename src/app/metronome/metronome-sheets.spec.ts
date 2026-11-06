@@ -17,7 +17,9 @@ beforeEach(() => {
   store = TestBed.inject(MetronomeStore);
 });
 
-afterEach(() => store.stop());
+afterEach(() => {
+  store.stop();
+});
 
 const press = (element: Element, label: string): void => {
   const button = byLabel(element, label);
@@ -106,7 +108,7 @@ describe('PracticeStatus', () => {
     }));
     TestBed.tick();
     const { fixture, element } = await render(PracticeStatus);
-    const chips = [...element.querySelectorAll('span')].map((chip) => chip.textContent?.trim());
+    const chips = [...element.querySelectorAll('span')].map((chip) => chip.textContent.trim());
     expect(chips).toEqual(['Gap 2 on · 1 off', 'Poly 3:2', '+4 every 4 bars → 160']);
     let opened = false;
     fixture.componentInstance.open.subscribe(() => (opened = true));

@@ -3,7 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { byLabel, click, key, pointer } from '../../testing/dom';
 import { HoldRepeat } from './hold-repeat';
 import { NumberStepper } from './number-stepper';
-import { PillOption, SegmentedPills } from './segmented-pills';
+import type { PillOption } from './segmented-pills';
+import { SegmentedPills } from './segmented-pills';
 import { ToggleSwitch } from './toggle-switch';
 
 @Component({
@@ -11,8 +12,8 @@ import { ToggleSwitch } from './toggle-switch';
   template: `<app-segmented-pills
     label="Size"
     [options]="options"
-    [(value)]="value"
     [disabled]="disabled()"
+    [(value)]="value"
   />`,
 })
 class PillsHost {
@@ -54,7 +55,7 @@ describe('SegmentedPills', () => {
     key(group, 'ArrowRight');
     await fixture.whenStable();
     expect(fixture.componentInstance.value()).toBe('l');
-    expect(document.activeElement?.textContent?.trim()).toBe('Large');
+    expect(document.activeElement?.textContent.trim()).toBe('Large');
     key(group, 'ArrowDown');
     expect(fixture.componentInstance.value()).toBe('s');
     key(group, 'ArrowLeft');
@@ -110,7 +111,7 @@ describe('NumberStepper', () => {
     expect(host.getAttribute('aria-valuemin')).toBe('1');
     expect(host.getAttribute('aria-valuemax')).toBe('20');
     expect(host.getAttribute('aria-valuetext')).toBe('5 bars');
-    expect([...host.querySelectorAll('button')].map((b) => b.textContent?.trim())).toEqual([
+    expect([...host.querySelectorAll('button')].map((b) => b.textContent.trim())).toEqual([
       '−10',
       '−1',
       '+1',
@@ -131,8 +132,8 @@ describe('NumberStepper', () => {
     pointer(byLabel(host, 'Plus 10'), 'pointerup');
     await fixture.whenStable();
     expect(value()).toBe(20);
-    expect(byLabel<HTMLButtonElement>(host, 'Plus 1').disabled).toBe(true);
-    expect(byLabel<HTMLButtonElement>(host, 'Minus 1').disabled).toBe(false);
+    expect((byLabel(host, 'Plus 1') as HTMLButtonElement).disabled).toBe(true);
+    expect((byLabel(host, 'Minus 1') as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('steps with the keyboard', async () => {
@@ -190,7 +191,7 @@ describe('NumberStepper', () => {
 
 @Component({
   imports: [ToggleSwitch],
-  template: `<app-toggle-switch label="Vibration" [(checked)]="on" [disabled]="disabled()" />`,
+  template: `<app-toggle-switch label="Vibration" [disabled]="disabled()" [(checked)]="on" />`,
 })
 class SwitchHost {
   readonly on = signal(false);

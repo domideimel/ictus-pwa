@@ -1,5 +1,5 @@
 import { Component, input, model } from '@angular/core';
-import { FormCheckboxControl } from '@angular/forms/signals';
+import type { FormCheckboxControl } from '@angular/forms/signals';
 
 /** iOS-style switch; a signal-forms checkbox control, bind with `[formField]`. */
 @Component({

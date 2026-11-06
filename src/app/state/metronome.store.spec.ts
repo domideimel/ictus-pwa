@@ -1,13 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { MetronomeDriver } from '../../testing/metronome-driver';
 import { BeatLevel, defaultLevels } from '../music/meter';
-import {
-  DEFAULT_PRACTICE,
-  MetronomeSetup,
-  MetronomeStore,
-  parseSetup,
-  sanitizeSetup,
-} from './metronome.store';
+import type { MetronomeSetup } from './metronome.store';
+import { DEFAULT_PRACTICE, MetronomeStore, parseSetup, sanitizeSetup } from './metronome.store';
 import { SettingsStore } from './settings.store';
 
 describe('MetronomeStore editing', () => {
@@ -98,16 +93,22 @@ describe('MetronomeStore editing', () => {
   it('averages up to the last five taps', () => {
     store.tap(0);
     expect(store.bpm()).toBe(120);
-    [0, 400, 800, 1200, 1600].forEach((time) => store.tap(time));
+    [0, 400, 800, 1200, 1600].forEach((time) => {
+      store.tap(time);
+    });
     expect(store.bpm()).toBe(150);
     store.tap(2100);
     expect(store.bpm()).toBe(Math.round(60000 / ((2100 - 400) / 4)));
   });
 
   it('starts tap tempo over after a pause of more than two seconds', () => {
-    [0, 500].forEach((time) => store.tap(time));
+    [0, 500].forEach((time) => {
+      store.tap(time);
+    });
     expect(store.bpm()).toBe(120);
-    [3000, 3750].forEach((time) => store.tap(time));
+    [3000, 3750].forEach((time) => {
+      store.tap(time);
+    });
     expect(store.bpm()).toBe(80);
   });
 });
