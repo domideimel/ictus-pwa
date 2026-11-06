@@ -7,6 +7,42 @@ const SPAN = BPM_RANGE.max - BPM_RANGE.min;
 /** 270° tempo arc with a knob. Drag around the dial to change the tempo; arrow keys nudge it. */
 @Component({
   selector: 'app-tempo-dial',
+  template: `
+    <svg class="absolute inset-0" aria-hidden="true" [attr.viewBox]="viewBox()">
+      <circle
+        fill="none"
+        class="stroke-stroke"
+        stroke-width="10"
+        stroke-linecap="round"
+        [attr.cx]="center()"
+        [attr.cy]="center()"
+        [attr.r]="radius()"
+        [attr.stroke-dasharray]="track()"
+        [attr.transform]="rotation()"
+      />
+      <circle
+        fill="none"
+        class="stroke-accent"
+        stroke-width="10"
+        stroke-linecap="round"
+        [attr.cx]="center()"
+        [attr.cy]="center()"
+        [attr.r]="radius()"
+        [attr.stroke-dasharray]="fill()"
+        [attr.transform]="rotation()"
+      />
+      <circle r="12" class="fill-fg" [attr.cx]="knob().x" [attr.cy]="knob().y" />
+    </svg>
+    <div class="absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
+      <span
+        class="leading-none font-semibold tracking-[-0.03em] tabular"
+        [style.font-size.px]="diameter() * 0.387"
+      >
+        {{ store.bpm() }}
+      </span>
+      <span class="mt-1 text-sm tracking-[0.12em] text-muted">BPM</span>
+    </div>
+  `,
   host: {
     role: 'slider',
     tabindex: '0',
@@ -24,42 +60,6 @@ const SPAN = BPM_RANGE.max - BPM_RANGE.min;
     '(pointercancel)': 'dragAngle = null',
     '(keydown)': 'onKeydown($event)',
   },
-  template: `
-    <svg class="absolute inset-0" [attr.viewBox]="viewBox()" aria-hidden="true">
-      <circle
-        [attr.cx]="center()"
-        [attr.cy]="center()"
-        [attr.r]="radius()"
-        fill="none"
-        class="stroke-stroke"
-        stroke-width="10"
-        stroke-linecap="round"
-        [attr.stroke-dasharray]="track()"
-        [attr.transform]="rotation()"
-      />
-      <circle
-        [attr.cx]="center()"
-        [attr.cy]="center()"
-        [attr.r]="radius()"
-        fill="none"
-        class="stroke-accent"
-        stroke-width="10"
-        stroke-linecap="round"
-        [attr.stroke-dasharray]="fill()"
-        [attr.transform]="rotation()"
-      />
-      <circle [attr.cx]="knob().x" [attr.cy]="knob().y" r="12" class="fill-fg" />
-    </svg>
-    <div class="absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
-      <span
-        class="leading-none font-semibold tracking-[-0.03em] tabular"
-        [style.font-size.px]="diameter() * 0.387"
-      >
-        {{ store.bpm() }}
-      </span>
-      <span class="mt-1 text-sm tracking-[0.12em] text-muted">BPM</span>
-    </div>
-  `,
 })
 export class TempoDial {
   protected readonly store = inject(MetronomeStore);

@@ -1,9 +1,11 @@
 import { Component, inject, output, signal, viewChild } from '@angular/core';
 import { FormField, form, max, min, submit } from '@angular/forms/signals';
-import { BEAT_RANGE, BEAT_UNITS, TimeSignature } from '../music/meter';
+import type { TimeSignature } from '../music/meter';
+import { BEAT_RANGE, BEAT_UNITS } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
 import { NumberStepper } from '../ui/number-stepper';
-import { PillOption, SegmentedPills } from '../ui/segmented-pills';
+import type { PillOption } from '../ui/segmented-pills';
+import { SegmentedPills } from '../ui/segmented-pills';
 import { SettingsGroup, SettingsRow } from '../ui/settings-group';
 import { Sheet } from '../ui/sheet';
 
@@ -60,9 +62,10 @@ export class TimeSignatureSheet {
 
   protected apply(event: Event): void {
     event.preventDefault();
-    void submit(this.signatureForm, async () => {
+    void submit(this.signatureForm, () => {
       this.store.setTimeSignature(this.model());
       this.sheet().close();
+      return Promise.resolve();
     });
   }
 }

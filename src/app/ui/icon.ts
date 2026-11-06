@@ -25,19 +25,19 @@ export type IconName =
 /** Inline stroke icons, so they take the text colour and work offline. Always decorative: label the button. */
 @Component({
   selector: 'app-icon',
-  host: { class: 'inline-flex shrink-0', 'aria-hidden': 'true' },
   template: `
     <svg
-      [attr.width]="size()"
-      [attr.height]="size()"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      [attr.stroke-width]="strokeWidth()"
       stroke-linecap="round"
       stroke-linejoin="round"
+      [attr.width]="size()"
+      [attr.height]="size()"
+      [attr.stroke-width]="strokeWidth()"
     >
-      @switch (name()) {
+      @let icon = name();
+      @switch (icon) {
         @case ('settings') {
           <circle cx="12" cy="12" r="3" />
           <path
@@ -109,9 +109,11 @@ export type IconName =
           <path d="M12 16l3-5" />
           <path d="M4 20h16" />
         }
+        @default never;
       }
     </svg>
   `,
+  host: { class: 'inline-flex shrink-0', 'aria-hidden': 'true' },
 })
 export class Icon {
   readonly name = input.required<IconName>();

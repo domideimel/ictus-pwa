@@ -1,6 +1,7 @@
-import { WritableSignal, effect, linkedSignal, untracked } from '@angular/core';
+import type { WritableSignal } from '@angular/core';
+import { effect, linkedSignal, untracked } from '@angular/core';
 import { withStorageSync } from '@ngrx-toolkit/core';
-import { EmptyFeatureResult } from '@ngrx/signals';
+import type { EmptyFeatureResult } from '@ngrx/signals';
 
 const PREFIX = 'ictus.';
 
@@ -15,7 +16,7 @@ export function withPersistence<State extends object>(
   key: string,
   parse: Parser<Partial<State>>,
   select: (state: State) => unknown = (state) => state,
-) {
+): ReturnType<typeof withStorageSync<EmptyFeatureResult & { state: State }>> {
   return withStorageSync<EmptyFeatureResult & { state: State }>({
     key: PREFIX + key,
     select,
@@ -37,7 +38,9 @@ export function writableState<T>(source: () => T, write: (value: T) => void): Wr
   const model = linkedSignal(source);
   effect(() => {
     const value = model();
-    untracked(() => write(value));
+    untracked(() => {
+      write(value);
+    });
   });
   return model;
 }

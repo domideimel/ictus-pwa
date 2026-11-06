@@ -7,7 +7,6 @@ import { Surface } from '../ui/surface';
 @Component({
   selector: 'app-nudge-buttons',
   imports: [HoldRepeat, Surface],
-  host: { class: 'grid grid-cols-4 gap-2' },
   template: `
     @for (delta of deltas; track delta) {
       <button
@@ -23,6 +22,7 @@ import { Surface } from '../ui/surface';
       </button>
     }
   `,
+  host: { class: 'grid grid-cols-4 gap-2' },
 })
 export class NudgeButtons {
   protected readonly store = inject(MetronomeStore);

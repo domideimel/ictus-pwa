@@ -1,17 +1,18 @@
 import { Component, inject, output, viewChild } from '@angular/core';
 import { FormField, disabled, form, max, min } from '@angular/forms/signals';
 import { BPM_RANGE } from '../music/meter';
+import type { Polyrhythm } from '../music/practice';
 import {
   GAP_BAR_RANGE,
   POLYRHYTHMS,
-  Polyrhythm,
   REST_BAR_RANGE,
   TRAINER_BAR_RANGE,
   TRAINER_STEP_RANGE,
 } from '../music/practice';
 import { MetronomeStore } from '../state/metronome.store';
 import { NumberStepper } from '../ui/number-stepper';
-import { PillOption, SegmentedPills } from '../ui/segmented-pills';
+import type { PillOption } from '../ui/segmented-pills';
+import { SegmentedPills } from '../ui/segmented-pills';
 import { SettingsGroup, SettingsRow } from '../ui/settings-group';
 import { Sheet } from '../ui/sheet';
 import { ToggleSwitch } from '../ui/toggle-switch';
@@ -144,8 +145,8 @@ export class PracticeSheet {
     max(path.gapClick.play, GAP_BAR_RANGE.max);
     min(path.gapClick.mute, GAP_BAR_RANGE.min);
     max(path.gapClick.mute, GAP_BAR_RANGE.max);
-    disabled(path.gapClick.play, ({ valueOf }) => !valueOf(path.gapClick.enabled));
-    disabled(path.gapClick.mute, ({ valueOf }) => !valueOf(path.gapClick.enabled));
+    disabled(path.gapClick.play, { when: ({ valueOf }) => !valueOf(path.gapClick.enabled) });
+    disabled(path.gapClick.mute, { when: ({ valueOf }) => !valueOf(path.gapClick.enabled) });
 
     min(path.speedTrainer.step, TRAINER_STEP_RANGE.min);
     max(path.speedTrainer.step, TRAINER_STEP_RANGE.max);
@@ -153,9 +154,15 @@ export class PracticeSheet {
     max(path.speedTrainer.everyBars, TRAINER_BAR_RANGE.max);
     min(path.speedTrainer.target, BPM_RANGE.min);
     max(path.speedTrainer.target, BPM_RANGE.max);
-    disabled(path.speedTrainer.step, ({ valueOf }) => !valueOf(path.speedTrainer.enabled));
-    disabled(path.speedTrainer.everyBars, ({ valueOf }) => !valueOf(path.speedTrainer.enabled));
-    disabled(path.speedTrainer.target, ({ valueOf }) => !valueOf(path.speedTrainer.enabled));
+    disabled(path.speedTrainer.step, {
+      when: ({ valueOf }) => !valueOf(path.speedTrainer.enabled),
+    });
+    disabled(path.speedTrainer.everyBars, {
+      when: ({ valueOf }) => !valueOf(path.speedTrainer.enabled),
+    });
+    disabled(path.speedTrainer.target, {
+      when: ({ valueOf }) => !valueOf(path.speedTrainer.enabled),
+    });
 
     min(path.restBars, REST_BAR_RANGE.min);
     max(path.restBars, REST_BAR_RANGE.max);

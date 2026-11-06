@@ -3,7 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { byLabel, click, queryAllText, render } from '../../testing/dom';
 import { defaultLevels } from '../music/meter';
 import { LibraryStore } from '../state/library.store';
-import { MetronomeSetup, MetronomeStore } from '../state/metronome.store';
+import type { MetronomeSetup } from '../state/metronome.store';
+import { MetronomeStore } from '../state/metronome.store';
 import { NameDialog } from './name-dialog';
 import { SetlistBar } from './setlist-bar';
 import { SetlistSheet } from './setlist-sheet';
@@ -50,24 +51,24 @@ describe('SetlistBar', () => {
 
   it('shows the piece and steps through the setlist', async () => {
     const { list, pieces } = concert();
-    library.setActivePiece({ setlistId: list.id, pieceId: pieces[0].id });
+    library.setActivePiece({ setlistId: list.id, pieceId: pieces[0]!.id });
     const { fixture, element } = await render(SetlistBar);
     expect(element.textContent).toContain('Piece 1');
     expect(element.textContent).toContain('1 of 3 · Concert');
-    expect(byLabel<HTMLButtonElement>(element, 'Previous piece').disabled).toBe(true);
+    expect((byLabel(element, 'Previous piece') as HTMLButtonElement).disabled).toBe(true);
 
     await click(fixture, byLabel(element, 'Next piece'));
     expect(metronome.bpm()).toBe(90);
     expect(metronome.timeSignature()).toEqual({ beats: 3, unit: 4 });
     await click(fixture, byLabel(element, 'Next piece'));
-    expect(byLabel<HTMLButtonElement>(element, 'Next piece').disabled).toBe(true);
+    expect((byLabel(element, 'Next piece') as HTMLButtonElement).disabled).toBe(true);
     await click(fixture, byLabel(element, 'Previous piece'));
     expect(metronome.bpm()).toBe(90);
   });
 
   it('opens the setlists from the piece name', async () => {
     const { list, pieces } = concert();
-    library.setActivePiece({ setlistId: list.id, pieceId: pieces[1].id });
+    library.setActivePiece({ setlistId: list.id, pieceId: pieces[1]!.id });
     const { fixture, element } = await render(SetlistBar);
     let opened = false;
     fixture.componentInstance.open.subscribe(() => (opened = true));
@@ -128,7 +129,7 @@ describe('NameDialog', () => {
     expect(fixture.componentInstance.saved).toEqual([]);
     expect(dialog.open).toBe(true);
     expect(dialog.querySelector('input')!.getAttribute('aria-invalid')).toBe('true');
-    expect(dialog.querySelector('#name-dialog-error')?.textContent?.trim()).toBe(message);
+    expect(dialog.querySelector('#name-dialog-error')?.textContent.trim()).toBe(message);
   });
 
   it('cancels without saving', async () => {
@@ -170,7 +171,7 @@ describe('SetlistSheet', () => {
 
   it('marks the loaded piece', async () => {
     const { list, pieces } = concert();
-    library.setActivePiece({ setlistId: list.id, pieceId: pieces[2].id });
+    library.setActivePiece({ setlistId: list.id, pieceId: pieces[2]!.id });
     const { element } = await render(SetlistSheet);
     expect(element.querySelector('.sr-only')?.textContent).toBe('Loaded');
   });
@@ -185,7 +186,7 @@ describe('SetlistSheet', () => {
     typeName(dialog, 'Encore');
     await click(fixture, byLabel(dialog, 'Save'));
     await fixture.whenStable();
-    const saved = library.setlists()[0].pieces.at(-1)!;
+    const saved = library.setlists()[0]!.pieces.at(-1)!;
     expect(saved).toEqual(expect.objectContaining({ name: 'Encore', bpm: 77 }));
     expect(library.activePiece()).toEqual({ setlistId: list.id, pieceId: saved.id });
   });
@@ -208,7 +209,7 @@ describe('SetlistSheet', () => {
     typeName(dialog, 'Gala');
     await click(fixture, byLabel(dialog, 'Save'));
     await fixture.whenStable();
-    expect(library.setlists()[0].name).toBe('Gala');
+    expect(library.setlists()[0]!.name).toBe('Gala');
   });
 
   it('reorders, updates and deletes in edit mode only', async () => {
@@ -218,18 +219,18 @@ describe('SetlistSheet', () => {
     const edit = byLabel(element, 'Edit');
     await click(fixture, edit);
     expect(edit.getAttribute('aria-pressed')).toBe('true');
-    expect(edit.textContent?.trim()).toBe('Finish');
+    expect(edit.textContent.trim()).toBe('Finish');
 
-    expect(byLabel<HTMLButtonElement>(element, 'Move Piece 1 up').disabled).toBe(true);
-    expect(byLabel<HTMLButtonElement>(element, 'Move Piece 3 down').disabled).toBe(true);
+    expect((byLabel(element, 'Move Piece 1 up') as HTMLButtonElement).disabled).toBe(true);
+    expect((byLabel(element, 'Move Piece 3 down') as HTMLButtonElement).disabled).toBe(true);
     await click(fixture, byLabel(element, 'Move Piece 1 down'));
-    expect(library.setlists()[0].pieces.map((piece) => piece.name)).toEqual([
+    expect(library.setlists()[0]!.pieces.map((piece) => piece.name)).toEqual([
       'Piece 2',
       'Piece 1',
       'Piece 3',
     ]);
     await click(fixture, byLabel(element, 'Move Piece 3 up'));
-    expect(library.setlists()[0].pieces.map((piece) => piece.name)).toEqual([
+    expect(library.setlists()[0]!.pieces.map((piece) => piece.name)).toEqual([
       'Piece 2',
       'Piece 3',
       'Piece 1',
@@ -237,17 +238,22 @@ describe('SetlistSheet', () => {
 
     metronome.setBpm(200);
     await click(fixture, byLabel(element, 'Update Piece 1 with current settings'));
-    expect(library.setlists()[0].pieces.find((piece) => piece.id === pieces[0].id)?.bpm).toBe(200);
+    expect(library.setlists()[0]!.pieces.find((piece) => piece.id === pieces[0]!.id)?.bpm).toBe(
+      200,
+    );
 
     await click(fixture, byLabel(element, /^Piece 2/));
     expect(metronome.bpm()).toBe(200);
 
     await click(fixture, byLabel(element, 'Delete Piece 2'));
-    expect(library.setlists()[0].pieces.map((piece) => piece.name)).toEqual(['Piece 3', 'Piece 1']);
+    expect(library.setlists()[0]!.pieces.map((piece) => piece.name)).toEqual([
+      'Piece 3',
+      'Piece 1',
+    ]);
     await click(fixture, byLabel(element, 'Delete Concert'));
     expect(library.setlists()).toEqual([]);
 
     await click(fixture, edit);
-    expect(edit.textContent?.trim()).toBe('Edit');
+    expect(edit.textContent.trim()).toBe('Edit');
   });
 });

@@ -1,17 +1,18 @@
-import { Type } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { Type } from '@angular/core';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 /** Finds an element by its accessible name (aria-label or text) and role-ish selector. */
-export function byLabel<T extends HTMLElement = HTMLElement>(
+export function byLabel(
   root: ParentNode,
   label: string | RegExp,
   selector = 'button',
-): T {
+): HTMLElement {
   const match = (text: string | null | undefined): boolean =>
     text !== null &&
     text !== undefined &&
     (typeof label === 'string' ? text.trim() === label : label.test(text.trim()));
-  const found = [...root.querySelectorAll<T>(selector)].find(
+  const found = [...root.querySelectorAll<HTMLElement>(selector)].find(
     (element) => match(element.getAttribute('aria-label')) || match(element.textContent),
   );
   if (!found) throw new Error(`No ${selector} labelled ${label}`);
@@ -20,7 +21,7 @@ export function byLabel<T extends HTMLElement = HTMLElement>(
 
 export function queryAllText(root: ParentNode, selector: string): string[] {
   return [...root.querySelectorAll(selector)].map((element) =>
-    (element.textContent ?? '').replace(/\s+/g, ' ').trim(),
+    element.textContent.replace(/\s+/g, ' ').trim(),
   );
 }
 

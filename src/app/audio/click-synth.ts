@@ -65,7 +65,7 @@ export function synthesizeClick(
   for (const value of output) peak = Math.max(peak, Math.abs(value));
   if (peak > 0) {
     const gain = 0.9 / peak;
-    for (let i = 0; i < count; i++) output[i] *= gain;
+    for (const [i, value] of output.entries()) output[i] = value * gain;
   }
   return output;
 }

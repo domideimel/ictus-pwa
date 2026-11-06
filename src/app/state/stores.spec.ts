@@ -2,7 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
 import { BeatLevel } from '../music/meter';
 import { LibraryStore } from './library.store';
-import { MetronomeSetup, MetronomeStore, sanitizeSetup } from './metronome.store';
+import type { MetronomeSetup } from './metronome.store';
+import { MetronomeStore, sanitizeSetup } from './metronome.store';
 import { PitchSmoother } from './tuner.store';
 import { SettingsStore } from './settings.store';
 import { withDefaults } from './storage';
@@ -37,7 +38,7 @@ describe('stores', () => {
     TestBed.tick();
 
     TestBed.resetTestingModule();
-    const saved = TestBed.inject(LibraryStore).setlists()[0].pieces[0];
+    const saved = TestBed.inject(LibraryStore).setlists()[0]!.pieces[0]!;
     expect(saved.name).toBe('Bolero');
     expect(saved.grouping).toEqual([2, 2, 3]);
     expect(saved.levels.at(-1)).toBe(BeatLevel.Mute);
@@ -66,9 +67,13 @@ describe('stores', () => {
 
   it('averages tap tempo and starts over after a pause', () => {
     const store = TestBed.inject(MetronomeStore);
-    [0, 500, 1000, 1500].forEach((time) => store.tap(time));
+    [0, 500, 1000, 1500].forEach((time) => {
+      store.tap(time);
+    });
     expect(store.bpm()).toBe(120);
-    [5000, 5600].forEach((time) => store.tap(time));
+    [5000, 5600].forEach((time) => {
+      store.tap(time);
+    });
     expect(store.bpm()).toBe(100);
   });
 
@@ -139,7 +144,9 @@ describe('stores', () => {
 describe('PitchSmoother', () => {
   it('counts one strike per new note and holds the last note briefly', () => {
     const smoother = new PitchSmoother();
-    [220, 221, 220, 220].forEach((frequency, i) => smoother.ingest(frequency, i * 40));
+    [220, 221, 220, 220].forEach((frequency, i) => {
+      smoother.ingest(frequency, i * 40);
+    });
     expect(smoother.strikeCount).toBe(1);
     expect(smoother.frequency).toBe(220);
 
@@ -149,7 +156,9 @@ describe('PitchSmoother', () => {
     smoother.ingest(null, 2000);
     expect(smoother.frequency).toBeNull();
 
-    [330, 331, 330].forEach((frequency, i) => smoother.ingest(frequency, 2100 + i * 40));
+    [330, 331, 330].forEach((frequency, i) => {
+      smoother.ingest(frequency, 2100 + i * 40);
+    });
     expect(smoother.strikeCount).toBe(2);
   });
 });

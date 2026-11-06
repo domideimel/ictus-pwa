@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model } from '@angular/core';
-import { FormValueControl } from '@angular/forms/signals';
+import type { FormValueControl } from '@angular/forms/signals';
 import { HoldRepeat } from './hold-repeat';
 import { Surface } from './surface';
 
@@ -11,19 +11,6 @@ import { Surface } from './surface';
 @Component({
   selector: 'app-number-stepper',
   imports: [HoldRepeat, NgTemplateOutlet, Surface],
-  host: {
-    role: 'spinbutton',
-    tabindex: '0',
-    class: 'flex items-center gap-1 rounded-[10px]',
-    '[attr.aria-label]': 'label()',
-    '[attr.aria-valuenow]': 'value()',
-    '[attr.aria-valuemin]': 'lower()',
-    '[attr.aria-valuemax]': 'upper()',
-    '[attr.aria-valuetext]': 'value() + unit()',
-    '[attr.aria-disabled]': 'disabled() || null',
-    '[class.opacity-40]': 'disabled()',
-    '(keydown)': 'onKeydown($event)',
-  },
   template: `
     @for (step of reversedSteps(); track step) {
       <ng-container *ngTemplateOutlet="button; context: { $implicit: -step }" />
@@ -44,15 +31,28 @@ import { Surface } from './surface';
         tabindex="-1"
         appSurface
         class="h-9 min-w-10 rounded-xl px-1.5 text-[13px] tabular"
+        appHoldRepeat
         [attr.aria-label]="(delta > 0 ? 'Plus ' : 'Minus ') + abs(delta)"
         [disabled]="disabled() || (delta > 0 ? value() >= upper() : value() <= lower())"
-        appHoldRepeat
         (repeat)="change(delta)"
       >
         {{ delta > 0 ? '+' + delta : '−' + abs(delta) }}
       </button>
     </ng-template>
   `,
+  host: {
+    role: 'spinbutton',
+    tabindex: '0',
+    class: 'flex items-center gap-1 rounded-[10px]',
+    '[attr.aria-label]': 'label()',
+    '[attr.aria-valuenow]': 'value()',
+    '[attr.aria-valuemin]': 'lower()',
+    '[attr.aria-valuemax]': 'upper()',
+    '[attr.aria-valuetext]': 'value() + unit()',
+    '[attr.aria-disabled]': 'disabled() || null',
+    '[class.opacity-40]': 'disabled()',
+    '(keydown)': 'onKeydown($event)',
+  },
 })
 export class NumberStepper implements FormValueControl<number> {
   readonly value = model.required<number>();

@@ -1,4 +1,4 @@
-import { NoteSpelling } from './note';
+import type { NoteSpelling } from './note';
 
 export type ClefSetting = 'auto' | 'bass' | 'treble';
 export type Clef = 'treble' | 'bass';

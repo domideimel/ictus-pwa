@@ -15,22 +15,30 @@ export class Viewport {
   /** md breakpoint: metronome and tuner side by side or stacked on one screen, like the iPad app. */
   readonly isWide = computed(() => this.size().width >= 768);
 
-  private readonly fine = signal(this.window?.matchMedia?.('(pointer: fine)').matches ?? false);
+  /** Missing outside real browsers (server rendering, jsdom). */
+  private readonly pointer =
+    typeof this.window?.matchMedia === 'function'
+      ? this.window.matchMedia('(pointer: fine)')
+      : null;
+  private readonly fine = signal(this.pointer?.matches ?? false);
   /** Mouse or trackpad: copy says "click" instead of "tap". */
   readonly finePointer = this.fine.asReadonly();
 
   constructor() {
     const window = this.window;
-    if (!window?.matchMedia) return;
-    const resize = (): void =>
+    const pointer = this.pointer;
+    if (!window) return;
+    const resize = (): void => {
       this.size.set({ width: window.innerWidth, height: window.innerHeight });
-    const pointer = window.matchMedia('(pointer: fine)');
-    const pointerChange = (): void => this.fine.set(pointer.matches);
+    };
+    const pointerChange = (): void => {
+      this.fine.set(pointer?.matches ?? false);
+    };
     window.addEventListener('resize', resize, { passive: true });
-    pointer.addEventListener('change', pointerChange);
+    pointer?.addEventListener('change', pointerChange);
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('resize', resize);
-      pointer.removeEventListener('change', pointerChange);
+      pointer?.removeEventListener('change', pointerChange);
     });
   }
 }

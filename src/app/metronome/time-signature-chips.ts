@@ -8,7 +8,6 @@ import { TimeSignatureSheet } from './time-signature-sheet';
 @Component({
   selector: 'app-time-signature-chips',
   imports: [Surface, TimeSignatureSheet],
-  host: { class: 'flex flex-col gap-2' },
   template: `
     <div class="flex gap-2" [class]="wraps() ? 'flex-wrap' : 'no-scrollbar overflow-x-auto px-5'">
       @for (signature of quickPicks; track label(signature)) {
@@ -17,8 +16,8 @@ import { TimeSignatureSheet } from './time-signature-sheet';
           type="button"
           appSurface
           pressed
-          [selected]="selected"
           class="h-11 shrink-0 rounded-full px-4 text-[15px] tabular"
+          [selected]="selected"
           (click)="store.setTimeSignature(signature)"
         >
           {{ label(signature) }}
@@ -27,9 +26,9 @@ import { TimeSignatureSheet } from './time-signature-sheet';
       <button
         type="button"
         appSurface
-        [selected]="isCustom()"
         class="h-11 shrink-0 rounded-full px-4 text-[15px] tabular"
         aria-haspopup="dialog"
+        [selected]="isCustom()"
         (click)="showCustom.set(true)"
       >
         {{ isCustom() ? label(store.timeSignature()) + ' ⋯' : 'More' }}
@@ -39,17 +38,17 @@ import { TimeSignatureSheet } from './time-signature-sheet';
     @if (groupings().length > 0) {
       <div
         class="flex gap-2"
-        [class]="wraps() ? 'flex-wrap' : 'no-scrollbar overflow-x-auto px-5'"
         role="group"
         aria-label="Grouping"
+        [class]="wraps() ? 'flex-wrap' : 'no-scrollbar overflow-x-auto px-5'"
       >
         @for (option of groupings(); track option.join('+')) {
           <button
             type="button"
             appSurface
             pressed
-            [selected]="option.join('+') === store.grouping().join('+')"
             class="h-[34px] shrink-0 rounded-full px-3.5 text-sm tabular"
+            [selected]="option.join('+') === store.grouping().join('+')"
             [attr.aria-label]="'Grouping ' + option.join(' plus ')"
             (click)="store.setGrouping(option)"
           >
@@ -63,6 +62,7 @@ import { TimeSignatureSheet } from './time-signature-sheet';
       <app-time-signature-sheet (closed)="showCustom.set(false)" />
     }
   `,
+  host: { class: 'flex flex-col gap-2' },
 })
 export class TimeSignatureChips {
   protected readonly store = inject(MetronomeStore);

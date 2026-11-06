@@ -1,7 +1,8 @@
-import { FakeAudioContext, FakeWorker, fakeStream, stubGetUserMedia } from '../../testing/fakes';
+import type { FakeAudioContext } from '../../testing/fakes';
+import { FakeWorker, fakeStream, stubGetUserMedia } from '../../testing/fakes';
 import { sharedAudioContext } from './audio-context';
 import { Microphone } from './microphone';
-import { PitchRequest } from './pitch-detector';
+import type { PitchRequest } from './pitch-detector';
 
 describe('Microphone', () => {
   let pitches: (number | null)[];
@@ -16,9 +17,9 @@ describe('Microphone', () => {
     pitches = [];
     stream = fakeStream();
     constraints = undefined;
-    stubGetUserMedia(async (...args: unknown[]) => {
+    stubGetUserMedia((...args: unknown[]) => {
       constraints = args[0] as MediaStreamConstraints;
-      return stream;
+      return Promise.resolve(stream);
     });
     (sharedAudioContext() as unknown as FakeAudioContext).state = 'suspended';
     microphone = new Microphone((pitch) => pitches.push(pitch));

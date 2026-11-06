@@ -1,4 +1,5 @@
-import { CLICK_SOUNDS, ClickKind, synthesizeClick } from './click-synth';
+import type { ClickKind } from './click-synth';
+import { CLICK_SOUNDS, synthesizeClick } from './click-synth';
 
 const KINDS: ClickKind[] = ['accent', 'beat', 'subdivision', 'poly'];
 
@@ -6,7 +7,7 @@ const KINDS: ClickKind[] = ['accent', 'beat', 'subdivision', 'poly'];
 function crossingsPerSecond(samples: Float32Array, sampleRate: number, seconds = 0.004): number {
   const count = Math.floor(seconds * sampleRate);
   let crossings = 0;
-  for (let i = 1; i < count; i++) if (samples[i - 1] < 0 !== samples[i] < 0) crossings++;
+  for (let i = 1; i < count; i++) if (samples[i - 1]! < 0 !== samples[i]! < 0) crossings++;
   return crossings / seconds;
 }
 
@@ -28,7 +29,7 @@ describe('synthesizeClick', () => {
 
   it('starts silently so the click never pops', () => {
     for (const { value } of CLICK_SOUNDS)
-      expect(Math.abs(synthesizeClick(value, 'accent', 48_000)[0])).toBe(0);
+      expect(Math.abs(synthesizeClick(value, 'accent', 48_000)[0]!)).toBe(0);
   });
 
   it('pitches accents above beats, subdivisions below and the polyrhythm highest', () => {

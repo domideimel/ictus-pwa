@@ -64,14 +64,15 @@ describe('WakeLock', () => {
     Object.defineProperty(navigator, 'wakeLock', {
       configurable: true,
       value: {
-        request: async () => {
+        request: () => {
           requested += 1;
-          return {
-            release: async () => {
+          return Promise.resolve({
+            release: () => {
               released += 1;
+              return Promise.resolve();
             },
             addEventListener: (_: string, listener: () => void) => listeners.push(listener),
-          };
+          });
         },
       },
     });
@@ -100,7 +101,9 @@ describe('WakeLock', () => {
     TestBed.inject(MetronomeStore).toggle();
     await settle();
     setPageVisible(false);
-    listeners.forEach((listener) => listener());
+    listeners.forEach((listener) => {
+      listener();
+    });
     await settle();
     setPageVisible(true);
     await settle();

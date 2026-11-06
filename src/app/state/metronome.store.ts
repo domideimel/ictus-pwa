@@ -7,15 +7,14 @@ import {
   withProps,
   withState,
 } from '@ngrx/signals';
-import { ClickParams, ScheduledBeat } from '../audio/click-scheduler';
+import type { ClickParams, ScheduledBeat } from '../audio/click-scheduler';
 import { setAudioSession } from '../audio/audio-context';
 import { MetronomeEngine } from '../audio/metronome-engine';
+import type { Subdivision, TimeSignature } from '../music/meter';
 import {
   BPM_RANGE,
   BeatLevel,
   SWING_RANGE,
-  Subdivision,
-  TimeSignature,
   clamp,
   defaultGrouping,
   defaultLevels,
@@ -25,18 +24,16 @@ import {
   sameSignature,
   tempoMarking,
 } from '../music/meter';
+import type { GapClick, Polyrhythm, RestCounter, SpeedTrainer } from '../music/practice';
 import {
   DEFAULT_GAP_CLICK,
   DEFAULT_SPEED_TRAINER,
-  GapClick,
-  Polyrhythm,
-  RestCounter,
-  SpeedTrainer,
   isGapBar,
   trainerTempo,
 } from '../music/practice';
 import { SettingsStore } from './settings.store';
-import { Parser, withDefaults, withPersistence, writableState } from './storage';
+import type { Parser } from './storage';
+import { withDefaults, withPersistence, writableState } from './storage';
 
 /** What a saved piece stores, and what the metronome screen edits. */
 export interface MetronomeSetup {
@@ -191,14 +188,18 @@ export const MetronomeStore = signalStore(
     };
   }),
   withProps((store) => ({
-    editablePractice: writableState(store.practice, (practice) => patchState(store, { practice })),
+    editablePractice: writableState(store.practice, (practice) => {
+      patchState(store, { practice });
+    }),
   })),
   withMethods((store) => {
-    const patch = (changes: Partial<MetronomeSetup>): void =>
+    const patch = (changes: Partial<MetronomeSetup>): void => {
       patchState(store, ({ setup }) => ({ setup: { ...setup, ...changes } }));
+    };
 
-    const setBpm = (bpm: number): void =>
+    const setBpm = (bpm: number): void => {
       patch({ bpm: clamp(Math.round(bpm), BPM_RANGE.min, BPM_RANGE.max) });
+    };
 
     const stop = (): void => {
       if (!store._playing()) return;
@@ -249,7 +250,9 @@ export const MetronomeStore = signalStore(
       () => untracked(store._settings.clickSound),
       showBeat,
     );
-    inject(DestroyRef).onDestroy(() => engine.dispose());
+    inject(DestroyRef).onDestroy(() => {
+      engine.dispose();
+    });
 
     let tapTimes: number[] = [];
 
@@ -301,8 +304,9 @@ export const MetronomeStore = signalStore(
         const last = tapTimes.at(-1);
         if (last !== undefined && now - last > 2000) tapTimes = [];
         tapTimes = [...tapTimes, now].slice(-5);
-        if (tapTimes.length < 2) return;
-        const average = (now - tapTimes[0]) / (tapTimes.length - 1);
+        const first = tapTimes[0];
+        if (tapTimes.length < 2 || first === undefined) return;
+        const average = (now - first) / (tapTimes.length - 1);
         setBpm(60000 / average);
       },
 

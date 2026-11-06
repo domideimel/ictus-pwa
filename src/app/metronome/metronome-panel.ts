@@ -40,7 +40,6 @@ import { TimeSignatureChips } from './time-signature-chips';
     TempoDial,
     TimeSignatureChips,
   ],
-  host: { class: 'flex min-h-0 flex-col' },
   template: `
     @if (wide()) {
       <section
@@ -184,6 +183,7 @@ import { TimeSignatureChips } from './time-signature-chips';
       <app-setlist-sheet (closed)="showSetlists.set(false)" />
     }
   `,
+  host: { class: 'flex min-h-0 flex-col' },
 })
 export class MetronomePanel {
   protected readonly store = inject(MetronomeStore);

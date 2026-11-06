@@ -51,9 +51,10 @@ export function groupingOptions({ beats, unit }: TimeSignature): number[][] {
 export function defaultGrouping(signature: TimeSignature): number[] {
   const options = groupingOptions(signature);
   if (options.length === 0) return [signature.beats];
-  if (signature.unit >= 8 && signature.beats % 3 === 0) return Array(signature.beats / 3).fill(3);
+  if (signature.unit >= 8 && signature.beats % 3 === 0)
+    return Array.from({ length: signature.beats / 3 }, () => 3);
   if (signature.beats === 5) return [3, 2];
-  return options[0];
+  return options[0] ?? [signature.beats];
 }
 
 /** Indices of beats that start a group (other than beat 1), e.g. beats 2 and 4 for 7/8 = 2+2+3. */
@@ -69,8 +70,10 @@ export function groupStarts(grouping: readonly number[]): Set<number> {
 }
 
 function compareLexicographic(a: readonly number[], b: readonly number[]): number {
-  for (let i = 0; i < Math.min(a.length, b.length); i++) {
-    if (a[i] !== b[i]) return a[i] - b[i];
+  for (const [i, value] of a.entries()) {
+    const other = b[i];
+    if (other === undefined) break;
+    if (value !== other) return value - other;
   }
   return a.length - b.length;
 }
@@ -85,8 +88,10 @@ export interface SubdivisionInfo {
   readonly tuplet?: number;
 }
 
+const QUARTERS: SubdivisionInfo = { value: 1, title: 'Quarter', symbol: '♩' };
+
 export const SUBDIVISIONS: readonly SubdivisionInfo[] = [
-  { value: 1, title: 'Quarter', symbol: '♩' },
+  QUARTERS,
   { value: 2, title: 'Eighth', symbol: '♫' },
   { value: 3, title: 'Triplet', symbol: '♪♪♪', tuplet: 3 },
   { value: 4, title: '16th', symbol: '♬' },
@@ -95,7 +100,7 @@ export const SUBDIVISIONS: readonly SubdivisionInfo[] = [
 ];
 
 export const subdivisionInfo = (value: Subdivision): SubdivisionInfo =>
-  SUBDIVISIONS.find((info) => info.value === value) ?? SUBDIVISIONS[0];
+  SUBDIVISIONS.find((info) => info.value === value) ?? QUARTERS;
 
 /** Swing applies to pairs of eighths or sixteenths. */
 export const canSwing = (value: Subdivision): boolean => value === 2 || value === 4;

@@ -22,7 +22,9 @@ export class HoldRepeat {
   private fromPointer = false;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.end());
+    inject(DestroyRef).onDestroy(() => {
+      this.end();
+    });
   }
 
   protected begin(event: PointerEvent): void {

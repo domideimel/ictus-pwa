@@ -35,7 +35,9 @@ describe('App', () => {
     driver = new MetronomeDriver();
   });
 
-  afterEach(() => metronome?.stop());
+  afterEach(() => {
+    metronome.stop();
+  });
 
   const start = async (url = '/') => {
     const harness = await RouterTestingHarness.create();
@@ -49,7 +51,7 @@ describe('App', () => {
   describe('phone layout', () => {
     it('shows the metronome tab first', async () => {
       const { element } = await start();
-      const tabs = [...element.querySelectorAll('nav a')].map((link) => link.textContent?.trim());
+      const tabs = [...element.querySelectorAll('nav a')].map((link) => link.textContent.trim());
       expect(tabs).toEqual(['Metronome', 'Tuner']);
       expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('Metronome');
       expect(element.querySelector('app-metronome-panel')).not.toBeNull();
@@ -113,7 +115,7 @@ describe('App', () => {
       expect(TestBed.inject(TunerStore).onScreen()).toBe(true);
       expect(element.querySelector('footer')?.textContent).toContain('Start / stop');
       expect(element.textContent).toContain('Beats · click to accent');
-      expect(element.querySelector('[role="status"]')?.textContent?.trim()).toBe('Microphone off');
+      expect(element.querySelector('[role="status"]')?.textContent.trim()).toBe('Microphone off');
 
       await click(fixture, byLabel(element.querySelector('app-combined-view header')!, 'Settings'));
       expect(element.querySelector('app-settings-sheet')).not.toBeNull();
@@ -126,7 +128,7 @@ describe('App', () => {
       const { fixture, element } = await start();
       await tunerDriver.switchOn();
       await fixture.whenStable();
-      expect(element.querySelector('app-combined-view [role="status"]')?.textContent?.trim()).toBe(
+      expect(element.querySelector('app-combined-view [role="status"]')?.textContent.trim()).toBe(
         'Mic on',
       );
     });
@@ -184,7 +186,7 @@ describe('App', () => {
       );
       key(document.body, 'ArrowRight');
       expect(metronome.bpm()).toBe(120);
-      library.setActivePiece({ setlistId: list.id, pieceId: pieces[0].id });
+      library.setActivePiece({ setlistId: list.id, pieceId: pieces[0]!.id });
       key(document.body, 'ArrowDown');
       expect(metronome.bpm()).toBe(140);
       key(document.body, 'ArrowUp');

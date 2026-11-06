@@ -29,8 +29,8 @@ import { Surface } from '../ui/surface';
               type="button"
               appSurface
               pressed
-              [selected]="settings.referencePitch() === value"
               class="h-10 rounded-full text-[15px] tabular"
+              [selected]="settings.referencePitch() === value"
               (click)="settings.update({ referencePitch: value })"
             >
               {{ value }}

@@ -1,6 +1,7 @@
 import { BeatLevel, defaultLevels, groupStarts } from '../music/meter';
 import { DEFAULT_GAP_CLICK, DEFAULT_SPEED_TRAINER } from '../music/practice';
-import { ClickParams, ClickScheduler, ScheduledBeat, ScheduledClick } from './click-scheduler';
+import type { ClickParams, ScheduledBeat, ScheduledClick } from './click-scheduler';
+import { ClickScheduler } from './click-scheduler';
 
 const base: ClickParams = {
   bpm: 120,
@@ -143,9 +144,9 @@ describe('ClickScheduler', () => {
       bpm: 100,
       trainer: { enabled: true, step: 10, everyBars: 1, target: 120 },
     });
-    expect(beats[4].time).toBeCloseTo(4 * 0.6, 9);
-    expect(beats[8].time).toBeCloseTo(4 * 0.6 + (4 * 60) / 110, 9);
-    expect(beats[9].time - beats[8].time).toBeCloseTo(0.5, 9);
+    expect(beats[4]!.time).toBeCloseTo(4 * 0.6, 9);
+    expect(beats[8]!.time).toBeCloseTo(4 * 0.6 + (4 * 60) / 110, 9);
+    expect(beats[9]!.time - beats[8]!.time).toBeCloseTo(0.5, 9);
   });
   it('places subdivision clicks between the beats at their own volume', () => {
     const { clicks } = run(0.49, { subdivision: 3 });

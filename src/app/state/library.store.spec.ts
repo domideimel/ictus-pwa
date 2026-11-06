@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { BeatLevel, defaultLevels } from '../music/meter';
-import { LibraryStore, Piece, pieceSummary } from './library.store';
-import { MetronomeSetup } from './metronome.store';
+import type { Piece } from './library.store';
+import { LibraryStore, pieceSummary } from './library.store';
+import type { MetronomeSetup } from './metronome.store';
 
 const setup: MetronomeSetup = {
   bpm: 90,
@@ -41,7 +42,7 @@ describe('LibraryStore', () => {
     const one = store.addPiece(list.id, 'One', setup);
     store.addPiece(list.id, 'Two', setup);
     store.updatePiece(list.id, one.id, { ...setup, bpm: 132 });
-    const updated = store.setlists()[0].pieces[0];
+    const updated = store.setlists()[0]!.pieces[0];
     expect(updated).toEqual(expect.objectContaining({ id: one.id, name: 'One', bpm: 132 }));
     store.deletePiece(list.id, one.id);
     expect(names(list.id)).toEqual(['Two']);
@@ -49,7 +50,11 @@ describe('LibraryStore', () => {
 
   it('moves pieces up and down within bounds', () => {
     const list = store.addSetlist('Concert');
-    const [a, , c] = ['A', 'B', 'C'].map((name) => store.addPiece(list.id, name, setup));
+    const [a, , c] = ['A', 'B', 'C'].map((name) => store.addPiece(list.id, name, setup)) as [
+      Piece,
+      Piece,
+      Piece,
+    ];
     store.movePiece(list.id, c.id, -1);
     expect(names(list.id)).toEqual(['A', 'C', 'B']);
     store.movePiece(list.id, a.id, -1);
@@ -128,15 +133,15 @@ describe('LibraryStore', () => {
     TestBed.resetTestingModule();
     const loaded = TestBed.inject(LibraryStore).setlists();
     expect(loaded.map((setlist) => setlist.name)).toEqual(['Saved', 'No pieces']);
-    expect(loaded[0].pieces).toEqual([
+    expect(loaded[0]!.pieces).toEqual([
       expect.objectContaining({ id: 'p1', bpm: 300, grouping: [3], swing: 0.5 }),
     ]);
-    expect(loaded[0].pieces[0].levels).toEqual([
+    expect(loaded[0]!.pieces[0]!.levels).toEqual([
       BeatLevel.Accent,
       BeatLevel.Normal,
       BeatLevel.Normal,
     ]);
-    expect(loaded[1].pieces).toEqual([]);
+    expect(loaded[1]!.pieces).toEqual([]);
   });
 
   it('ignores a saved value that is not a list', () => {

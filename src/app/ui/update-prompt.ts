@@ -1,8 +1,8 @@
+import type { ElementRef } from '@angular/core';
 import {
   Component,
   DOCUMENT,
   DestroyRef,
-  ElementRef,
   afterRenderEffect,
   computed,
   effect,
@@ -99,7 +99,9 @@ export class UpdatePrompt {
       this.broken.set(true);
       this.dismissed.set(false);
     });
-    const timer = setInterval(() => this.check(), CHECK_INTERVAL_MS);
+    const timer = setInterval(() => {
+      this.check();
+    }, CHECK_INTERVAL_MS);
     inject(DestroyRef).onDestroy(() => {
       events.unsubscribe();
       failures.unsubscribe();

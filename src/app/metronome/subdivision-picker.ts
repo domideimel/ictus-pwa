@@ -5,12 +5,6 @@ import { MetronomeStore } from '../state/metronome.store';
 /** Quarter to sextuplet. Symbol above the label on phones, beside it on wider screens. */
 @Component({
   selector: 'app-subdivision-picker',
-  host: {
-    role: 'radiogroup',
-    'aria-label': 'Subdivision',
-    class: 'grid gap-1 rounded-[14px] border border-stroke bg-surface p-1',
-    '[class]': 'horizontal() ? "grid-cols-3" : "grid-cols-6"',
-  },
   template: `
     @for (option of options; track option.value) {
       @let selected = store.subdivision() === option.value;
@@ -46,6 +40,12 @@ import { MetronomeStore } from '../state/metronome.store';
       </button>
     }
   `,
+  host: {
+    role: 'radiogroup',
+    'aria-label': 'Subdivision',
+    class: 'grid gap-1 rounded-[14px] border border-stroke bg-surface p-1',
+    '[class]': 'horizontal() ? "grid-cols-3" : "grid-cols-6"',
+  },
 })
 export class SubdivisionPicker {
   protected readonly store = inject(MetronomeStore);

@@ -1,9 +1,11 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
-import { SettingsStore, TunerMode } from '../state/settings.store';
+import type { TunerMode } from '../state/settings.store';
+import { SettingsStore } from '../state/settings.store';
 import { TunerStore } from '../state/tuner.store';
 import { Icon } from '../ui/icon';
-import { PillOption, SegmentedPills } from '../ui/segmented-pills';
+import type { PillOption } from '../ui/segmented-pills';
+import { SegmentedPills } from '../ui/segmented-pills';
 import { SectionLabel } from '../ui/section-label';
 import { DrumTuning } from './drum-tuning';
 import { ReferencePitchButton } from './reference-pitch';
@@ -49,7 +51,6 @@ export class TunerToggle {
     TunerToggle,
     TuningStatePill,
   ],
-  host: { class: 'flex min-h-0 flex-col' },
   template: `
     @if (wide()) {
       <section
@@ -119,6 +120,7 @@ export class TunerToggle {
       <app-tuner-toggle class="px-5 pt-2 pb-3" />
     }
   `,
+  host: { class: 'flex min-h-0 flex-col' },
 })
 export class TunerPanel {
   protected readonly tuner = inject(TunerStore);

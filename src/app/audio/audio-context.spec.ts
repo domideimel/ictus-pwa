@@ -22,6 +22,8 @@ describe('audio context', () => {
   });
 
   it('does nothing in browsers without an audio session', () => {
-    expect(() => setAudioSession('playback')).not.toThrow();
+    expect(() => {
+      setAudioSession('playback');
+    }).not.toThrow();
   });
 });

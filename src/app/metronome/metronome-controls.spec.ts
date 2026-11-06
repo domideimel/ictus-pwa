@@ -21,7 +21,9 @@ beforeEach(() => {
   store = TestBed.inject(MetronomeStore);
 });
 
-afterEach(() => store.stop());
+afterEach(() => {
+  store.stop();
+});
 
 describe('TempoDial', () => {
   it('is a slider announcing tempo and marking', async () => {
@@ -79,7 +81,7 @@ describe('TempoDial', () => {
 
   it('draws the arc for the tempo', async () => {
     const { fixture, element } = await render(TempoDial);
-    const fill = () => element.querySelectorAll('circle')[1].getAttribute('stroke-dasharray')!;
+    const fill = () => element.querySelectorAll('circle')[1]!.getAttribute('stroke-dasharray')!;
     store.setBpm(20);
     await fixture.whenStable();
     expect(fill().startsWith('0 ')).toBe(true);
@@ -87,7 +89,7 @@ describe('TempoDial', () => {
     await fixture.whenStable();
     const [filled, ,] = fill().split(' ').map(Number);
     const track = Number(
-      element.querySelectorAll('circle')[0].getAttribute('stroke-dasharray')!.split(' ')[0],
+      element.querySelectorAll('circle')[0]!.getAttribute('stroke-dasharray')!.split(' ')[0],
     );
     expect(filled).toBeCloseTo(track, 6);
   });
@@ -117,7 +119,7 @@ describe('BeatDots', () => {
     const { element } = await render(BeatDots);
     const rows = element.querySelectorAll(':scope > div');
     expect(rows).toHaveLength(2);
-    expect(rows[0].querySelectorAll('button')).toHaveLength(8);
+    expect(rows[0]!.querySelectorAll('button')).toHaveLength(8);
     const marks = [...element.querySelectorAll('button')].map((button) =>
       button.querySelector('span:last-child')!.classList.contains('bg-accent'),
     );

@@ -8,5 +8,10 @@ let timer: ReturnType<typeof setInterval> | undefined;
 
 addEventListener('message', ({ data }: MessageEvent<'start' | 'stop'>) => {
   clearInterval(timer);
-  timer = data === 'start' ? setInterval(() => postMessage(null), 25) : undefined;
+  timer =
+    data === 'start'
+      ? setInterval(() => {
+          postMessage(null);
+        }, 25)
+      : undefined;
 });

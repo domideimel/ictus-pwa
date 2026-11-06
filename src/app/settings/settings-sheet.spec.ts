@@ -61,12 +61,12 @@ describe('SettingsSheet', () => {
     const { element, changed } = await setup();
     const sound = element.querySelector('select[aria-label="Click sound"]') as HTMLSelectElement;
     const pedal = element.querySelector('select[aria-label="Pedal"]') as HTMLSelectElement;
-    expect([...sound.options].map((option) => option.textContent?.trim())).toEqual([
+    expect([...sound.options].map((option) => option.textContent.trim())).toEqual([
       'Click',
       'Woodblock',
       'Cowbell',
     ]);
-    expect([...pedal.options].map((option) => option.textContent?.trim())).toEqual([
+    expect([...pedal.options].map((option) => option.textContent.trim())).toEqual([
       'Tap · Start/Stop',
       'Previous · Next piece',
     ]);
@@ -79,15 +79,15 @@ describe('SettingsSheet', () => {
   it('has a volume slider per voice, including the polyrhythm', async () => {
     const { element, changed } = await setup();
     const sliders = [...element.querySelectorAll('input[type="range"]')] as HTMLInputElement[];
-    expect(sliders.map((slider) => slider.closest('label')?.textContent?.trim())).toEqual([
+    expect(sliders.map((slider) => slider.closest('label')?.textContent.trim())).toEqual([
       'Accent',
       'Beat',
       'Subdivision',
       'Polyrhythm',
     ]);
     expect(sliders.map((slider) => [slider.min, slider.max])).toEqual(Array(4).fill(['0', '1']));
-    sliders[3].value = '0.25';
-    sliders[3].dispatchEvent(new Event('input'));
+    sliders[3]!.value = '0.25';
+    sliders[3]!.dispatchEvent(new Event('input'));
     await changed();
     expect(settings.polyVolume()).toBe(0.25);
   });

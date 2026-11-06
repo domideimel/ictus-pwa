@@ -1,8 +1,9 @@
 import { Component, inject, output } from '@angular/core';
 import { FormField, form, max, min } from '@angular/forms/signals';
 import { CLICK_SOUNDS } from '../audio/click-synth';
-import { AccidentalStyle } from '../music/note';
-import { CLEF_SETTINGS, ClefSetting, clefSettingTitle } from '../music/staff';
+import type { AccidentalStyle } from '../music/note';
+import type { ClefSetting } from '../music/staff';
+import { CLEF_SETTINGS, clefSettingTitle } from '../music/staff';
 import {
   PEDAL_MODES,
   REFERENCE_PITCH_RANGE,
@@ -10,7 +11,8 @@ import {
   TOLERANCE_OPTIONS,
 } from '../state/settings.store';
 import { NumberStepper } from '../ui/number-stepper';
-import { PillOption, SegmentedPills } from '../ui/segmented-pills';
+import type { PillOption } from '../ui/segmented-pills';
+import { SegmentedPills } from '../ui/segmented-pills';
 import { SettingsGroup, SettingsRow } from '../ui/settings-group';
 import { Sheet } from '../ui/sheet';
 import { ToggleSwitch } from '../ui/toggle-switch';

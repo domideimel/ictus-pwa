@@ -6,9 +6,9 @@ import {
   withProps,
   withState,
 } from '@ngrx/signals';
-import { ClickSound } from '../audio/click-synth';
-import { AccidentalStyle } from '../music/note';
-import { ClefSetting } from '../music/staff';
+import type { ClickSound } from '../audio/click-synth';
+import type { AccidentalStyle } from '../music/note';
+import type { ClefSetting } from '../music/staff';
 import { withDefaults, withPersistence, writableState } from './storage';
 
 export type PedalMode = 'tapAndStartStop' | 'previousAndNext';
@@ -72,7 +72,9 @@ export const SettingsStore = signalStore(
   withProps((store) => ({
     editable: writableState<Settings>(
       () => getState(store),
-      (settings) => store.update(settings),
+      (settings) => {
+        store.update(settings);
+      },
     ),
   })),
 );

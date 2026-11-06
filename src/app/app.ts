@@ -31,10 +31,6 @@ import { Viewport } from './ui/viewport';
     Icon,
     UpdatePrompt,
   ],
-  host: {
-    class: 'flex h-dvh flex-col overflow-hidden safe-top',
-    '(document:keydown)': 'onKeydown($event)',
-  },
   template: `
     @if (viewport.isWide()) {
       <app-combined-view />
@@ -48,10 +44,10 @@ import { Viewport } from './ui/viewport';
       >
         @for (tab of tabs; track tab.path) {
           <a
-            [routerLink]="tab.path"
             routerLinkActive="text-accent-text font-semibold"
             ariaCurrentWhenActive="page"
             class="flex flex-col items-center gap-1 py-1 text-[11.5px] font-medium text-muted"
+            [routerLink]="tab.path"
           >
             <app-icon [name]="tab.icon" [size]="24" />
             {{ tab.label }}
@@ -68,6 +64,10 @@ import { Viewport } from './ui/viewport';
     }
     <app-update-prompt />
   `,
+  host: {
+    class: 'flex h-dvh flex-col overflow-hidden safe-top',
+    '(document:keydown)': 'onKeydown($event)',
+  },
 })
 export class App {
   protected readonly viewport = inject(Viewport);
@@ -97,7 +97,9 @@ export class App {
 
   constructor() {
     inject(WakeLock);
-    effect(() => this.tuner.setOnScreen(this.tunerOnScreen()));
+    effect(() => {
+      this.tuner.setOnScreen(this.tunerOnScreen());
+    });
   }
 
   /** Space starts/stops, T taps; arrow and page keys are what Bluetooth page-turner pedals send. */
