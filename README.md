@@ -51,13 +51,11 @@ When a new version is deployed, the app offers a **Reload** button.
 
 ## CI/CD
 
-- **CI** (`.github/workflows/ci.yml`) runs on every pull request and push to `main`: formatting, unit tests with
-  coverage thresholds (summary in the run, report as an artifact) and a production build.
-- **Deploy** (`.github/workflows/deploy.yml`) runs after CI succeeds and deploys to Vercel with the Vercel CLI:
-  `main` goes to production, pull requests from this repository get a preview URL as a comment.
-  Vercel's own Git deployments are switched off in `vercel.json`, so only tested commits are deployed.
-
-Setup: add a Vercel token as the repository secret `VERCEL_TOKEN` (GitHub → Settings → Secrets and variables → Actions).
+- **CI** (`.github/workflows/ci.yml`) runs on every pull request and push to `main`: formatting, ESLint,
+  type-check, unit tests with coverage thresholds (summary in the run, report as an artifact) and a production build.
+- **Deploy:** Vercel's Git integration builds every push: `main` goes to production, other branches and
+  pull requests get preview URLs. `vercel.json` adds the fallback to `index.html` (so `/tuner` works on reload)
+  and keeps the service worker files from being cached.
 
 ## Structure
 
