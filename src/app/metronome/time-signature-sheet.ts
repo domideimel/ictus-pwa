@@ -12,7 +12,7 @@ import { Sheet } from '../ui/sheet';
   selector: 'app-time-signature-sheet',
   imports: [Sheet, NumberStepper, SegmentedPills, SettingsGroup, SettingsRow, FormField],
   template: `
-    <app-sheet title="Time signature" doneLabel="Cancel" (closed)="closed.emit()">
+    <app-sheet title="Time signature" closeLabel="Cancel" (closed)="closed.emit()">
       <form class="flex flex-col gap-6" (submit)="apply($event)">
         <p class="text-center text-6xl font-semibold tabular" aria-live="polite">
           {{ model().beats }}/{{ model().unit }}

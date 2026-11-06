@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { HoldRepeat } from './hold-repeat';
+import { Surface } from './surface';
 
 /**
  * − value + with optional larger steps, e.g. ±1 and ±10. A signal-forms control: `min` and `max`
@@ -9,7 +10,7 @@ import { HoldRepeat } from './hold-repeat';
  */
 @Component({
   selector: 'app-number-stepper',
-  imports: [HoldRepeat, NgTemplateOutlet],
+  imports: [HoldRepeat, NgTemplateOutlet, Surface],
   host: {
     role: 'spinbutton',
     tabindex: '0',
@@ -41,7 +42,8 @@ import { HoldRepeat } from './hold-repeat';
       <button
         type="button"
         tabindex="-1"
-        class="min-h-9 min-w-9 rounded-[10px] bg-stroke px-1 text-[13px] font-semibold tabular disabled:opacity-30"
+        appSurface
+        class="h-9 min-w-10 rounded-xl px-1.5 text-[13px] tabular"
         [attr.aria-label]="(delta > 0 ? 'Plus ' : 'Minus ') + abs(delta)"
         [disabled]="disabled() || (delta > 0 ? value() >= upper() : value() <= lower())"
         appHoldRepeat

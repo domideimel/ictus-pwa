@@ -8,11 +8,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormField, form, maxLength, required, submit, validate } from '@angular/forms/signals';
+import { Surface } from '../ui/surface';
 
 /** Small modal asking for a setlist or piece name. Uses a signal form so an empty name can't be saved. */
 @Component({
   selector: 'app-name-dialog',
-  imports: [FormField],
+  imports: [FormField, Surface],
   template: `
     <dialog
       #dialog
@@ -43,12 +44,13 @@ import { FormField, form, maxLength, required, submit, validate } from '@angular
         <div class="grid grid-cols-2 gap-2">
           <button
             type="button"
-            class="h-11 rounded-[10px] bg-stroke font-semibold"
+            appSurface
+            class="h-11 rounded-xl font-semibold"
             (click)="dialog.close()"
           >
             Cancel
           </button>
-          <button type="submit" class="h-11 rounded-[10px] bg-accent font-semibold text-on-accent">
+          <button type="submit" class="h-11 rounded-xl bg-accent font-semibold text-on-accent">
             Save
           </button>
         </div>

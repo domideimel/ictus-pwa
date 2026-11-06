@@ -1,4 +1,5 @@
 import { Component, ElementRef, afterNextRender, input, output, viewChild } from '@angular/core';
+import { HeaderIconButton } from './header-icon-button';
 
 /**
  * Bottom sheet on phones, centered card on wider screens. Built on the native modal `<dialog>`,
@@ -7,6 +8,7 @@ import { Component, ElementRef, afterNextRender, input, output, viewChild } from
  */
 @Component({
   selector: 'app-sheet',
+  imports: [HeaderIconButton],
   template: `
     <dialog
       #dialog
@@ -16,17 +18,11 @@ import { Component, ElementRef, afterNextRender, input, output, viewChild } from
       (click)="onBackdropClick($event)"
     >
       <div class="flex max-h-[92dvh] flex-col">
-        <header class="flex shrink-0 items-center gap-2 px-5 pt-5 pb-2">
-          <h2 [id]="titleId" class="text-2xl font-bold">{{ title() }}</h2>
+        <header class="flex shrink-0 items-center gap-2 ps-5 pe-4 pt-4 pb-2">
+          <h2 [id]="titleId" class="text-[22px] font-semibold">{{ title() }}</h2>
           <span class="flex-1"></span>
           <ng-content select="[sheetAccessory]" />
-          <button
-            type="button"
-            class="h-11 px-1 text-base font-semibold text-accent-text"
-            (click)="close()"
-          >
-            {{ doneLabel() }}
-          </button>
+          <app-header-icon-button icon="close" [label]="closeLabel()" (pressed)="close()" />
         </header>
         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-2 pb-6 safe-bottom">
           <ng-content />
@@ -39,7 +35,8 @@ export class Sheet {
   private static nextId = 0;
 
   readonly title = input.required<string>();
-  readonly doneLabel = input('Done');
+  /** Accessible name of the round × button, e.g. "Cancel" when closing discards the input. */
+  readonly closeLabel = input('Close');
   readonly closed = output();
 
   protected readonly titleId = `sheet-title-${Sheet.nextId++}`;

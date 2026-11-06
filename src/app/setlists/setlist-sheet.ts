@@ -3,6 +3,7 @@ import { LibraryStore, Piece, Setlist, pieceSummary } from '../state/library.sto
 import { MetronomeStore } from '../state/metronome.store';
 import { Icon } from '../ui/icon';
 import { Sheet } from '../ui/sheet';
+import { Surface } from '../ui/surface';
 import { NameDialog } from './name-dialog';
 
 type Naming =
@@ -13,14 +14,16 @@ type Naming =
 /** Setlists of saved pieces. Tap a piece to load it; save the current metronome as a new piece. */
 @Component({
   selector: 'app-setlist-sheet',
-  imports: [Sheet, Icon, NameDialog],
+  imports: [Sheet, Icon, NameDialog, Surface],
   template: `
     <app-sheet title="Setlists" (closed)="closed.emit()">
       <button
         sheetAccessory
         type="button"
-        class="h-11 px-3 text-base text-accent-text"
-        [attr.aria-pressed]="editing()"
+        appSurface
+        pressed
+        class="h-11 rounded-full px-4 text-[15px]"
+        [selected]="editing()"
         (click)="editing.set(!editing())"
       >
         {{ editing() ? 'Finish' : 'Edit' }}
