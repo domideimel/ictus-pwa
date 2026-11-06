@@ -60,6 +60,7 @@ import { TimeSignatureChips } from './time-signature-chips';
             <app-header-icon-button
               icon="practice"
               label="Practice tools"
+              [badge]="store.activePractice().length"
               (pressed)="showPractice.set(true)"
             />
           </div>
@@ -118,6 +119,7 @@ import { TimeSignatureChips } from './time-signature-chips';
           <app-header-icon-button
             icon="practice"
             label="Practice tools"
+            [badge]="store.activePractice().length"
             (pressed)="showPractice.set(true)"
           />
           <ng-content select="[headerEnd]" />

@@ -73,6 +73,9 @@ const DEFAULT_SETUP: MetronomeSetup = {
   swing: 0.5,
 };
 
+/** The practice tools that change the click; the rest counter is a one-off and not one of them. */
+export type PracticeTool = 'gapClick' | 'polyrhythm' | 'speedTrainer';
+
 export const DEFAULT_PRACTICE: PracticeSetup = {
   gapClick: DEFAULT_GAP_CLICK,
   speedTrainer: DEFAULT_SPEED_TRAINER,
@@ -196,6 +199,16 @@ export const MetronomeStore = signalStore(
       }),
 
       /** True while the current bar is a muted bar of the gap click. */
+      /** Practice tools that are switched on, in the order the practice sheet lists them. */
+      activePractice: computed(() => {
+        const { gapClick, polyrhythm, speedTrainer } = practice();
+        const tools: PracticeTool[] = [];
+        if (gapClick.enabled) tools.push('gapClick');
+        if (polyrhythm !== 'off') tools.push('polyrhythm');
+        if (speedTrainer.enabled) tools.push('speedTrainer');
+        return tools;
+      }),
+
       isInGap: computed(() => _playing() && !_rest() && isGapBar(practice().gapClick, _bar())),
 
       /** Practice tools are paused while the rest counter runs. */
@@ -394,6 +407,24 @@ export const MetronomeStore = signalStore(
         stop();
         store._rest.set({ bars: Math.max(1, bars), audible, finished: false });
         void start();
+      },
+
+      /** Switches one practice tool off, or all of them; their settings are kept for next time. */
+      turnOffPractice(tool?: PracticeTool): void {
+        patchState(store, ({ practice }) => ({
+          practice: {
+            ...practice,
+            gapClick:
+              !tool || tool === 'gapClick'
+                ? { ...practice.gapClick, enabled: false }
+                : practice.gapClick,
+            polyrhythm: !tool || tool === 'polyrhythm' ? 'off' : practice.polyrhythm,
+            speedTrainer:
+              !tool || tool === 'speedTrainer'
+                ? { ...practice.speedTrainer, enabled: false }
+                : practice.speedTrainer,
+          },
+        }));
       },
 
       endRest(): void {

@@ -44,6 +44,18 @@ describe('MetronomePanel', () => {
     vi.restoreAllMocks();
   });
 
+  it('badges the practice button with the number of tools on', async () => {
+    const { fixture, element } = await render(MetronomePanel);
+    store.editablePractice.update((practice) => ({ ...practice, polyrhythm: '3:2' }));
+    TestBed.tick();
+    await fixture.whenStable();
+    const button = byLabel(element, 'Practice tools, 1 on');
+    expect(button.textContent.trim()).toBe('1');
+    store.turnOffPractice();
+    await fixture.whenStable();
+    expect(byLabel(element, 'Practice tools')).toBeTruthy();
+  });
+
   it('opens the practice and setlist sheets from the header', async () => {
     const { fixture, element } = await render(MetronomePanel);
     await click(fixture, byLabel(element, 'Practice tools'));

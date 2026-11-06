@@ -1,4 +1,4 @@
-import { Component, inject, output, viewChild } from '@angular/core';
+import { Component, computed, inject, output, viewChild } from '@angular/core';
 import { FormField, disabled, form, max, min } from '@angular/forms/signals';
 import { BPM_RANGE } from '../music/meter';
 import type { Polyrhythm } from '../music/practice';
@@ -35,6 +35,21 @@ import { ToggleSwitch } from '../ui/toggle-switch';
   template: `
     <app-sheet title="Practice" (closed)="closed.emit()">
       <form class="flex flex-col gap-5" (submit)="$event.preventDefault()">
+        @if (store.activePractice().length > 0) {
+          <div
+            class="flex items-center justify-between gap-3 rounded-xl bg-accent/15 ps-4 pe-1 text-accent-text"
+            role="status"
+          >
+            <span class="text-[15px] font-semibold">{{ activeSummary() }}</span>
+            <button
+              type="button"
+              class="h-11 px-3 text-[15px] font-semibold underline underline-offset-2"
+              (click)="store.turnOffPractice()"
+            >
+              Turn all off
+            </button>
+          </div>
+        }
         <app-settings-group
           title="Gap click"
           footnote="Plays some bars, then stays silent so you keep time on your own."
@@ -166,6 +181,11 @@ export class PracticeSheet {
 
     min(path.restBars, REST_BAR_RANGE.min);
     max(path.restBars, REST_BAR_RANGE.max);
+  });
+
+  protected readonly activeSummary = computed(() => {
+    const count = this.store.activePractice().length;
+    return count === 1 ? '1 tool on' : `${count} tools on`;
   });
 
   private readonly sheet = viewChild.required(Sheet);

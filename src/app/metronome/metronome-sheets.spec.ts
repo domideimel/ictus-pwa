@@ -28,6 +28,23 @@ const press = (element: Element, label: string): void => {
 };
 
 describe('PracticeSheet', () => {
+  it('says how many tools are on and turns them all off', async () => {
+    const { fixture, element } = await render(PracticeSheet);
+    expect(element.querySelector('[role="status"]')).toBeNull();
+    store.editablePractice.update((practice) => ({
+      ...practice,
+      polyrhythm: '3:2',
+      speedTrainer: { ...practice.speedTrainer, enabled: true },
+    }));
+    TestBed.tick();
+    await fixture.whenStable();
+    const status = element.querySelector('[role="status"]')!;
+    expect(status.textContent).toContain('2 tools on');
+    await click(fixture, status.querySelector('button')!);
+    expect(store.activePractice()).toEqual([]);
+    expect(element.querySelector('[role="status"]')).toBeNull();
+  });
+
   it('switches the gap click on and edits its bars', async () => {
     const { fixture, element } = await render(PracticeSheet);
     const playBars = element.querySelector('[aria-label="Play bars"]')!;
@@ -108,12 +125,43 @@ describe('PracticeStatus', () => {
     }));
     TestBed.tick();
     const { fixture, element } = await render(PracticeStatus);
-    const chips = [...element.querySelectorAll('span')].map((chip) => chip.textContent.trim());
+    const chips = [...element.querySelectorAll('[aria-haspopup="dialog"]')].map((chip) =>
+      chip.textContent.trim(),
+    );
     expect(chips).toEqual(['Gap 2 on · 1 off', 'Poly 3:2', '+4 every 4 bars → 160']);
     let opened = false;
     fixture.componentInstance.open.subscribe(() => (opened = true));
     await click(fixture, element.querySelector('button')!);
     expect(opened).toBe(true);
+  });
+
+  it('turns one tool off, or all of them, keeping their settings', async () => {
+    store.editablePractice.update((practice) => ({
+      ...practice,
+      gapClick: { enabled: true, play: 3, mute: 1 },
+      polyrhythm: '4:3',
+      speedTrainer: { enabled: true, step: 4, everyBars: 4, target: 160 },
+    }));
+    TestBed.tick();
+    const { fixture, element } = await render(PracticeStatus);
+    await click(fixture, byLabel(element, 'Turn off polyrhythm'));
+    expect(store.practice().polyrhythm).toBe('off');
+    expect(store.activePractice()).toEqual(['gapClick', 'speedTrainer']);
+    await click(
+      fixture,
+      [...element.querySelectorAll('button')].find((b) => b.textContent.includes('Turn all off'))!,
+    );
+    expect(store.activePractice()).toEqual([]);
+    expect(store.practice().gapClick).toEqual({ enabled: false, play: 3, mute: 1 });
+    expect(element.querySelector('button')).toBeNull();
+  });
+
+  it('offers "Turn all off" only with more than one tool on', async () => {
+    store.editablePractice.update((practice) => ({ ...practice, polyrhythm: '3:2' }));
+    TestBed.tick();
+    const { element } = await render(PracticeStatus);
+    expect(element.textContent).not.toContain('Turn all off');
+    expect(byLabel(element, 'Turn off polyrhythm')).toBeTruthy();
   });
 
   it('shows live state while playing', async () => {
