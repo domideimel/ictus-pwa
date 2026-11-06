@@ -23,6 +23,7 @@ export interface Settings {
   readonly accentVolume: number;
   readonly beatVolume: number;
   readonly subdivisionVolume: number;
+  readonly polyVolume: number;
   readonly vibration: boolean;
   readonly keepAwake: boolean;
   readonly pedalMode: PedalMode;
@@ -42,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accentVolume: 1,
   beatVolume: 0.8,
   subdivisionVolume: 0.5,
+  polyVolume: 0.9,
   vibration: true,
   keepAwake: true,
   pedalMode: 'tapAndStartStop',

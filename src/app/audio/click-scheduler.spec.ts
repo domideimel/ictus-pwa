@@ -15,6 +15,7 @@ const base: ClickParams = {
   accentVolume: 1,
   beatVolume: 0.8,
   subdivisionVolume: 0.5,
+  polyVolume: 0.9,
 };
 
 /** Runs the scheduler in 25 ms steps, like the ticker worker does. */
@@ -105,6 +106,31 @@ describe('ClickScheduler', () => {
     expect(times(run(1.99, { polyrhythm: '3:2' }).clicks, 'poly')).toEqual(
       [0, 1 / 3, 2 / 3, 1, 4 / 3, 5 / 3].map((t) => expect.closeTo(t, 9)),
     );
+  });
+
+  it('spaces 4 against 3 across the bar line', () => {
+    expect(times(run(2.99, { polyrhythm: '4:3' }).clicks, 'poly')).toEqual(
+      [0, 0.375, 0.75, 1.125, 1.5, 1.875, 2.25, 2.625].map((t) => expect.closeTo(t, 9)),
+    );
+  });
+
+  it('keeps the polyrhythm on the beat when the tempo changes', () => {
+    const scheduler = new ClickScheduler(0);
+    const poly: number[] = [];
+    for (let t = 0.025; t <= 1.5; t += 0.025) {
+      const params: ClickParams = { ...base, polyrhythm: '3:2', bpm: t < 0.9 ? 120 : 60 };
+      poly.push(...times(scheduler.advance(t, params).clicks, 'poly'));
+    }
+    // 120 BPM for beats 1-2, then 60 BPM: the next cycle starts exactly on beat 3 at 1 s.
+    expect(poly).toEqual([0, 1 / 3, 2 / 3, 1, 1 + 2 / 3].map((t) => expect.closeTo(t, 9)));
+  });
+
+  it('plays the polyrhythm through muted beats but not in a gap bar', () => {
+    const levels = [BeatLevel.Accent, BeatLevel.Mute, BeatLevel.Normal, BeatLevel.Normal];
+    expect(times(run(0.99, { polyrhythm: '3:2', levels }).clicks, 'poly')).toHaveLength(3);
+    const gap = { enabled: true, play: 1, mute: 1 };
+    const poly = times(run(3.99, { polyrhythm: '3:2', gap }).clicks, 'poly');
+    expect(poly.every((t) => t < 2)).toBe(true);
   });
 
   it('silences every second bar of a 1 + 1 gap click', () => {

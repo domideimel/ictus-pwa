@@ -181,6 +181,7 @@ export const MetronomeStore = signalStore(
           accentVolume: _settings.accentVolume(),
           beatVolume: _settings.beatVolume(),
           subdivisionVolume: _settings.subdivisionVolume(),
+          polyVolume: _settings.polyVolume(),
         };
       }),
     };

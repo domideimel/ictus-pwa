@@ -38,6 +38,8 @@ export class MetronomeEngine {
     const context = sharedAudioContext();
     this.context = context;
     if (context.state !== 'running') await context.resume();
+    // A second start while the context was resuming may have won the race.
+    if (this.scheduler) return;
     this.prepareBuffers(context);
     this.scheduler = new ClickScheduler(context.currentTime + START_DELAY);
     this.pendingBeats = [];

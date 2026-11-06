@@ -25,6 +25,7 @@ export interface ClickParams {
   readonly accentVolume: number;
   readonly beatVolume: number;
   readonly subdivisionVolume: number;
+  readonly polyVolume: number;
 }
 
 export interface ScheduledClick {
@@ -50,9 +51,6 @@ export class ClickScheduler {
   private subIndex = 0;
   private bar = 0;
   private beatsSinceStart = 0;
-  private polyRemaining = 0;
-  private polyInterval = 0;
-  private nextPoly = 0;
 
   constructor(startTime: number) {
     this.nextTick = startTime;
@@ -65,13 +63,7 @@ export class ClickScheduler {
   ): { clicks: ScheduledClick[]; beats: ScheduledBeat[] } {
     const clicks: ScheduledClick[] = [];
     const beats: ScheduledBeat[] = [];
-    for (;;) {
-      const polyDue = this.polyRemaining > 0 && this.nextPoly < this.nextTick;
-      const next = polyDue ? this.nextPoly : this.nextTick;
-      if (next >= until) break;
-      if (polyDue) this.polyTick(params, clicks);
-      else this.tick(params, clicks, beats);
-    }
+    while (this.nextTick < until) this.tick(params, clicks, beats);
     return { clicks, beats };
   }
 
@@ -94,7 +86,8 @@ export class ClickScheduler {
     const muted = level === BeatLevel.Mute || params.silent || isGapBar(params.gap, this.bar);
 
     if (this.subIndex === 0) {
-      this.startPolyCycleIfNeeded(beatSeconds, params.polyrhythm, time);
+      if (!params.silent && !isGapBar(params.gap, this.bar))
+        this.polyClicks(params, time, beatSeconds, clicks);
       this.beatsSinceStart += 1;
       beats.push({ time, index: this.beatIndex, bar: this.bar });
       if (!muted) {
@@ -120,24 +113,25 @@ export class ClickScheduler {
     return 2 * straight * (this.subIndex % 2 === 0 ? swing : 1 - swing);
   }
 
-  /** Every `beats` beats, the polyrhythm's clicks are spread evenly over that span. */
-  private startPolyCycleIfNeeded(beatSeconds: number, polyrhythm: Polyrhythm, time: number): void {
-    const cycle = polyrhythmCycle(polyrhythm);
-    if (!cycle) {
-      this.polyRemaining = 0;
-      return;
+  /**
+   * The polyrhythm voice spreads `clicks` even clicks over `beats` beats, counted from the first beat.
+   * Each beat schedules the clicks that fall inside it at that beat's tempo, so the voice stays locked
+   * to the beat when the tempo changes and stops on the next beat when it is switched off.
+   */
+  private polyClicks(
+    params: ClickParams,
+    beatTime: number,
+    beatSeconds: number,
+    clicks: ScheduledClick[],
+  ): void {
+    const cycle = polyrhythmCycle(params.polyrhythm);
+    if (!cycle) return;
+    const position = this.beatsSinceStart % cycle.beats;
+    for (let k = 0; k < cycle.clicks; k++) {
+      // Position of click k within the cycle, in beats; integer arithmetic keeps 0, 1, 2… exact.
+      const offset = (k * cycle.beats) / cycle.clicks - position;
+      if (offset >= 0 && offset < 1)
+        clicks.push({ time: beatTime + offset * beatSeconds, kind: 'poly', gain: params.polyVolume });
     }
-    if (this.beatsSinceStart % cycle.beats !== 0) return;
-    this.polyRemaining = cycle.clicks;
-    this.polyInterval = (beatSeconds * cycle.beats) / cycle.clicks;
-    this.nextPoly = time;
-  }
-
-  private polyTick(params: ClickParams, clicks: ScheduledClick[]): void {
-    const time = this.nextPoly;
-    this.polyRemaining -= 1;
-    this.nextPoly += this.polyInterval;
-    if (params.silent || isGapBar(params.gap, this.bar)) return;
-    clicks.push({ time, kind: 'poly', gain: params.beatVolume });
   }
 }

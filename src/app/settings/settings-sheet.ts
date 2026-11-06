@@ -132,7 +132,12 @@ export class SettingsSheet {
   protected readonly settingsForm = form(this.store.editable, (path) => {
     min(path.referencePitch, REFERENCE_PITCH_RANGE.min);
     max(path.referencePitch, REFERENCE_PITCH_RANGE.max);
-    for (const volume of [path.accentVolume, path.beatVolume, path.subdivisionVolume]) {
+    for (const volume of [
+      path.accentVolume,
+      path.beatVolume,
+      path.subdivisionVolume,
+      path.polyVolume,
+    ]) {
       min(volume, 0);
       max(volume, 1);
     }
@@ -156,5 +161,6 @@ export class SettingsSheet {
     { label: 'Accent', field: this.settingsForm.accentVolume },
     { label: 'Beat', field: this.settingsForm.beatVolume },
     { label: 'Subdivision', field: this.settingsForm.subdivisionVolume },
+    { label: 'Polyrhythm', field: this.settingsForm.polyVolume },
   ];
 }
