@@ -2,20 +2,26 @@ import {
   BEAT_RANGE,
   BeatLevel,
   QUICK_PICKS,
-  SUBDIVISIONS,
+  beatLengths,
+  canCountInGroups,
   canSwing,
   clamp,
   defaultGrouping,
   defaultLevels,
+  durationSymbol,
+  durationTitle,
   groupStarts,
   groupingOptions,
   isValidSignature,
+  keepNoteValue,
   levelTitle,
   nextLevel,
   sameSignature,
   signatureLabel,
   subdivisionInfo,
+  subdivisionOptions,
   tempoMarking,
+  tempoUnits,
 } from './meter';
 
 describe('time signatures', () => {
@@ -92,19 +98,94 @@ describe('groupings', () => {
   });
 });
 
+describe('counting', () => {
+  it('counts every note, or the groups of a compound or odd meter', () => {
+    const elevenEight = { beats: 11, unit: 8 };
+    expect(beatLengths(elevenEight, [3, 3, 3, 2], 'unit')).toEqual(Array(11).fill(1));
+    expect(beatLengths(elevenEight, [3, 3, 3, 2], 'group')).toEqual([3, 3, 3, 2]);
+    // Simple meters have no groups to count.
+    expect(canCountInGroups({ beats: 4, unit: 4 }, [4])).toBe(false);
+    expect(beatLengths({ beats: 4, unit: 4 }, [4], 'group')).toEqual([1, 1, 1, 1]);
+  });
+
+  it('counts the BPM in even groups, in notes when groups are uneven', () => {
+    expect(tempoUnits([1, 1, 1])).toBe(1);
+    expect(tempoUnits([3, 3])).toBe(3);
+    expect(tempoUnits([2, 2, 2])).toBe(2);
+    expect(tempoUnits([3, 3, 3, 2])).toBe(1);
+    expect(tempoUnits([])).toBe(1);
+  });
+
+  it('names durations as single or dotted notes', () => {
+    expect(durationSymbol(1, 4)).toBe('♩');
+    expect(durationSymbol(1, 8)).toBe('♪');
+    expect(durationSymbol(2, 8)).toBe('♩');
+    expect(durationSymbol(3, 8)).toBe('♩.');
+    expect(durationSymbol(3, 16)).toBe('♪.');
+    expect(durationTitle(3, 8)).toBe('dotted quarter');
+    expect(durationTitle(2, 16)).toBe('eighth');
+    expect(durationTitle(1, 2)).toBe('half');
+  });
+});
+
 describe('subdivisions', () => {
-  it('describes quarter to sextuplet', () => {
-    expect(SUBDIVISIONS.map((info) => info.value)).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(subdivisionInfo(3)).toEqual(expect.objectContaining({ title: 'Triplet', tuplet: 3 }));
-    expect(subdivisionInfo(1).tuplet).toBeUndefined();
+  const titles = (unit: number, lengths: number[]): string[] =>
+    subdivisionOptions(unit, lengths).map((info) => info.title);
+
+  it('describes quarter to sextuplet in 4/4', () => {
+    expect(subdivisionOptions(4, [1, 1, 1, 1]).map((info) => info.value)).toEqual([
+      1, 2, 3, 4, 5, 6,
+    ]);
+    expect(titles(4, [1])).toEqual([
+      'Quarter',
+      'Eighth',
+      'Triplet',
+      '16th',
+      'Quintuplet',
+      'Sextuplet',
+    ]);
+    expect(subdivisionInfo(3, 4, [1])).toEqual(expect.objectContaining({ tuplet: 3 }));
+    expect(subdivisionInfo(1, 4, [1]).tuplet).toBeUndefined();
   });
 
-  it('falls back to quarters for unknown values', () => {
-    expect(subdivisionInfo(9 as never).value).toBe(1);
+  it('names the notes that actually play in other meters', () => {
+    expect(titles(8, Array(11).fill(1)).slice(0, 4)).toEqual(['Eighth', '16th', 'Triplet', '32nd']);
+    expect(subdivisionInfo(1, 8, [1]).symbol).toBe('♪');
+    expect(subdivisionInfo(2, 8, [1]).symbol).toBe('♬');
+    expect(titles(2, [1, 1]).slice(0, 4)).toEqual(['Half', 'Quarter', 'Triplet', 'Eighth']);
   });
 
-  it('swings only eighths and sixteenths', () => {
-    expect([1, 2, 3, 4, 5, 6].filter((value) => canSwing(value as never))).toEqual([2, 4]);
+  it('offers the groups alone when counting in groups', () => {
+    expect(titles(8, [3, 3, 3, 2])).toEqual([
+      'Beat',
+      'Eighth',
+      '16th',
+      'Triplet',
+      '32nd',
+      'Sextuplet',
+    ]);
+    expect(subdivisionInfo(0, 8, [3, 3, 3, 2]).symbol).toBe('♩.♩');
+    expect(subdivisionInfo(0, 8, [3, 3]).symbol).toBe('♩.');
+  });
+
+  it('falls back to the plain note for values the meter does not offer', () => {
+    expect(subdivisionInfo(9 as never, 4, [1]).value).toBe(1);
+    expect(subdivisionInfo(0, 4, [1, 1]).value).toBe(1);
+    expect(subdivisionInfo(5, 8, [3, 2]).value).toBe(1);
+  });
+
+  it('keeps the note value when the meter changes', () => {
+    expect(keepNoteValue(2, 4, 8)).toBe(1); // eighths stay eighths
+    expect(keepNoteValue(4, 4, 8)).toBe(2); // sixteenths stay sixteenths
+    expect(keepNoteValue(1, 8, 4)).toBe(2); // and back
+    expect(keepNoteValue(1, 4, 8)).toBe(1); // quarters don't fit 11/8: plain eighths
+    expect(keepNoteValue(1, 8, 8)).toBe(1);
+    expect(keepNoteValue(3, 4, 8)).toBe(3);
+    expect(keepNoteValue(0, 8, 8)).toBe(1);
+  });
+
+  it('swings only pairs of clicks', () => {
+    expect([0, 1, 2, 3, 4, 5, 6].filter((value) => canSwing(value as never))).toEqual([2, 4]);
   });
 });
 

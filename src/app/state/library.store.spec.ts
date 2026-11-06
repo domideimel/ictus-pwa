@@ -8,6 +8,7 @@ const setup: MetronomeSetup = {
   bpm: 90,
   timeSignature: { beats: 4, unit: 4 },
   grouping: [4],
+  pulse: 'unit',
   levels: defaultLevels(4),
   subdivision: 1,
   swing: 0.5,

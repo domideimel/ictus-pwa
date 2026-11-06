@@ -7,9 +7,14 @@ import type { ClickKind } from './click-synth';
 export interface ClickParams {
   readonly bpm: number;
   readonly levels: readonly BeatLevel[];
+  /** Length of each count in notes of the time signature; uneven when counting 11/8 as 3+3+3+2. */
+  readonly beatLengths: readonly number[];
+  /** Notes of the time signature the BPM counts, e.g. 3 for ♩. = BPM in 6/8 counted in two. */
+  readonly tempoUnits: number;
   readonly groupStarts: ReadonlySet<number>;
+  /** Clicks per note of the time signature; 0 clicks only on the counts. */
   readonly subdivision: number;
-  /** Share of a pair of eighths/sixteenths taken by the first note: 0.5 straight, 0.667 triplet swing. */
+  /** Share of a pair of subdivision clicks taken by the first: 0.5 straight, 0.667 triplet swing. */
   readonly swing: number;
   readonly gap: GapClick;
   readonly trainer: SpeedTrainer;
@@ -62,9 +67,9 @@ export class ClickScheduler {
   }
 
   private tick(params: ClickParams, clicks: ScheduledClick[], beats: ScheduledBeat[]): void {
-    const subdivisions = Math.max(1, params.subdivision);
-    const beatCount = Math.max(1, Math.min(16, params.levels.length));
-    if (this.subIndex >= subdivisions) {
+    const lengths = params.beatLengths.length > 0 ? params.beatLengths : [1];
+    const beatCount = Math.min(16, lengths.length);
+    if (this.subIndex >= clicksInBeat(lengths[this.beatIndex] ?? 1, params.subdivision)) {
       this.subIndex = 0;
       this.beatIndex += 1;
     }
@@ -74,7 +79,10 @@ export class ClickScheduler {
     }
 
     const bpm = trainerTempo(params.bpm, this.bar, params.trainer);
-    const beatSeconds = 60 / Math.max(bpm, 1);
+    const unitSeconds = 60 / Math.max(bpm, 1) / Math.max(params.tempoUnits, 1);
+    const length = lengths[this.beatIndex] ?? 1;
+    const beatSeconds = length * unitSeconds;
+    const subdivisions = clicksInBeat(length, params.subdivision);
     const level = params.levels[this.beatIndex] ?? BeatLevel.Normal;
     const time = this.nextTick;
     const muted = level === BeatLevel.Mute || params.silent || isGapBar(params.gap, this.bar);
@@ -96,15 +104,19 @@ export class ClickScheduler {
       clicks.push({ time, kind: 'subdivision', gain: params.subdivisionVolume });
     }
 
-    this.nextTick += this.tickLength(beatSeconds, subdivisions, params.swing);
+    this.nextTick += this.tickLength(beatSeconds, subdivisions, params);
     this.subIndex += 1;
   }
 
-  /** Straight: beat / subdivisions. Swung pairs: long-short, the pair keeps its total length so nothing drifts. */
-  private tickLength(beatSeconds: number, subdivisions: number, swing: number): number {
+  /**
+   * Straight: beat / clicks. Swung pairs: long-short, the pair keeps its total length so nothing drifts.
+   * Swing needs two or four clicks per note, so pairs never straddle a note, even in a beat of three.
+   */
+  private tickLength(beatSeconds: number, subdivisions: number, params: ClickParams): number {
     const straight = beatSeconds / subdivisions;
-    if ((subdivisions !== 2 && subdivisions !== 4) || swing <= 0.5) return straight;
-    return 2 * straight * (this.subIndex % 2 === 0 ? swing : 1 - swing);
+    if ((params.subdivision !== 2 && params.subdivision !== 4) || params.swing <= 0.5)
+      return straight;
+    return 2 * straight * (this.subIndex % 2 === 0 ? params.swing : 1 - params.swing);
   }
 
   /**
@@ -132,4 +144,9 @@ export class ClickScheduler {
         });
     }
   }
+}
+
+/** A count of `length` notes gets `length × subdivision` clicks, or just one when only the counts play. */
+function clicksInBeat(length: number, subdivision: number): number {
+  return subdivision > 0 ? Math.max(1, length * subdivision) : 1;
 }

@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { canSwing, groupingOptions, signatureLabel, subdivisionInfo } from '../music/meter';
+import { canSwing, groupingOptions, signatureLabel } from '../music/meter';
 import { LibraryStore } from '../state/library.store';
 import { MetronomeStore } from '../state/metronome.store';
 import { SetlistBar } from '../setlists/setlist-bar';
@@ -196,7 +196,7 @@ export class MetronomePanel {
 
   protected readonly swingAvailable = computed(() => canSwing(this.store.subdivision()));
   protected readonly signature = computed(() => signatureLabel(this.store.timeSignature()));
-  protected readonly symbol = computed(() => subdivisionInfo(this.store.subdivision()).symbol);
+  protected readonly symbol = computed(() => this.store.subdivisionInfo().symbol);
 
   /**
    * The dial shrinks to fit whatever rows are showing (setlist, practice chips, grouping, swing);
@@ -209,7 +209,7 @@ export class MetronomePanel {
       (practice.gapClick.enabled || practice.speedTrainer.enabled || practice.polyrhythm !== 'off'
         ? 44
         : 0) +
-      (groupingOptions(this.store.timeSignature()).length > 0 ? 42 : 0) +
+      (groupingOptions(this.store.timeSignature()).length > 0 ? 84 : 0) +
       (this.swingAvailable() ? 44 : 0);
     return Math.min(248, Math.max(140, this.viewport.height() - 640 - optional));
   });

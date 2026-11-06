@@ -1,8 +1,11 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { BeatLevel, levelTitle } from '../music/meter';
+import { BeatLevel, durationTitle, levelTitle } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
 
-/** One dot per beat, in rows of up to eight. Tap to cycle accent → normal → mute; group starts get an amber mark. */
+/**
+ * One dot per beat, in rows of up to eight. Tap to cycle accent → normal → mute; group starts get an amber
+ * mark. Counting uneven groups, the long beats are wider pills so 3+3+3+2 reads long-long-long-short.
+ */
 @Component({
   selector: 'app-beat-dots',
   template: `
@@ -18,7 +21,7 @@ import { MetronomeStore } from '../state/metronome.store';
             <span
               class="flex items-center justify-center rounded-full tabular transition-colors duration-75 motion-reduce:transition-none"
               [class]="dot.classes"
-              [style.width.px]="size()"
+              [style.width.px]="size() * dot.width"
               [style.height.px]="size()"
               [style.font-size.px]="size() * 0.35"
             >
@@ -49,13 +52,20 @@ export class BeatDots {
   protected readonly rows = computed(() => {
     const playing = this.store.isPlaying() ? this.store.currentBeat() : null;
     const groupStarts = this.store.groupStarts();
+    const lengths = this.store.beatLengths();
+    const shortest = Math.min(...lengths);
+    const uneven = lengths.some((length) => length !== shortest);
+    const unit = this.store.timeSignature().unit;
     const dots = this.store.levels().map((level, index) => {
       const current = playing === index;
+      const length = lengths[index] ?? shortest;
+      const note = uneven ? `, ${durationTitle(length, unit)}` : '';
       return {
         index,
-        label: `Beat ${index + 1}, ${levelTitle(level)}${current ? ', playing' : ''}`,
+        label: `Beat ${index + 1}${note}, ${levelTitle(level)}${current ? ', playing' : ''}`,
         classes: dotClasses(level, current),
         groupStart: groupStarts.has(index),
+        width: uneven ? length / shortest : 1,
       };
     });
     const rows: (typeof dots)[] = [];

@@ -64,7 +64,7 @@ describe('MetronomePanel', () => {
   });
 
   it('shrinks the dial to make room for optional rows', async () => {
-    resize(390, 1000);
+    resize(390, 1100);
     const { fixture, element } = await render(MetronomePanel);
     const dial = (): string => (element.querySelector('app-tempo-dial') as HTMLElement).style.width;
     expect(dial()).toBe('248px');
@@ -78,8 +78,8 @@ describe('MetronomePanel', () => {
     library.setActivePiece({ setlistId: list.id, pieceId: piece.id });
     TestBed.tick();
     await fixture.whenStable();
-    // Setlist bar, practice chips, grouping chips and swing slider.
-    expect(dial()).toBe(`${1000 - 640 - 52 - 44 - 42 - 44}px`);
+    // Setlist bar, practice chips, grouping chips with the count toggle, and swing slider.
+    expect(dial()).toBe(`${1100 - 640 - 52 - 44 - 84 - 44}px`);
 
     resize(390, 600);
     TestBed.resetTestingModule();

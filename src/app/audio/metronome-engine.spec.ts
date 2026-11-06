@@ -10,6 +10,8 @@ import { MetronomeEngine } from './metronome-engine';
 const base: ClickParams = {
   bpm: 120,
   levels: defaultLevels(4),
+  beatLengths: [1, 1, 1, 1],
+  tempoUnits: 1,
   groupStarts: groupStarts([4]),
   subdivision: 1,
   swing: 0.5,
