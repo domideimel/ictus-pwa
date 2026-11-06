@@ -60,3 +60,32 @@ describe('PitchDetector', () => {
     expect(detector.frequency(new Float32Array(4096))).toBeNull();
   });
 });
+
+describe('PitchDetector limits', () => {
+  it('needs at least 256 samples', () => {
+    expect(new PitchDetector(SAMPLE_RATE).frequency(sine(440, [[1, 1]], 255))).toBeNull();
+  });
+
+  it('treats very quiet input as silence', () => {
+    const quiet = sine(440).map((value) => value * 0.001);
+    expect(new PitchDetector(SAMPLE_RATE).frequency(quiet)).toBeNull();
+  });
+
+  it('gives no pitch for noise', () => {
+    let seed = 1;
+    const noise = Float32Array.from({ length: 4096 }, () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed / 2147483647) * 2 - 1;
+    });
+    expect(new PitchDetector(SAMPLE_RATE).frequency(noise)).toBeNull();
+  });
+
+  it('works at 44.1 kHz too', () => {
+    const detector = new PitchDetector(44_100);
+    const samples = Float32Array.from(
+      { length: 4096 },
+      (_, i) => 0.4 * Math.sin((2 * Math.PI * 220 * i) / 44_100),
+    );
+    expect(detector.frequency(samples)).toBeCloseTo(220, 0);
+  });
+});

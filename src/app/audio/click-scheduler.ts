@@ -131,7 +131,11 @@ export class ClickScheduler {
       // Position of click k within the cycle, in beats; integer arithmetic keeps 0, 1, 2… exact.
       const offset = (k * cycle.beats) / cycle.clicks - position;
       if (offset >= 0 && offset < 1)
-        clicks.push({ time: beatTime + offset * beatSeconds, kind: 'poly', gain: params.polyVolume });
+        clicks.push({
+          time: beatTime + offset * beatSeconds,
+          kind: 'poly',
+          gain: params.polyVolume,
+        });
     }
   }
 }
