@@ -3,8 +3,8 @@ import {
   ElementRef,
   afterNextRender,
   input,
+  linkedSignal,
   output,
-  signal,
   viewChild,
 } from '@angular/core';
 import { FormField, form, maxLength, required, submit, validate } from '@angular/forms/signals';
@@ -21,7 +21,8 @@ import { Surface } from '../ui/surface';
       aria-labelledby="name-dialog-title"
       (close)="closed.emit()"
     >
-      <form class="flex flex-col gap-4 p-5" (submit)="save($event)">
+      <!-- novalidate: the form shows its own messages instead of the browser bubble. -->
+      <form class="flex flex-col gap-4 p-5" novalidate (submit)="save($event)">
         <h2 id="name-dialog-title" class="text-center text-[17px] font-semibold">{{ title() }}</h2>
         <label class="flex flex-col gap-1.5 text-sm text-muted">
           Name
@@ -64,7 +65,8 @@ export class NameDialog {
   readonly saved = output<string>();
   readonly closed = output();
 
-  protected readonly model = signal({ name: '' });
+  /** Starts from the suggested name, so it is already in the field when it gets selected. */
+  protected readonly model = linkedSignal(() => ({ name: this.initialName() }));
   protected readonly nameForm = form(this.model, (path) => {
     required(path.name, { message: 'Enter a name.' });
     maxLength(path.name, 60, { message: 'Use at most 60 characters.' });
@@ -84,7 +86,6 @@ export class NameDialog {
 
   constructor() {
     afterNextRender(() => {
-      this.model.set({ name: this.initialName() });
       this.dialog().nativeElement.showModal();
       this.input().nativeElement.select();
     });

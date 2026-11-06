@@ -67,19 +67,24 @@ import { Surface } from '../ui/surface';
       <select
         id="drum-target"
         class="h-11 max-w-[60%] rounded-[10px] border border-stroke bg-surface px-3 text-muted"
-        [value]="targetValue()"
         (change)="setTarget($any($event.target).value)"
       >
-        <option value="average">Average of all lugs</option>
+        <!-- [selected] per option: a select-level [value] runs before an option added in the same
+             change (the locked average) exists, and would show the wrong choice. -->
+        <option value="average" [selected]="targetValue() === 'average'">
+          Average of all lugs
+        </option>
         @if (averageReference(); as average) {
           <option value="lock">Lock current average ({{ average.toFixed(1) }} Hz)</option>
         }
         @if (customTarget(); as custom) {
-          <option value="custom">{{ custom }}</option>
+          <option value="custom" selected>{{ custom }}</option>
         }
         <optgroup label="Note">
           @for (note of targetNotes(); track note.midi) {
-            <option [value]="note.midi">{{ note.label }}</option>
+            <option [value]="note.midi" [selected]="targetValue() === '' + note.midi">
+              {{ note.label }}
+            </option>
           }
         </optgroup>
       </select>
