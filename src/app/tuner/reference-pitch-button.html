@@ -3,7 +3,7 @@
   appSurface
   class="h-11 gap-2 rounded-full px-4 text-15 font-semibold tabular-nums"
   aria-haspopup="dialog"
-  [attr.aria-label]="`Reference pitch A equals ${settings.referencePitch()} hertz, change`"
+  [attr.aria-label]="`Reference pitch: A = ${settings.referencePitch()} Hz`"
   (click)="editing.set(true)"
 >
   A = {{ settings.referencePitch() }} Hz
