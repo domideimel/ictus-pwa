@@ -82,27 +82,39 @@ test('changes the tempo with the nudge buttons, holding, the keyboard and the di
   expect(Number(await tempo(page).getAttribute('aria-valuenow'))).toBeGreaterThan(100);
 });
 
-/** Taps every `ms`; the result allows for the test's own timing jitter on slow runners. */
-const tapEvery = async (page: Page, ms: number, tap: () => Promise<void>): Promise<number> => {
-  for (let i = 0; i < 4; i++) {
-    await tap();
-    await page.waitForTimeout(ms);
-  }
+/**
+ * Taps four times, `ms` apart, from inside the page: Playwright's own round trips on a slow runner
+ * would otherwise add their delay to every gap and lower the tempo.
+ */
+const tapEvery = async (page: Page, ms: number, via: 'button' | 'key'): Promise<number> => {
+  await page.evaluate(
+    async ({ ms, via }) => {
+      const button = [...document.querySelectorAll('button')].find(
+        (candidate) =>
+          (candidate.getAttribute('aria-label') ?? candidate.textContent.trim()) === 'Tap tempo',
+      );
+      for (let i = 0; i < 4; i++) {
+        if (via === 'button') button?.click();
+        else document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 't', bubbles: true }));
+        await new Promise((resolve) => setTimeout(resolve, ms));
+      }
+    },
+    { ms, via },
+  );
   return Number(await tempo(page).getAttribute('aria-valuenow'));
 };
 
 test('taps the tempo with the Tap button', async ({ page }) => {
-  const tap = page.getByRole('button', { name: 'Tap tempo' });
-  const tapped = await tapEvery(page, 500, () => tap.click());
   // 500 ms apart is 120 BPM.
-  expect(tapped).toBeGreaterThan(95);
+  const tapped = await tapEvery(page, 500, 'button');
+  expect(tapped).toBeGreaterThanOrEqual(110);
   expect(tapped).toBeLessThanOrEqual(121);
 });
 
 test('taps the tempo with the T key', async ({ page }) => {
-  const tapped = await tapEvery(page, 300, () => page.keyboard.press('t'));
   // 300 ms apart is 200 BPM.
-  expect(tapped).toBeGreaterThan(150);
+  const tapped = await tapEvery(page, 300, 'key');
+  expect(tapped).toBeGreaterThanOrEqual(180);
   expect(tapped).toBeLessThanOrEqual(201);
 });
 

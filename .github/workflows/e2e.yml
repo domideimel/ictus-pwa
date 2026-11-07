@@ -84,6 +84,16 @@ jobs:
         if: matrix.browser && steps.browsers.outputs.cache-hit == 'true' && runner.os == 'Linux'
         run: pnpm exec playwright install-deps ${{ matrix.browser }}
 
+      # Firefox on Linux only runs its audio clock with a sound server, and the runners have none.
+      - name: Sound server for Firefox
+        if: matrix.browser == 'firefox' && runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=e2e
+          pactl set-default-sink e2e
+
       - name: Build
         run: pnpm build
 
