@@ -52,7 +52,8 @@ function installStandIns(): void {
   // The tone's own audio context starts on the first press, a user gesture in every browser.
   const unlock = (): void => {
     context ??= new AudioContext();
-    void context.resume();
+    // Rejects if the page navigates away first (a reload in a test); nothing to do then.
+    context.resume().catch(() => undefined);
   };
   window.addEventListener('pointerdown', unlock, { capture: true });
   window.addEventListener('keydown', unlock, { capture: true });

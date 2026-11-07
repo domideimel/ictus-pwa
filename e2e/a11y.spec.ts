@@ -9,6 +9,11 @@ import { expect, test } from './fixtures';
  */
 interface Scenario {
   readonly name: string;
+  /**
+   * Firefox 159 on Linux crashes its content process while axe walks the page with the click
+   * playing or after drum strikes; these states are checked in Chromium and WebKit.
+   */
+  readonly skipFirefox?: true;
   /** Leaves the page in the state to check. */
   readonly setup: (page: Page, app: AppHarness, wide: boolean) => Promise<void>;
 }
@@ -30,6 +35,7 @@ const SCENARIOS: readonly Scenario[] = [
   { name: 'metronome', setup: (page, _, wide) => metronome(page, wide).then(() => undefined) },
   {
     name: 'metronome playing 7/8 in groups with practice tools on',
+    skipFirefox: true,
     setup: async (page, _, wide) => {
       await metronome(page, wide);
       await page.getByRole('button', { name: '7/8', exact: true }).click();
@@ -143,6 +149,7 @@ const SCENARIOS: readonly Scenario[] = [
   },
   {
     name: 'drum tuner with readings',
+    skipFirefox: true,
     setup: async (page, app, wide) => {
       await tuner(page, wide);
       await page.getByRole('radio', { name: 'Drum lugs' }).click();
@@ -170,7 +177,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
     test.use({ colorScheme });
 
     for (const scenario of SCENARIOS) {
-      test(scenario.name, async ({ page, app, wide }) => {
+      test(scenario.name, async ({ page, app, wide, browserName }) => {
+        test.skip(
+          browserName === 'firefox' && scenario.skipFirefox === true,
+          'Firefox crashes under axe in this state; checked in Chromium and WebKit.',
+        );
         await scenario.setup(page, app, wide);
         // Let transitions (needle, switches, pressed states) settle before measuring contrast.
         await page.waitForTimeout(250);
