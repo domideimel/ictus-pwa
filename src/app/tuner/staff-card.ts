@@ -8,8 +8,14 @@ const SPACE = 14;
 const BOTTOM_LINE_Y = 102;
 const NOTE_X = 180;
 
-/** SMuFL code points in Bravura. */
-const GLYPH = { gClef: '', fClef: '', wholeNote: '', sharp: '', flat: '' } as const;
+/** SMuFL code points in Bravura (private-use characters, so written as escapes). */
+const GLYPH = {
+  gClef: '\u{E050}',
+  fClef: '\u{E062}',
+  wholeNote: '\u{E0A2}',
+  sharp: '\u{E262}',
+  flat: '\u{E260}',
+} as const;
 
 const y = (position: number): number => BOTTOM_LINE_Y - (position * SPACE) / 2;
 

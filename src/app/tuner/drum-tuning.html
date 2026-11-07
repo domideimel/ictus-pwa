@@ -1,6 +1,12 @@
 <div class="flex items-center justify-between text-15">
-  <span id="lug-count-label">Lugs</span>
-  <app-number-stepper label="Lugs" [formField]="lugForm.drumLugs" />
+  <span>Lugs</span>
+  <app-number-stepper
+    label="Lugs"
+    [min]="lugRange.min"
+    [max]="lugRange.max"
+    [value]="settings.drumLugs()"
+    (valueChange)="settings.update({ drumLugs: $event })"
+  />
 </div>
 
 <div class="relative mx-auto aspect-square w-full max-w-85">

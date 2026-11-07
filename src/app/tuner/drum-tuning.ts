@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, linkedSignal, untracked } from '@angular/core';
-import { FormField, form, max, min } from '@angular/forms/signals';
 import {
   LUG_RANGE,
   deviations,
@@ -17,7 +16,7 @@ import { Surface } from '../ui/surface';
 /** Tap the head about 2–3 cm in front of each lug; every strike is stored for the highlighted lug. */
 @Component({
   selector: 'app-drum-tuning',
-  imports: [NumberStepper, Surface, FormField],
+  imports: [NumberStepper, Surface],
   templateUrl: './drum-tuning.html',
   host: { class: 'flex flex-col gap-5' },
 })
@@ -25,10 +24,7 @@ export class DrumTuning {
   private readonly tuner = inject(TunerStore);
   protected readonly settings = inject(SettingsStore);
 
-  protected readonly lugForm = form(this.settings.editable, (path) => {
-    min(path.drumLugs, LUG_RANGE.min);
-    max(path.drumLugs, LUG_RANGE.max);
-  });
+  protected readonly lugRange = LUG_RANGE;
 
   /** Readings start over whenever the lug count changes; the target is kept. */
   protected readonly tuning = linkedSignal<number, ReturnType<typeof emptyTuning>>({

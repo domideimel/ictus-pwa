@@ -29,7 +29,7 @@ import {
   tempoMarking,
   tempoUnits,
 } from '../music/meter';
-import type { GapClick, Polyrhythm, RestCounter, SpeedTrainer } from '../music/practice';
+import type { GapClick, Polyrhythm, RestState, SpeedTrainer } from '../music/practice';
 import {
   DEFAULT_GAP_CLICK,
   DEFAULT_SPEED_TRAINER,
@@ -180,7 +180,7 @@ export const MetronomeStore = signalStore(
     _playing: signal(false),
     _beat: signal<number | null>(null),
     _bar: signal(0),
-    _rest: signal<RestCounter | null>(null),
+    _rest: signal<RestState | null>(null),
   })),
   withComputed(({ setup, practice, _settings, _playing, _beat, _bar, _rest }) => {
     const bpm = computed(() => setup().bpm);
@@ -328,7 +328,7 @@ export const MetronomeStore = signalStore(
     };
 
     /** The downbeat after the last rest bar is the entrance: stop and signal it. */
-    const finishRest = (rest: RestCounter): void => {
+    const finishRest = (rest: RestState): void => {
       stop();
       store._rest.set({ ...rest, finished: true });
       vibrate([60, 40, 60]);

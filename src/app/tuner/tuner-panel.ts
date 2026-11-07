@@ -1,5 +1,4 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { FormField, form } from '@angular/forms/signals';
 import type { TunerMode } from '../state/settings.store';
 import { SettingsStore } from '../state/settings.store';
 import { TunerStore } from '../state/tuner.store';
@@ -31,7 +30,6 @@ export class TunerToggle {
   imports: [
     CentsMeter,
     DrumTuning,
-    FormField,
     FrequencyLabel,
     NoteName,
     ReferencePitchButton,
@@ -53,7 +51,6 @@ export class TunerPanel {
     { value: 'chromatic', label: 'Chromatic' },
     { value: 'drum', label: 'Drum lugs' },
   ];
-  protected readonly modeForm = form(this.settings.editable);
   protected readonly mode = computed(() => this.settings.tunerMode());
 
   /**
@@ -67,4 +64,8 @@ export class TunerPanel {
       return 'Paused while the click plays. Stop the metronome to keep tuning.';
     return null;
   });
+
+  protected setMode(tunerMode: TunerMode): void {
+    this.settings.update({ tunerMode });
+  }
 }

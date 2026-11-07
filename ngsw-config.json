@@ -10,7 +10,6 @@
           "/icons/icon.svg",
           "/fonts/Bravura.otf",
           "/media/*.woff2",
-          "/index.csr.html",
           "/index.html",
           "/manifest.webmanifest",
           "/*.css",
@@ -23,7 +22,7 @@
       "installMode": "lazy",
       "updateMode": "prefetch",
       "resources": {
-        "files": ["/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"]
+        "files": ["/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|ttf|woff|woff2)"]
       }
     }
   ]

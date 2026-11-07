@@ -10,7 +10,12 @@
         <app-tuner-toggle class="w-40" />
       </div>
     </header>
-    <app-segmented-pills label="Tuner mode" [options]="modes" [formField]="modeForm.tunerMode" />
+    <app-segmented-pills
+      label="Tuner mode"
+      [options]="modes"
+      [value]="mode()"
+      (valueChange)="setMode($event)"
+    />
     @if (mode() === 'chromatic') {
       <div class="flex flex-col items-center gap-4">
         <app-staff-card class="w-full" />
@@ -39,7 +44,8 @@
     class="mx-5 mt-3"
     label="Tuner mode"
     [options]="modes"
-    [formField]="modeForm.tunerMode"
+    [value]="mode()"
+    (valueChange)="setMode($event)"
   />
 
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">

@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { canSwing, groupingOptions, signatureLabel } from '../music/meter';
 import { LibraryStore } from '../state/library.store';
+import { clamp } from '../shared/numbers';
 import { MetronomeStore } from '../state/metronome.store';
 import { SetlistBar } from '../setlists/setlist-bar';
 import { SetlistSheet } from '../setlists/setlist-sheet';
@@ -17,6 +18,16 @@ import { SubdivisionPicker } from './subdivision-picker';
 import { SwingSlider } from './swing-slider';
 import { TempoDial } from './tempo-dial';
 import { TimeSignatureChips } from './time-signature-chips';
+
+/** Height of the phone screen around the dial: header, beats, meter, subdivision, tap row and tabs. */
+const PHONE_FIXED_HEIGHT = 640;
+/** Rows that only show up sometimes, each taking this much height from the dial. */
+const SETLIST_BAR_HEIGHT = 52;
+const PRACTICE_CHIPS_HEIGHT = 44;
+const GROUPING_ROWS_HEIGHT = 84;
+const SWING_SLIDER_HEIGHT = 44;
+/** The dial's size range on phones; below the smallest the screen scrolls instead. */
+const PHONE_DIAL = { min: 140, max: 248 } as const;
 
 /**
  * The whole metronome. Phone: full screen with the tap / start row at the bottom.
@@ -61,14 +72,15 @@ export class MetronomePanel {
    * only below 140 px does the screen scroll.
    */
   protected readonly phoneDial = computed(() => {
-    const practice = this.store.practice();
     const optional =
-      (this.library.activePosition() ? 52 : 0) +
-      (practice.gapClick.enabled || practice.speedTrainer.enabled || practice.polyrhythm !== 'off'
-        ? 44
-        : 0) +
-      (groupingOptions(this.store.timeSignature()).length > 0 ? 84 : 0) +
-      (this.swingAvailable() ? 44 : 0);
-    return Math.min(248, Math.max(140, this.viewport.height() - 640 - optional));
+      (this.library.activePosition() ? SETLIST_BAR_HEIGHT : 0) +
+      (this.store.activePractice().length > 0 ? PRACTICE_CHIPS_HEIGHT : 0) +
+      (groupingOptions(this.store.timeSignature()).length > 0 ? GROUPING_ROWS_HEIGHT : 0) +
+      (this.swingAvailable() ? SWING_SLIDER_HEIGHT : 0);
+    return clamp(
+      this.viewport.height() - PHONE_FIXED_HEIGHT - optional,
+      PHONE_DIAL.min,
+      PHONE_DIAL.max,
+    );
   });
 }

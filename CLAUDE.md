@@ -21,6 +21,8 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 - It MUST pass all AXE checks.
 - It MUST follow all WCAG AA minimums, including focus management, color contrast, and ARIA attributes.
+- `src/app/a11y.spec.ts` runs axe on every screen and sheet; add new screens and dialogs to it.
+- Colour pairs are checked by `pnpm check:contrast` (`scripts/check-contrast.mjs`); add a pair there when a new colour combination is used.
 
 ## Components
 

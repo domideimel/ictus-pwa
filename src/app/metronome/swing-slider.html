@@ -2,6 +2,7 @@
   >Straight</span
 >
 <input
+  #slider
   type="range"
   class="h-11 min-w-0 flex-1 accent-accent"
   aria-label="Swing"
@@ -10,7 +11,7 @@
   [max]="range.max"
   [value]="store.swing()"
   [attr.aria-valuetext]="valueText()"
-  (input)="store.setSwing(+$any($event.target).value)"
+  (input)="store.setSwing(slider.valueAsNumber)"
 />
 <span aria-hidden="true" [class]="isStraight() ? 'text-muted' : 'font-semibold text-fg'"
   >Swing</span

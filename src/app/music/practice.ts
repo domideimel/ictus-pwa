@@ -53,7 +53,7 @@ export const trainerSummary = (trainer: SpeedTrainer): string =>
   `+${trainer.step} every ${trainer.everyBars} bars → ${trainer.target}`;
 
 /** Active rest counter: counts bars silently (or audibly) and signals the entrance. */
-export interface RestCounter {
+export interface RestState {
   readonly bars: number;
   readonly audible: boolean;
   readonly finished: boolean;
