@@ -222,7 +222,7 @@ describe('TunerToggle', () => {
 describe('ReferencePitchButton', () => {
   it('shows the reference and edits it in a sheet', async () => {
     const { fixture, element } = await render(ReferencePitchButton);
-    const button = byLabel(element, 'Reference pitch A equals 442 hertz, change');
+    const button = byLabel(element, 'Reference pitch: A = 442 Hz');
     expect(button.textContent).toContain('A = 442 Hz');
     await click(fixture, button);
     const dialog = element.querySelector('dialog') as HTMLDialogElement;

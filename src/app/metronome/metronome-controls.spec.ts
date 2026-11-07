@@ -280,9 +280,9 @@ describe('TimeSignatureChips', () => {
       '2+3+2',
       '3+2+2',
     ]);
-    await click(fixture, byLabel(element, 'Grouping 3 plus 2 plus 2'));
+    await click(fixture, byLabel(element, '3+2+2'));
     expect(store.grouping()).toEqual([3, 2, 2]);
-    expect(byLabel(element, 'Grouping 3 plus 2 plus 2').getAttribute('aria-pressed')).toBe('true');
+    expect(byLabel(element, '3+2+2').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('counts odd meters in notes or in groups', async () => {
