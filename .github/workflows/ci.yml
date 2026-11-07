@@ -1,4 +1,4 @@
-# Checks every pull request and every push to main: formatting, ESLint, type-check, unit tests
+# Checks every pull request and every push to main: formatting, ESLint, type-check, colour contrast, unit tests
 # with coverage thresholds, and a production build (strict Angular template checks).
 # Vercel deploys on its own through its Git integration (production from main, previews for PRs).
 name: CI
@@ -43,6 +43,9 @@ jobs:
 
       - name: Type-check
         run: pnpm typecheck
+
+      - name: Colour contrast (WCAG AA)
+        run: pnpm check:contrast
 
       - name: Unit tests with coverage
         run: pnpm test:ci

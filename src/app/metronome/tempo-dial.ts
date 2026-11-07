@@ -18,8 +18,7 @@ const SPAN = BPM_RANGE.max - BPM_RANGE.min;
     '[attr.aria-valuemin]': 'min',
     '[attr.aria-valuemax]': 'max',
     '[attr.aria-valuenow]': 'store.bpm()',
-    '[attr.aria-valuetext]':
-      'store.bpm() + " BPM, " + tempoNoteTitle() + " notes, " + store.tempoMarking()',
+    '[attr.aria-valuetext]': 'valueText()',
     '(pointerdown)': 'onPointerDown($event)',
     '(pointermove)': 'onPointerMove($event)',
     '(pointerup)': 'dragAngle = null',
@@ -39,6 +38,9 @@ export class TempoDial {
   );
   protected readonly tempoNoteTitle = computed(() =>
     durationTitle(this.store.tempoUnits(), this.store.timeSignature().unit),
+  );
+  protected readonly valueText = computed(
+    () => `${this.store.bpm()} BPM, ${this.tempoNoteTitle()} notes, ${this.store.tempoMarking()}`,
   );
   protected readonly center = computed(() => this.diameter() / 2);
   protected readonly radius = computed(() => this.diameter() / 2 - 12);
@@ -86,6 +88,7 @@ export class TempoDial {
     if (rounded !== this.store.bpm()) this.store.setBpm(rounded);
   }
 
+  /** Arrows ±1, Page Up/Down ±10, Home and End jump to the ends of the range. */
   protected onKeydown(event: KeyboardEvent): void {
     const deltas: Record<string, number> = {
       ArrowUp: 1,
@@ -96,10 +99,12 @@ export class TempoDial {
       PageDown: -10,
     };
     const delta = deltas[event.key];
-    if (delta === undefined) return;
+    const end = event.key === 'Home' ? BPM_RANGE.min : event.key === 'End' ? BPM_RANGE.max : null;
+    if (delta === undefined && end === null) return;
     event.preventDefault();
     event.stopPropagation();
-    this.store.nudge(delta);
+    if (end === null) this.store.nudge(delta ?? 0);
+    else this.store.setBpm(end);
   }
 
   private angle(event: PointerEvent): number {

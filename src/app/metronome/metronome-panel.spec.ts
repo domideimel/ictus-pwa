@@ -28,7 +28,9 @@ describe('MetronomePanel', () => {
 
   it('shows the phone layout with marking, meter and current tempo', async () => {
     const { element } = await render(MetronomePanel);
-    expect(element.querySelector('h1')?.textContent).toBe('Allegro');
+    expect(element.textContent).toContain('Allegro');
+    // The page around the panel names the screen; the tempo marking is not a heading.
+    expect(element.querySelector('h1')).toBeNull();
     const meter = byLabel(element, 'Current meter and tempo', '[role="group"]');
     expect(meter.textContent.replace(/\s+/g, ' ').trim()).toBe('4/4♩ · 120');
     expect(element.querySelector('section')).toBeNull();

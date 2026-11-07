@@ -22,12 +22,12 @@
           </div>
         </div>
         <app-cents-meter />
-        @if (tuner.microphoneDenied()) {
-          <p class="max-w-sm text-center text-sm text-accent-text">{{ micHelpText }}</p>
-        }
       </div>
     } @else {
       <app-drum-tuning />
+    }
+    @if (notice(); as notice) {
+      <p class="self-center text-center text-sm text-accent-text" role="status">{{ notice }}</p>
     }
   </section>
 } @else {
@@ -50,12 +50,14 @@
         <app-tuning-state-pill class="mt-4" />
         <app-cents-meter class="mt-6" />
         <app-frequency-label class="mt-2" />
-        @if (tuner.microphoneDenied()) {
-          <p class="mt-4 max-w-xs text-center text-sm text-accent-text">{{ micHelpText }}</p>
-        }
       </div>
     } @else {
       <app-drum-tuning class="px-5 py-4" />
+    }
+    @if (notice(); as notice) {
+      <p class="mx-auto max-w-xs px-5 pb-4 text-center text-sm text-accent-text" role="status">
+        {{ notice }}
+      </p>
     }
   </div>
 

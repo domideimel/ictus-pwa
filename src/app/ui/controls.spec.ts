@@ -65,6 +65,10 @@ describe('SegmentedPills', () => {
     const other = key(group, 'Enter');
     expect(other.defaultPrevented).toBe(false);
     expect(fixture.componentInstance.value()).toBe('m');
+    key(group, 'End');
+    expect(fixture.componentInstance.value()).toBe('l');
+    key(group, 'Home');
+    expect(fixture.componentInstance.value()).toBe('s');
   });
 
   it('can be disabled', async () => {
@@ -152,6 +156,14 @@ describe('NumberStepper', () => {
     expect(key(host, 'a').defaultPrevented).toBe(false);
   });
 
+  it('jumps to the limits with Home and End', async () => {
+    const { host, value } = await setup();
+    key(host, 'End');
+    expect(value()).toBe(20);
+    key(host, 'Home');
+    expect(value()).toBe(1);
+  });
+
   it('keeps arrow keys from reaching the page shortcuts', async () => {
     const { host } = await setup();
     const outside = vi.fn();
@@ -182,6 +194,10 @@ describe('NumberStepper', () => {
     const fixture = TestBed.createComponent(Unbounded);
     await fixture.whenStable();
     const host = fixture.nativeElement.querySelector('app-number-stepper') as HTMLElement;
+    // No made-up limits for assistive tech, and no ends to jump to.
+    expect(host.hasAttribute('aria-valuemin')).toBe(false);
+    expect(host.hasAttribute('aria-valuemax')).toBe(false);
+    expect(key(host, 'Home').defaultPrevented).toBe(false);
     key(host, 'ArrowDown');
     expect(fixture.componentInstance.value()).toBe(-1);
     key(host, 'PageUp');

@@ -1,5 +1,6 @@
 import { Component, input, model } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
+import { focusRadio, radioKeyTarget } from './radio-keys';
 
 export interface PillOption<T> {
   readonly value: T;
@@ -31,24 +32,15 @@ export class SegmentedPills<T> implements FormValueControl<T> {
     this.value.set(value);
   }
 
-  /** Arrow keys move the selection, as in a native radio group. */
+  /** Arrow keys move the selection, Home and End jump to the ends, as in a native radio group. */
   protected onKeydown(event: KeyboardEvent): void {
-    const step =
-      event.key === 'ArrowRight' || event.key === 'ArrowDown'
-        ? 1
-        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
-          ? -1
-          : 0;
-    if (step === 0) return;
-    event.preventDefault();
     const options = this.options();
     const index = options.findIndex((option) => option.value === this.value());
-    const next = options[(index + step + options.length) % options.length];
-    if (!next) return;
+    const target = radioKeyTarget(event.key, index, options.length);
+    const next = target === null ? undefined : options[target];
+    if (target === null || !next) return;
+    event.preventDefault();
     this.select(next.value);
-    const buttons = (event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>(
-      'button',
-    );
-    buttons[options.indexOf(next)]?.focus();
+    focusRadio(event, target);
   }
 }

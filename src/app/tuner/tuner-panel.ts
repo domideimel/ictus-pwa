@@ -55,6 +55,16 @@ export class TunerPanel {
   ];
   protected readonly modeForm = form(this.settings.editable);
   protected readonly mode = computed(() => this.settings.tunerMode());
-  protected readonly micHelpText =
-    'Microphone access is off. Allow it for this site in your browser or system settings, then press Start again.';
+
+  /**
+   * Why the tuner hears nothing. The chromatic tuner's state pill already says it is paused for the
+   * click; the drum tuner has no pill, so it says so here.
+   */
+  protected readonly notice = computed(() => {
+    if (this.tuner.microphoneDenied())
+      return 'Microphone access is off. Allow it for this site in your browser or system settings, then press Start again.';
+    if (this.mode() === 'drum' && this.tuner.isPausedForClick())
+      return 'Paused while the click plays. Stop the metronome to keep tuning.';
+    return null;
+  });
 }

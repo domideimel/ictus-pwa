@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit && tsc -p tsconfig.worker.json --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check:contrast": "node scripts/check-contrast.mjs",
     "prepare": "husky"
   },
   "private": true,
@@ -39,6 +40,7 @@
     "@tailwindcss/postcss": "^4.1.12",
     "@vitest/coverage-v8": "5.1.0",
     "angular-eslint": "^22.6.0",
+    "axe-core": "^4.14.0",
     "eslint": "^9.39.5",
     "husky": "^9.1.7",
     "jsdom": "^30.0.0",

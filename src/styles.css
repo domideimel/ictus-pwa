@@ -53,7 +53,7 @@
   --color-fg: #f2f2f0;
   --color-muted: #a1a1a8;
   --color-faint: #8a8a92;
-  --color-ring: #5a5a62;
+  --color-ring: #66666f;
   --color-accent: #f2a33a;
   --color-accent-text: #f2a33a;
   --color-on-accent: #0e0e10;
@@ -74,10 +74,10 @@
     --color-fg: #141416;
     --color-muted: #5f5f66;
     --color-faint: #707077;
-    --color-ring: #a6a6ad;
-    --color-accent: #e08e1f;
-    --color-accent-text: #a9620a;
-    --color-in-tune: #16866f;
+    --color-ring: #8b8b91;
+    --color-accent: #c57d1b;
+    --color-accent-text: #965709;
+    --color-in-tune: #116654;
   }
 }
 

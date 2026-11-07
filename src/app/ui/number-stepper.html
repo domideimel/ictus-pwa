@@ -18,7 +18,7 @@
     appSurface
     class="h-9 min-w-10 rounded-xl px-1.5 text-13 tabular-nums"
     appHoldRepeat
-    [attr.aria-label]="(delta > 0 ? 'Plus ' : 'Minus ') + abs(delta)"
+    [attr.aria-label]="`${delta > 0 ? 'Plus' : 'Minus'} ${abs(delta)}`"
     [disabled]="disabled() || (delta > 0 ? value() >= upper() : value() <= lower())"
     (repeat)="change(delta)"
   >

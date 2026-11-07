@@ -38,7 +38,7 @@
             @for (beat of beats(); track beat) {
               <span
                 class="size-3.5 rounded-full"
-                [class]="store.currentBeat() === beat ? 'bg-accent' : 'bg-stroke'"
+                [class]="store.currentBeat() === beat ? 'bg-accent' : 'bg-ring'"
               ></span>
             }
           </div>

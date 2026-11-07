@@ -219,7 +219,8 @@ describe('SetlistSheet', () => {
     expect(element.querySelector('[aria-label="Delete Piece 1"]')).toBeNull();
     const edit = byLabel(element, 'Edit');
     await click(fixture, edit);
-    expect(edit.getAttribute('aria-pressed')).toBe('true');
+    // The label says what the button does next, so it is not also a toggle.
+    expect(edit.hasAttribute('aria-pressed')).toBe(false);
     expect(edit.textContent.trim()).toBe('Finish');
 
     expect((byLabel(element, 'Move Piece 1 up') as HTMLButtonElement).disabled).toBe(true);

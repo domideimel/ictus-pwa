@@ -30,14 +30,16 @@ export class NoteName {
   });
 }
 
-/** High / in tune / low, with symbol and text so it never relies on colour alone. */
+/**
+ * High / in tune / low, with symbol and text so it never relies on colour alone. The cents change many
+ * times a second, so screen readers are told only when the state itself changes ("High", "In tune").
+ */
 @Component({
   selector: 'app-tuning-state-pill',
   templateUrl: './tuning-state-pill.html',
   host: {
     class:
       'inline-flex h-9 items-center self-center rounded-full px-4 text-base font-bold tabular-nums',
-    role: 'status',
     '[class]': 'state().classes',
   },
 })
@@ -46,19 +48,33 @@ export class TuningStatePill {
 
   protected readonly state = computed(() => {
     const neutral = 'bg-muted/15 text-muted';
-    if (this.tuner.microphoneDenied())
-      return { text: 'Microphone access needed', classes: neutral };
-    if (this.tuner.isPausedForClick())
-      return { text: 'Paused while the click plays', classes: neutral };
+    if (this.tuner.microphoneDenied()) {
+      const text = 'Microphone access needed';
+      return { text, announcement: text, classes: neutral };
+    }
+    if (this.tuner.isPausedForClick()) {
+      const text = 'Paused while the click plays';
+      return { text, announcement: text, classes: neutral };
+    }
     const reading = this.tuner.reading();
-    if (!reading)
-      return { text: this.tuner.isListening() ? 'Listening…' : 'Tuner off', classes: neutral };
+    if (!reading) {
+      const text = this.tuner.isListening() ? 'Listening…' : 'Tuner off';
+      return { text, announcement: text, classes: neutral };
+    }
     const cents = Math.round(reading.cents);
     const signed = cents > 0 ? `+${cents}` : cents < 0 ? `−${-cents}` : '0';
     if (this.tuner.isInTune())
-      return { text: `✓ In tune · ${signed} ¢`, classes: 'bg-in-tune/15 text-in-tune' };
-    const direction = reading.cents > 0 ? '▲ High' : '▼ Low';
-    return { text: `${direction} · ${signed} ¢`, classes: 'bg-accent/15 text-accent-text' };
+      return {
+        text: `✓ In tune · ${signed} ¢`,
+        announcement: 'In tune',
+        classes: 'bg-in-tune/15 text-in-tune',
+      };
+    const high = reading.cents > 0;
+    return {
+      text: `${high ? '▲ High' : '▼ Low'} · ${signed} ¢`,
+      announcement: high ? 'High' : 'Low',
+      classes: 'bg-accent/15 text-accent-text',
+    };
   });
 }
 

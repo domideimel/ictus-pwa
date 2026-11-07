@@ -38,7 +38,7 @@ export class BeatDots {
       const note = uneven ? `, ${durationTitle(length, unit)}` : '';
       return {
         index,
-        label: `Beat ${index + 1}${note}, ${levelTitle(level)}${current ? ', playing' : ''}`,
+        label: `Beat ${index + 1}${note}, ${levelTitle(level)}`,
         classes: dotClasses(level, current),
         groupStart: groupStarts.has(index),
         width: uneven ? length / shortest : 1,

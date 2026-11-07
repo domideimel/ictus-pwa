@@ -50,7 +50,27 @@ describe('NoteName', () => {
 });
 
 describe('TuningStatePill', () => {
-  const text = (element: HTMLElement): string => element.textContent.trim();
+  const text = (element: HTMLElement): string =>
+    element.querySelector('span:not([role])')!.textContent.trim();
+  const announced = (element: HTMLElement): string =>
+    element.querySelector('[role="status"]')!.textContent.trim();
+
+  it('announces only changes of state, not every cent', async () => {
+    const { fixture, element } = await render(TuningStatePill);
+    expect(element.getAttribute('role')).toBeNull();
+    await driver.switchOn();
+    driver.hear(cents(442, 20), cents(442, 20));
+    await fixture.whenStable();
+    expect(text(element)).toBe('▲ High · +20 ¢');
+    expect(announced(element)).toBe('High');
+    driver.hear(cents(442, 24), cents(442, 24), cents(442, 24));
+    await fixture.whenStable();
+    expect(text(element)).not.toBe('▲ High · +20 ¢');
+    expect(announced(element)).toBe('High');
+    driver.hear(null, null, cents(442, 2), cents(442, 2));
+    await fixture.whenStable();
+    expect(announced(element)).toBe('In tune');
+  });
 
   it('walks through off, listening, in tune, high and low', async () => {
     const { fixture, element } = await render(TuningStatePill);
@@ -188,7 +208,7 @@ describe('TunerToggle', () => {
     const { fixture, element } = await render(TunerToggle);
     const button = element.querySelector('button')!;
     expect(button.textContent.trim()).toBe('Start tuner');
-    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(button.hasAttribute('aria-pressed')).toBe(false);
     await click(fixture, button);
     await driver.settle();
     expect(metronome.isPlaying()).toBe(false);
@@ -356,6 +376,29 @@ describe('TunerPanel', () => {
     const { fixture, element } = await render(TunerPanel);
     stubGetUserMedia(() => Promise.reject(new DOMException('no', 'NotAllowedError')));
     await driver.switchOn();
+    await fixture.whenStable();
+    expect(element.textContent).toContain('Microphone access is off.');
+    warn.mockRestore();
+  });
+
+  it('explains a denied microphone and the pause for the click in drum mode too', async () => {
+    settings.update({ tunerMode: 'drum' });
+    const { fixture, element } = await render(TunerPanel);
+    await driver.switchOn();
+    TestBed.inject(MetronomeStore).toggle();
+    await driver.settle();
+    await fixture.whenStable();
+    expect(element.querySelector('[role="status"]')?.textContent).toContain(
+      'Paused while the click plays.',
+    );
+    TestBed.inject(MetronomeStore).stop();
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    tuner.toggle();
+    await driver.settle();
+    stubGetUserMedia(() => Promise.reject(new DOMException('denied', 'NotAllowedError')));
+    await click(fixture, byLabel(element, 'Start tuner'));
+    await driver.settle();
     await fixture.whenStable();
     expect(element.textContent).toContain('Microphone access is off.');
     warn.mockRestore();

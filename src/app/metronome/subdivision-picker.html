@@ -10,6 +10,7 @@
     "
     [attr.aria-checked]="selected"
     [attr.aria-label]="option.title"
+    [tabIndex]="selected ? 0 : -1"
     (click)="store.setSubdivision(option.value)"
   >
     <span class="flex items-start leading-none" aria-hidden="true">
