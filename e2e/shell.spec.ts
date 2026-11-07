@@ -103,19 +103,30 @@ test.describe('offline', () => {
     test.skip(browserName !== 'chromium', 'Service worker caching is checked once, in Chromium.');
     test.setTimeout(60_000);
     await page.goto('/metronome');
-    // Registered once the app is stable (after 30 s at most); then it precaches the app group.
-    await page.waitForFunction(
-      async () => {
-        const names = await caches.keys();
-        const app = names.find((name) => name.endsWith(':app:cache'));
-        return app !== undefined && (await (await caches.open(app)).keys()).length >= 10;
-      },
-      null,
-      { timeout: 45_000, polling: 250 },
-    );
-    // Reloaded online, the page is controlled by the worker.
-    await page.reload();
-    await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+    // Registered once the app is stable (after 30 s at most); active, it precaches the app group.
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await expect
+      .poll(
+        () =>
+          page.evaluate(async () => {
+            const app = (await caches.keys()).find((name) => name.endsWith(':app:cache'));
+            return app ? (await (await caches.open(app)).keys()).length : 0;
+          }),
+        { message: 'files in the app cache', timeout: 30_000 },
+      )
+      .toBeGreaterThanOrEqual(10);
+    // Pages loaded before the worker was active are not controlled until they load again.
+    await expect
+      .poll(
+        async () => {
+          await page.reload();
+          return page.evaluate(() => navigator.serviceWorker.controller !== null);
+        },
+        { message: 'page controlled by the service worker', timeout: 20_000 },
+      )
+      .toBe(true);
     await context.setOffline(true);
     await page.reload();
     await expect(page.getByRole('slider', { name: 'Tempo' })).toBeVisible();
