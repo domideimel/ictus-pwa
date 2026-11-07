@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { getState, patchState, signalStore, withState } from '@ngrx/signals';
-import { withDefaults, withPersistence, writableState } from './storage';
+import { oneOf, withDefaults, withPersistence, writableState } from './storage';
 
 describe('withDefaults', () => {
   const parse = withDefaults({ count: 1, name: 'a', on: false, list: [1] });
@@ -26,6 +26,15 @@ describe('withDefaults', () => {
 
   it('rejects anything that is not an object', () => {
     for (const value of [null, undefined, 3, 'text', [1, 2]]) expect(parse(value)).toBeNull();
+  });
+});
+
+describe('oneOf', () => {
+  it('keeps a known option and falls back otherwise', () => {
+    const sounds = ['click', 'woodblock'] as const;
+    expect(oneOf(sounds, 'woodblock', 'click')).toBe('woodblock');
+    expect(oneOf(sounds, 'bell', 'click')).toBe('click');
+    expect(oneOf(sounds, 3, 'click')).toBe('click');
   });
 });
 

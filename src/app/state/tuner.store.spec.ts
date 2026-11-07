@@ -185,6 +185,57 @@ describe('TunerStore', () => {
     warn.mockRestore();
   });
 
+  it('counts a note as in tune by the whole cents it shows', async () => {
+    tuner.setOnScreen(true);
+    tuner.toggle();
+    await settle();
+    const sharp = 442 * 2 ** (5.4 / 1200);
+    hear(sharp, sharp);
+    expect(Math.round(tuner.reading()?.cents ?? 0)).toBe(5);
+    expect(tuner.isInTune()).toBe(true);
+  });
+
+  it('asks for the microphone once when the tuner flips off and on during the prompt', async () => {
+    let grant: (stream: MediaStream) => void = () => undefined;
+    stubGetUserMedia(() => {
+      requests += 1;
+      return new Promise((resolve) => (grant = resolve));
+    });
+    const visible = (value: boolean): void => {
+      setPageVisible(value);
+      TestBed.tick();
+    };
+    tuner.setOnScreen(true);
+    tuner.toggle();
+    TestBed.tick();
+    visible(false);
+    visible(true);
+    grant(stream);
+    await settle();
+    expect(requests).toBe(1);
+    expect(tuner.isListening()).toBe(true);
+    tuner.toggle();
+    TestBed.tick();
+    expect(stream.stoppedTracks).toBe(1);
+  });
+
+  it('gives iOS back the playback audio session when the start is cancelled', async () => {
+    const session = { type: 'auto' };
+    Object.defineProperty(navigator, 'audioSession', { configurable: true, value: session });
+    let grant: (stream: MediaStream) => void = () => undefined;
+    stubGetUserMedia(() => new Promise((resolve) => (grant = resolve)));
+    tuner.setOnScreen(true);
+    tuner.toggle();
+    TestBed.tick();
+    expect(session.type).toBe('play-and-record');
+    tuner.toggle();
+    TestBed.tick();
+    grant(stream);
+    await settle();
+    expect(session.type).toBe('playback');
+    Reflect.deleteProperty(navigator, 'audioSession');
+  });
+
   it('lets go of the microphone when switched off while it was starting', async () => {
     let grant: (stream: MediaStream) => void = () => undefined;
     stubGetUserMedia(() => new Promise((resolve) => (grant = resolve)));

@@ -63,3 +63,8 @@ export function withDefaults<T extends object>(defaults: T): Parser<T> {
     return merged as T;
   };
 }
+
+/** The stored value when it is one of `options`, else `fallback`: an option a newer or older version knew. */
+export function oneOf<T>(options: readonly T[], value: unknown, fallback: T): T {
+  return options.find((option) => option === value) ?? fallback;
+}

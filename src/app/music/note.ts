@@ -1,4 +1,5 @@
 export type AccidentalStyle = 'sharps' | 'flats';
+export const ACCIDENTAL_STYLES: readonly AccidentalStyle[] = ['sharps', 'flats'];
 export type Accidental = 'natural' | 'sharp' | 'flat';
 
 export const accidentalSymbol = (accidental: Accidental): string =>

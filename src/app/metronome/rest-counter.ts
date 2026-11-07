@@ -20,8 +20,9 @@ export class RestCounter {
   protected readonly bar = computed(() =>
     Math.min(this.store.currentBar() + 1, this.store.rest()?.bars ?? 1),
   );
+  /** One dot per count: 11 in 11/8, four when counting it in groups. */
   protected readonly beats = computed(() =>
-    Array.from({ length: this.store.timeSignature().beats }, (_, i) => i),
+    Array.from({ length: this.store.levels().length }, (_, i) => i),
   );
 
   constructor() {

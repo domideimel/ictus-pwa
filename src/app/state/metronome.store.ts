@@ -17,7 +17,6 @@ import {
   SWING_RANGE,
   beatLengths,
   canCountInGroups,
-  clamp,
   defaultGrouping,
   defaultLevels,
   groupStarts,
@@ -34,12 +33,18 @@ import type { GapClick, Polyrhythm, RestCounter, SpeedTrainer } from '../music/p
 import {
   DEFAULT_GAP_CLICK,
   DEFAULT_SPEED_TRAINER,
+  GAP_BAR_RANGE,
+  POLYRHYTHMS,
+  REST_BAR_RANGE,
+  TRAINER_BAR_RANGE,
+  TRAINER_STEP_RANGE,
   isGapBar,
   trainerTempo,
 } from '../music/practice';
+import { clamp, wholeIn } from '../shared/numbers';
 import { SettingsStore } from './settings.store';
 import type { Parser } from './storage';
-import { withDefaults, withPersistence, writableState } from './storage';
+import { oneOf, withDefaults, withPersistence, writableState } from './storage';
 
 /** What a saved piece stores, and what the metronome screen edits. */
 export interface MetronomeSetup {
@@ -93,6 +98,7 @@ export function sanitizeSetup(setup: MetronomeSetup): MetronomeSetup {
     ? setup.timeSignature
     : DEFAULT_SETUP.timeSignature;
   const grouping =
+    setup.grouping.every((size) => Number.isInteger(size) && size > 0) &&
     setup.grouping.reduce((sum, size) => sum + size, 0) === timeSignature.beats
       ? setup.grouping
       : defaultGrouping(timeSignature);
@@ -104,7 +110,7 @@ export function sanitizeSetup(setup: MetronomeSetup): MetronomeSetup {
       ? setup.levels
       : defaultLevels(lengths.length);
   return {
-    bpm: clamp(Math.round(setup.bpm) || DEFAULT_SETUP.bpm, BPM_RANGE.min, BPM_RANGE.max),
+    bpm: wholeIn(Math.round(setup.bpm) || DEFAULT_SETUP.bpm, BPM_RANGE),
     timeSignature,
     grouping,
     pulse,
@@ -120,6 +126,33 @@ export const parseSetup: Parser<MetronomeSetup> = (value) => {
   return merged ? sanitizeSetup(merged) : null;
 };
 
+/**
+ * Reads saved practice tools. Every nested field is checked too: a trainer saved without a target would
+ * otherwise give the click a tempo of NaN and silence it.
+ */
+export const parsePractice: Parser<PracticeSetup> = (value) => {
+  const merged = withDefaults(DEFAULT_PRACTICE)(value);
+  if (!merged) return null;
+  const gap = withDefaults(DEFAULT_GAP_CLICK)(merged.gapClick) ?? DEFAULT_GAP_CLICK;
+  const trainer = withDefaults(DEFAULT_SPEED_TRAINER)(merged.speedTrainer) ?? DEFAULT_SPEED_TRAINER;
+  return {
+    gapClick: {
+      enabled: gap.enabled,
+      play: wholeIn(gap.play, GAP_BAR_RANGE),
+      mute: wholeIn(gap.mute, GAP_BAR_RANGE),
+    },
+    speedTrainer: {
+      enabled: trainer.enabled,
+      step: wholeIn(trainer.step, TRAINER_STEP_RANGE),
+      everyBars: wholeIn(trainer.everyBars, TRAINER_BAR_RANGE),
+      target: wholeIn(trainer.target, BPM_RANGE),
+    },
+    polyrhythm: oneOf(POLYRHYTHMS, merged.polyrhythm, DEFAULT_PRACTICE.polyrhythm),
+    restBars: wholeIn(merged.restBars, REST_BAR_RANGE),
+    restAudible: merged.restAudible,
+  };
+};
+
 interface MetronomeState {
   readonly setup: MetronomeSetup;
   readonly practice: PracticeSetup;
@@ -130,7 +163,7 @@ const parseState: Parser<MetronomeState> = (value) => {
   const stored = value as Partial<Record<keyof MetronomeState, unknown>>;
   return {
     setup: parseSetup(stored.setup) ?? DEFAULT_SETUP,
-    practice: withDefaults(DEFAULT_PRACTICE)(stored.practice) ?? DEFAULT_PRACTICE,
+    practice: parsePractice(stored.practice) ?? DEFAULT_PRACTICE,
   };
 };
 
@@ -198,7 +231,6 @@ export const MetronomeStore = signalStore(
         return Math.round(trainerTempo(bpm(), _bar(), trainer));
       }),
 
-      /** True while the current bar is a muted bar of the gap click. */
       /** Practice tools that are switched on, in the order the practice sheet lists them. */
       activePractice: computed(() => {
         const { gapClick, polyrhythm, speedTrainer } = practice();
@@ -209,6 +241,7 @@ export const MetronomeStore = signalStore(
         return tools;
       }),
 
+      /** True while the current bar is a muted bar of the gap click. */
       isInGap: computed(() => _playing() && !_rest() && isGapBar(practice().gapClick, _bar())),
 
       /** Practice tools are paused while the rest counter runs. */
@@ -267,7 +300,7 @@ export const MetronomeStore = signalStore(
     };
 
     const setBpm = (bpm: number): void => {
-      patch({ bpm: clamp(Math.round(bpm), BPM_RANGE.min, BPM_RANGE.max) });
+      patch({ bpm: wholeIn(bpm, BPM_RANGE) });
     };
 
     const stop = (): void => {
@@ -289,6 +322,8 @@ export const MetronomeStore = signalStore(
       } catch (error) {
         console.error('Metronome start failed', error);
         store._playing.set(false);
+        // A rest counter with no click behind it would sit on bar 1 forever.
+        store._rest.set(null);
       }
     };
 

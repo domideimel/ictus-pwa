@@ -85,6 +85,46 @@ describe('MetronomeEngine', () => {
     expect(beats.map((beat) => beat.index)).toEqual([0, 1]);
   });
 
+  it('keeps reporting beats from the ticker when no animation frames run (background tab)', async () => {
+    await engine.start();
+    context.currentTime = 0.07;
+    ticker().reply(null);
+    expect(beats).toEqual([{ time: 0.06, index: 0, bar: 0 }]);
+    context.currentTime = 0.6;
+    ticker().reply(null);
+    expect(beats.map((beat) => beat.index)).toEqual([0, 1]);
+  });
+
+  it('reports only the latest of the beats that went by unseen', async () => {
+    // Fast enough that the lookahead holds two beats (0.06 and 0.10 s), then a frame comes late.
+    params = { ...base, bpm: 1500 };
+    await engine.start();
+    context.currentTime = 0.11;
+    flushAnimationFrames();
+    expect(beats).toEqual([{ time: 0.1, index: 1, bar: 0 }]);
+  });
+
+  it('stops asking for animation frames once a reported beat stops the click', async () => {
+    engine = new MetronomeEngine(
+      () => params,
+      () => sound,
+      () => {
+        engine.stop();
+      },
+    );
+    await engine.start();
+    context.currentTime = 0.07;
+    flushAnimationFrames();
+    expect(engine.isRunning).toBe(false);
+    expect(pendingAnimationFrames()).toBe(0);
+  });
+
+  it('plays the click sound when the saved sound is unknown', async () => {
+    sound = 'bell' as ClickSound;
+    await engine.start();
+    expect(context.started[0]?.buffer?.length).toBe(Math.floor(0.04 * 48_000));
+  });
+
   it('allows for output latency when reporting beats', async () => {
     context.outputLatency = 0.05;
     await engine.start();

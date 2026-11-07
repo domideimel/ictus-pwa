@@ -131,6 +131,8 @@ export class FakeWorker {
   static instances: FakeWorker[] = [];
 
   onmessage: ((event: MessageEvent) => void) | null = null;
+  onerror: ((event: ErrorEvent) => void) | null = null;
+  onmessageerror: ((event: MessageEvent) => void) | null = null;
   readonly messages: unknown[] = [];
   terminated = false;
 
@@ -145,6 +147,11 @@ export class FakeWorker {
   /** Sends a message from the worker to the page. */
   reply(data: unknown): void {
     this.onmessage?.(new MessageEvent('message', { data }));
+  }
+
+  /** An uncaught exception inside the worker. */
+  fail(message: string): void {
+    this.onerror?.(new ErrorEvent('error', { message, cancelable: true }));
   }
 
   terminate(): void {

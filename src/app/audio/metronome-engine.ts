@@ -13,7 +13,8 @@ const KINDS: readonly ClickKind[] = ['accent', 'beat', 'subdivision', 'poly'];
 
 /**
  * Plays the click with Web Audio. A worker ticker keeps scheduling ahead even in a background tab;
- * beats are reported once they are actually audible, so the lights match what you hear.
+ * beats are reported once they are actually audible, so the lights match what you hear. Animation
+ * frames report them precisely on screen; the ticker reports them in the background, where frames stop.
  */
 export class MetronomeEngine {
   private context: AudioContext | null = null;
@@ -102,7 +103,9 @@ export class MetronomeEngine {
     const sound = this.sound();
     for (const click of clicks) {
       if (click.gain <= 0) continue;
-      const buffer = this.buffers.get(`${sound}:${click.kind}`);
+      // A sound this version doesn't know (e.g. saved by another version) falls back to the click.
+      const buffer =
+        this.buffers.get(`${sound}:${click.kind}`) ?? this.buffers.get(`click:${click.kind}`);
       if (!buffer) continue;
       const source = context.createBufferSource();
       const gain = context.createGain();
@@ -114,21 +117,28 @@ export class MetronomeEngine {
       source.start(Math.max(click.time, context.currentTime));
     }
     this.pendingBeats.push(...beats);
+    this.reportDue(context);
   }
 
-  /** Compares each scheduled beat with the time that is coming out of the speaker right now. */
   private readonly reportBeats = (): void => {
     const context = this.context;
     if (!this.scheduler || !context) return;
-    const playing = audibleTime(context);
-    let next = this.pendingBeats[0];
-    while (next && next.time <= playing) {
-      this.pendingBeats.shift();
-      this.onBeat(next);
-      next = this.pendingBeats[0];
-    }
-    this.frame = requestAnimationFrame(this.reportBeats);
+    this.reportDue(context);
+    // Reporting a beat may have stopped the click (the end of a rest).
+    if (this.isRunning) this.frame = requestAnimationFrame(this.reportBeats);
   };
+
+  /**
+   * Reports the latest beat that is coming out of the speaker right now. Beats that went by unseen
+   * (a throttled tab) are skipped rather than replayed all at once.
+   */
+  private reportDue(context: AudioContext): void {
+    const playing = audibleTime(context);
+    let latest: ScheduledBeat | undefined;
+    while (this.pendingBeats[0] && this.pendingBeats[0].time <= playing)
+      latest = this.pendingBeats.shift();
+    if (latest) this.onBeat(latest);
+  }
 }
 
 function audibleTime(context: AudioContext): number {

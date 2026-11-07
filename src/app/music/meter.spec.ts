@@ -5,7 +5,6 @@ import {
   beatLengths,
   canCountInGroups,
   canSwing,
-  clamp,
   defaultGrouping,
   defaultLevels,
   durationSymbol,
@@ -232,13 +231,5 @@ describe('tempo markings', () => {
     [300, 'Prestissimo'],
   ])('%i BPM is %s', (bpm, marking) => {
     expect(tempoMarking(bpm)).toBe(marking);
-  });
-});
-
-describe('clamp', () => {
-  it('keeps values inside the range', () => {
-    expect(clamp(5, 1, 10)).toBe(5);
-    expect(clamp(-1, 1, 10)).toBe(1);
-    expect(clamp(11, 1, 10)).toBe(10);
   });
 });

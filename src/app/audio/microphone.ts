@@ -15,18 +15,34 @@ export class Microphone {
   private worker: Worker | null = null;
   private timer: ReturnType<typeof setInterval> | undefined;
   private busy = false;
+  /** The start in progress; a second start while the permission prompt is open waits for it. */
+  private starting: Promise<void> | null = null;
+  /** Bumped by `stop()`, so a start that was still waiting for the stream gives it back. */
+  private session = 0;
 
   constructor(private readonly onPitch: (frequency: number | null) => void) {}
 
   /** Throws a DOMException named NotAllowedError when the user denies access. */
-  async start(): Promise<void> {
-    if (this.stream) return;
+  start(): Promise<void> {
+    if (this.stream) return Promise.resolve();
+    this.starting ??= this.open().finally(() => {
+      this.starting = null;
+    });
+    return this.starting;
+  }
+
+  private async open(): Promise<void> {
+    const session = this.session;
     const context = sharedAudioContext();
     // Raw input: echo cancellation and noise suppression bend the pitch of sustained notes.
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
     });
     if (context.state !== 'running') await context.resume();
+    if (session !== this.session) {
+      stopTracks(stream);
+      return;
+    }
     this.stream = stream;
     this.source = context.createMediaStreamSource(stream);
     this.analyser = context.createAnalyser();
@@ -43,10 +59,11 @@ export class Microphone {
   }
 
   stop(): void {
+    this.session += 1;
     clearInterval(this.timer);
     this.timer = undefined;
     this.source?.disconnect();
-    for (const track of this.stream?.getTracks() ?? []) track.stop();
+    if (this.stream) stopTracks(this.stream);
     this.stream = null;
     this.source = null;
     this.analyser = null;
@@ -65,6 +82,15 @@ export class Microphone {
       this.busy = false;
       if (this.stream) this.onPitch(data);
     };
+    // A failed detection must not leave the worker marked busy, or the tuner would stop updating.
+    worker.onerror = (event) => {
+      event.preventDefault();
+      console.error('Pitch detection failed', event.message);
+      this.busy = false;
+    };
+    worker.onmessageerror = () => {
+      this.busy = false;
+    };
     return worker;
   }
 
@@ -77,4 +103,8 @@ export class Microphone {
     const request: PitchRequest = { sampleRate, samples };
     this.worker.postMessage(request, [samples.buffer]);
   }
+}
+
+function stopTracks(stream: MediaStream): void {
+  for (const track of stream.getTracks()) track.stop();
 }

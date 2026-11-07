@@ -3,7 +3,7 @@ import { form } from '@angular/forms/signals';
 import { BeatLevel } from '../music/meter';
 import { LibraryStore } from './library.store';
 import type { MetronomeSetup } from './metronome.store';
-import { MetronomeStore, sanitizeSetup } from './metronome.store';
+import { MetronomeStore, parseSetup, sanitizeSetup } from './metronome.store';
 import { PitchSmoother } from './tuner.store';
 import { SettingsStore } from './settings.store';
 import { withDefaults } from './storage';
@@ -110,6 +110,61 @@ describe('stores', () => {
   it('keeps defaults when stored settings are corrupt', () => {
     localStorage.setItem('ictus.settings', '{not json');
     expect(TestBed.inject(SettingsStore).referencePitch()).toBe(442);
+  });
+
+  it('repairs stored settings that are out of range or name unknown options', () => {
+    localStorage.setItem(
+      'ictus.settings',
+      JSON.stringify({
+        referencePitch: 999,
+        tolerance: 7,
+        clef: 'alto',
+        accidentals: 'both',
+        clickSound: 'bell',
+        accentVolume: 3,
+        beatVolume: -1,
+        pedalMode: 'scroll',
+        tunerMode: 'strobe',
+        drumLugs: 40,
+      }),
+    );
+    const settings = TestBed.inject(SettingsStore);
+    expect(settings.referencePitch()).toBe(450);
+    expect(settings.tolerance()).toBe(5);
+    expect(settings.clef()).toBe('bass');
+    expect(settings.accidentals()).toBe('flats');
+    expect(settings.clickSound()).toBe('click');
+    expect(settings.accentVolume()).toBe(1);
+    expect(settings.beatVolume()).toBe(0);
+    expect(settings.pedalMode()).toBe('tapAndStartStop');
+    expect(settings.tunerMode()).toBe('chromatic');
+    expect(settings.drumLugs()).toBe(16);
+  });
+
+  it('repairs nested practice tools, so a trainer saved without a target still clicks', () => {
+    localStorage.setItem(
+      'ictus.metronome',
+      JSON.stringify({
+        practice: {
+          gapClick: { enabled: true, play: 0 },
+          speedTrainer: { enabled: true, step: 4, everyBars: 4 },
+          polyrhythm: '7:6',
+          restBars: 5000,
+        },
+      }),
+    );
+    const practice = TestBed.inject(MetronomeStore).practice();
+    expect(practice.gapClick).toEqual({ enabled: true, play: 1, mute: 2 });
+    expect(practice.speedTrainer).toEqual({ enabled: true, step: 4, everyBars: 4, target: 160 });
+    expect(practice.polyrhythm).toBe('off');
+    expect(practice.restBars).toBe(999);
+  });
+
+  it('drops a stored grouping with sizes that are not whole beats', () => {
+    expect(
+      parseSetup({ timeSignature: { beats: 4, unit: 8 }, grouping: [5, -1], pulse: 'group' })
+        ?.grouping,
+    ).toEqual([4]);
   });
 
   it('saves settings edited through the form model', () => {

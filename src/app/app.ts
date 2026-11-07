@@ -70,10 +70,14 @@ export class App {
     });
   }
 
-  /** Space starts/stops, T taps; arrow and page keys are what Bluetooth page-turner pedals send. */
+  /**
+   * Space starts/stops, T taps; arrow and page keys are what Bluetooth page-turner pedals send.
+   * A held key repeats, and must not flip start/stop or tap the tempo up to 300.
+   */
   protected onKeydown(event: KeyboardEvent): void {
     if (
       event.defaultPrevented ||
+      event.repeat ||
       event.metaKey ||
       event.ctrlKey ||
       event.altKey ||
@@ -88,6 +92,7 @@ export class App {
       event.preventDefault();
       this.metronome.toggle();
     } else if (event.key === 't' || event.key === 'T') {
+      if (isInsideDialog(event.target)) return;
       this.metronome.tap();
     } else if (left || right) {
       if (isInsideDialog(event.target) || isRadio(event.target)) return;
