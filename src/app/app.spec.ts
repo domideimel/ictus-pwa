@@ -155,6 +155,29 @@ describe('App', () => {
       expect(metronome.bpm()).toBe(100);
     });
 
+    it('ignores a held key, so Space and T fire once', async () => {
+      await start();
+      key(document.body, ' ');
+      await driver.settle();
+      expect(metronome.isPlaying()).toBe(true);
+      expect(key(document.body, ' ', { repeat: true }).defaultPrevented).toBe(false);
+      key(document.body, 't', { repeat: true });
+      key(document.body, 't', { repeat: true });
+      expect(metronome.isPlaying()).toBe(true);
+      expect(metronome.bpm()).toBe(120);
+    });
+
+    it('does not tap the tempo with T inside a dialog', async () => {
+      const { fixture, element } = await start();
+      await click(fixture, byLabel(element, 'Settings'));
+      const closeButton = byLabel(element.querySelector('app-settings-sheet')!, 'Close');
+      vi.spyOn(performance, 'now').mockReturnValueOnce(0).mockReturnValueOnce(600);
+      key(closeButton, 't');
+      key(closeButton, 't');
+      vi.restoreAllMocks();
+      expect(metronome.bpm()).toBe(120);
+    });
+
     it('taps with the left pedal and starts with the right pedal', async () => {
       await start();
       vi.spyOn(performance, 'now').mockReturnValueOnce(0).mockReturnValueOnce(500);
@@ -218,8 +241,11 @@ describe('App', () => {
       expect(key(closeButton, 'ArrowLeft').defaultPrevented).toBe(false);
       expect(metronome.isPlaying()).toBe(false);
 
+      // A radio group moves its own selection with the arrows; the pedal action doesn't fire.
       const radio = element.querySelector('app-subdivision-picker [role="radio"]') as HTMLElement;
-      expect(key(radio, 'ArrowRight').defaultPrevented).toBe(false);
+      key(radio, 'ArrowRight');
+      expect(metronome.subdivision()).toBe(2);
+      expect(metronome.isPlaying()).toBe(false);
     });
   });
 });

@@ -1,4 +1,4 @@
-import { clamp } from './meter';
+import { wholeIn } from '../shared/numbers';
 
 export const LUG_RANGE = { min: 3, max: 16 } as const;
 
@@ -11,7 +11,7 @@ export interface DrumTuning {
 }
 
 export function emptyTuning(lugCount: number, target: number | null = null): DrumTuning {
-  const count = clamp(Math.round(lugCount), LUG_RANGE.min, LUG_RANGE.max);
+  const count = wholeIn(lugCount, LUG_RANGE);
   return { readings: Array(count).fill(null), currentLug: 0, target };
 }
 

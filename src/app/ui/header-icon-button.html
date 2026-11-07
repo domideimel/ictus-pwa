@@ -1,0 +1,17 @@
+<button
+  type="button"
+  appSurface
+  class="relative size-11 rounded-full"
+  [attr.aria-label]="fullLabel()"
+  (click)="pressed.emit()"
+>
+  <app-icon [name]="icon()" />
+  @if (badge() > 0) {
+    <span
+      class="absolute -end-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent px-1 text-11 font-bold text-on-accent tabular-nums"
+      aria-hidden="true"
+    >
+      {{ badge() }}
+    </span>
+  }
+</button>

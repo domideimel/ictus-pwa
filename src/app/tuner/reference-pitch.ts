@@ -10,36 +10,7 @@ import { Surface } from '../ui/surface';
 @Component({
   selector: 'app-reference-pitch-sheet',
   imports: [Sheet, NumberStepper, Surface, FormField],
-  template: `
-    <app-sheet title="Reference pitch" (closed)="closed.emit()">
-      <form class="flex flex-col items-center gap-5 pb-2" (submit)="$event.preventDefault()">
-        <app-number-stepper
-          class="text-2xl"
-          label="Reference pitch"
-          unit=" Hz"
-          [formField]="pitchForm.referencePitch"
-        />
-        <div
-          class="grid w-full grid-cols-4 gap-2"
-          role="group"
-          aria-label="Common reference pitches"
-        >
-          @for (value of quickPicks; track value) {
-            <button
-              type="button"
-              appSurface
-              pressed
-              class="h-10 rounded-full text-[15px] tabular"
-              [selected]="settings.referencePitch() === value"
-              (click)="settings.update({ referencePitch: value })"
-            >
-              {{ value }}
-            </button>
-          }
-        </div>
-      </form>
-    </app-sheet>
-  `,
+  templateUrl: './reference-pitch-sheet.html',
 })
 export class ReferencePitchSheet {
   protected readonly settings = inject(SettingsStore);
@@ -56,22 +27,7 @@ export class ReferencePitchSheet {
 @Component({
   selector: 'app-reference-pitch-button',
   imports: [Icon, Surface, ReferencePitchSheet],
-  template: `
-    <button
-      type="button"
-      appSurface
-      class="h-11 gap-2 rounded-full px-4 text-[15px] font-semibold tabular"
-      aria-haspopup="dialog"
-      [attr.aria-label]="'Reference pitch A equals ' + settings.referencePitch() + ' hertz, change'"
-      (click)="editing.set(true)"
-    >
-      A = {{ settings.referencePitch() }} Hz
-      <app-icon name="chevron-down" class="text-muted" [size]="14" [strokeWidth]="2.2" />
-    </button>
-    @if (editing()) {
-      <app-reference-pitch-sheet (closed)="editing.set(false)" />
-    }
-  `,
+  templateUrl: './reference-pitch-button.html',
 })
 export class ReferencePitchButton {
   protected readonly settings = inject(SettingsStore);

@@ -45,8 +45,8 @@ export default tseslint.config(
       // Angular's style guide (v20+) names classes without Component / Directive suffixes.
       '@angular-eslint/component-class-suffix': 'off',
       '@angular-eslint/directive-class-suffix': 'off',
-      // Inline templates are preferred for small components.
-      '@angular-eslint/component-max-inline-declarations': 'off',
+      // Every template lives in its own .html file (see CLAUDE.md).
+      '@angular-eslint/component-max-inline-declarations': ['error', { template: 0 }],
     },
   },
   {
@@ -86,6 +86,8 @@ export default tseslint.config(
       '@typescript-eslint/explicit-function-return-type': 'off',
       // Test hosts are created directly, never by selector.
       '@angular-eslint/use-component-selector': 'off',
+      // Test hosts are the one place an inline template is clearer than a file.
+      '@angular-eslint/component-max-inline-declarations': 'off',
     },
   },
 );

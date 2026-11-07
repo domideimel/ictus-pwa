@@ -6,7 +6,7 @@ It installs to the home screen on iPhone, iPad, Android and desktop, works offli
 ## Features
 
 - **Metronome:** tempo dial (20–300 BPM), ±1/±5, tap tempo, accent / normal / mute per beat, time signatures up to 16 beats with 2+2+3-style groupings,
-  subdivisions from quarter to sextuplet, swing for eighths and sixteenths, three click sounds with separate volumes, downbeat flash, vibration (Android).
+  subdivisions from quarter to sextuplet, swing for eighths and sixteenths, three click sounds with separate volumes, vibration (Android).
 - **Practice:** gap click, polyrhythms 3:2 / 4:3 / 5:4, speed trainer, rest counter for long tacets.
 - **Setlists:** save the current setup as a piece, step through pieces on stage.
 - **Tuner:** chromatic tuner with staff (bass clef and flats by default, German note names: H, and B for B♭), cents meter and adjustable reference pitch.
@@ -22,6 +22,7 @@ pnpm test           # unit tests (Vitest), watch mode
 pnpm test:ci        # one run with coverage and thresholds, as in CI
 pnpm lint           # ESLint: typescript-eslint strict + stylistic (type-checked), all angular-eslint rules
 pnpm typecheck      # tsc for app, specs and workers
+pnpm check:contrast # theme colour pairs against WCAG AA, light and dark
 pnpm format         # Prettier; CI runs pnpm format:check
 pnpm build          # production build in dist/ictus-pwa/browser
 ```
@@ -54,8 +55,10 @@ When a new version is deployed, the app offers a **Reload** button.
 - **CI** (`.github/workflows/ci.yml`) runs on every pull request and push to `main`: formatting, ESLint,
   type-check, unit tests with coverage thresholds (summary in the run, report as an artifact) and a production build.
 - **Deploy:** Vercel's Git integration builds every push: `main` goes to production, other branches and
-  pull requests get preview URLs. `vercel.json` adds the fallback to `index.html` (so `/tuner` works on reload)
-  and keeps the service worker files from being cached.
+  pull requests get preview URLs. `vercel.json` adds the fallback to `index.html` (so `/tuner` works on reload),
+  keeps the service worker files from being cached, and sends the security headers: a Content Security Policy
+  that allows only the app's own scripts (critical CSS is not inlined, so `index.html` has no inline script),
+  `Permissions-Policy` limiting the microphone to the app, `nosniff`, a referrer policy and no framing.
 
 ## Structure
 
@@ -64,9 +67,11 @@ When a new version is deployed, the app offers a **Reload** button.
 | `src/app/music`                                               | Pure music logic: meters, groupings, note names, staff placement, practice tools, drum tuning                   |
 | `src/app/audio`                                               | Web Audio click scheduler, click synthesis, YIN pitch detector (in a web worker), microphone                    |
 | `src/app/state`                                               | Signal-based stores, saved to localStorage                                                                      |
+| `src/app/shared`                                              | Small helpers without a domain, e.g. `clamp`                                                                    |
 | `src/app/ui`                                                  | Shared controls: sheet (native `<dialog>`), segmented pills, number stepper, switch (all signal-forms controls) |
 | `src/app/metronome`, `tuner`, `setlists`, `settings`, `pages` | Screens and their components                                                                                    |
-| `src/testing`                                                 | Test fakes and drivers (not part of the app build)                                                              |
+| `src/testing`                                                 | Test fakes, drivers and the axe helper (not part of the app build)                                              |
+| `scripts`                                                     | `check-contrast.mjs`, run in CI                                                                                 |
 
 ## Differences from the native app
 

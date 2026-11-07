@@ -1,0 +1,27 @@
+@for (step of reversedSteps(); track step) {
+  <ng-container *ngTemplateOutlet="button; context: { $implicit: -step }" />
+}
+<span
+  class="min-w-13 text-center text-15 font-semibold tabular-nums whitespace-nowrap"
+  aria-hidden="true"
+>
+  {{ value() }}{{ unit() }}
+</span>
+@for (step of steps(); track step) {
+  <ng-container *ngTemplateOutlet="button; context: { $implicit: step }" />
+}
+
+<ng-template #button let-delta>
+  <button
+    type="button"
+    tabindex="-1"
+    appSurface
+    class="h-9 min-w-10 rounded-xl px-1.5 text-13 tabular-nums"
+    appHoldRepeat
+    [attr.aria-label]="`${delta > 0 ? 'Plus' : 'Minus'} ${abs(delta)}`"
+    [disabled]="disabled() || (delta > 0 ? value() >= upper() : value() <= lower())"
+    (repeat)="change(delta)"
+  >
+    {{ delta > 0 ? `+${delta}` : `−${abs(delta)}` }}
+  </button>
+</ng-template>

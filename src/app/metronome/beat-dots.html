@@ -1,0 +1,23 @@
+@for (row of rows(); track $index) {
+  <div class="flex" [class]="spreadOut() ? 'justify-between px-3' : 'gap-5'">
+    @for (dot of row; track dot.index) {
+      <button
+        type="button"
+        class="flex flex-col items-center gap-1"
+        [attr.aria-label]="dot.label"
+        (click)="store.cycleLevel(dot.index)"
+      >
+        <span
+          class="flex items-center justify-center rounded-full tabular-nums transition-colors duration-75 motion-reduce:transition-none"
+          [class]="dot.classes"
+          [style.width.px]="size() * dot.width"
+          [style.height.px]="size()"
+          [style.font-size.px]="size() * 0.35"
+        >
+          {{ dot.index + 1 }}
+        </span>
+        <span class="size-1.25 rounded-full" [class.bg-accent]="dot.groupStart"></span>
+      </button>
+    }
+  </div>
+}

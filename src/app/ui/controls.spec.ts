@@ -65,6 +65,10 @@ describe('SegmentedPills', () => {
     const other = key(group, 'Enter');
     expect(other.defaultPrevented).toBe(false);
     expect(fixture.componentInstance.value()).toBe('m');
+    key(group, 'End');
+    expect(fixture.componentInstance.value()).toBe('l');
+    key(group, 'Home');
+    expect(fixture.componentInstance.value()).toBe('s');
   });
 
   it('can be disabled', async () => {
@@ -125,7 +129,8 @@ describe('NumberStepper', () => {
     pointer(byLabel(host, 'Plus 10'), 'pointerup');
     await fixture.whenStable();
     expect(value()).toBe(15);
-    byLabel(host, 'Plus 10').click();
+    // The click the browser fires after that press.
+    byLabel(host, 'Plus 10').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
     await fixture.whenStable();
     expect(value()).toBe(15);
     pointer(byLabel(host, 'Plus 10'), 'pointerdown', { button: 0 });
@@ -150,6 +155,14 @@ describe('NumberStepper', () => {
     key(host, 'PageDown');
     expect(value()).toBe(1);
     expect(key(host, 'a').defaultPrevented).toBe(false);
+  });
+
+  it('jumps to the limits with Home and End', async () => {
+    const { host, value } = await setup();
+    key(host, 'End');
+    expect(value()).toBe(20);
+    key(host, 'Home');
+    expect(value()).toBe(1);
   });
 
   it('keeps arrow keys from reaching the page shortcuts', async () => {
@@ -182,6 +195,10 @@ describe('NumberStepper', () => {
     const fixture = TestBed.createComponent(Unbounded);
     await fixture.whenStable();
     const host = fixture.nativeElement.querySelector('app-number-stepper') as HTMLElement;
+    // No made-up limits for assistive tech, and no ends to jump to.
+    expect(host.hasAttribute('aria-valuemin')).toBe(false);
+    expect(host.hasAttribute('aria-valuemax')).toBe(false);
+    expect(key(host, 'Home').defaultPrevented).toBe(false);
     key(host, 'ArrowDown');
     expect(fixture.componentInstance.value()).toBe(-1);
     key(host, 'PageUp');
@@ -254,12 +271,37 @@ describe('HoldRepeat', () => {
     expect(count()).toBe(5);
   });
 
+  /** The click a browser fires after a pointer press counts the presses in `detail`. */
+  const pointerClick = (button: HTMLButtonElement): void => {
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  };
+
   it('does not count the click that follows a press', () => {
     const { button, count } = setup();
     pointer(button, 'pointerdown', { button: 0 });
     pointer(button, 'pointerup');
-    button.click();
+    pointerClick(button);
     expect(count()).toBe(1);
+  });
+
+  it('still counts a keyboard click after a press that slid off the button', () => {
+    const { button, count } = setup();
+    pointer(button, 'pointerdown', { button: 0 });
+    pointer(button, 'pointerleave');
+    button.click();
+    expect(count()).toBe(2);
+  });
+
+  it('stops repeating once the button is disabled at its limit', () => {
+    const { button, count } = setup();
+    pointer(button, 'pointerdown', { button: 0 });
+    vi.advanceTimersByTime(400 + 80);
+    expect(count()).toBe(3);
+    button.disabled = true;
+    vi.advanceTimersByTime(80 * 5);
+    button.disabled = false;
+    vi.advanceTimersByTime(80 * 5);
+    expect(count()).toBe(3);
   });
 
   it('counts keyboard clicks', () => {

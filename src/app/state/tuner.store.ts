@@ -104,9 +104,10 @@ export const TunerStore = signalStore(
       strikeFrequency: computed(() => strike().frequency),
       isPausedForClick: computed(() => onScreen() && switchedOn() && _metronome.isPlaying()),
       reading,
+      /** Judged on the whole cents the display shows, so "+5 ¢" is in tune at ±5 ¢. */
       isInTune: computed(() => {
         const value = reading();
-        return value !== null && Math.abs(value.cents) <= _settings.tolerance();
+        return value !== null && Math.abs(Math.round(value.cents)) <= _settings.tolerance();
       }),
     };
   }),
@@ -153,6 +154,7 @@ export const TunerStore = signalStore(
           patchState(store, { microphoneDenied: false });
           if (!stillWanted()) {
             microphone.stop();
+            setAudioSession('playback');
             return;
           }
           patchState(store, { isListening: true });
@@ -168,8 +170,9 @@ export const TunerStore = signalStore(
 
       _silence(): void {
         wanted = false;
-        if (!store.isListening()) return;
+        // Also cancels a start that is still waiting for the permission prompt.
         microphone.stop();
+        if (!store.isListening()) return;
         smoother.reset();
         patchState(store, { isListening: false, frequency: null });
         setAudioSession('playback');

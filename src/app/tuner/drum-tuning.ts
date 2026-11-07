@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, linkedSignal, untracked } from '@angular/core';
-import { FormField, form, max, min } from '@angular/forms/signals';
 import {
   LUG_RANGE,
   deviations,
@@ -17,126 +16,15 @@ import { Surface } from '../ui/surface';
 /** Tap the head about 2–3 cm in front of each lug; every strike is stored for the highlighted lug. */
 @Component({
   selector: 'app-drum-tuning',
-  imports: [NumberStepper, Surface, FormField],
-  template: `
-    <div class="flex items-center justify-between text-[15px]">
-      <span id="lug-count-label">Lugs</span>
-      <app-number-stepper label="Lugs" [formField]="lugForm.drumLugs" />
-    </div>
-
-    <div class="relative mx-auto aspect-square w-full max-w-[340px]">
-      <div class="absolute rounded-full bg-paper" [style.inset.px]="lugSize() / 2 + 6"></div>
-      <div
-        class="absolute rounded-full border-[6px] border-stroke"
-        [style.inset.px]="lugSize() / 2 - 3"
-      ></div>
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center text-ink"
-        aria-live="polite"
-      >
-        @if (reference(); as reference) {
-          <span class="text-[22px] font-semibold tabular">{{ reference.toFixed(1) }} Hz</span>
-          <span class="text-xs uppercase text-paper-label">{{
-            tuning().target === null ? 'average' : 'target'
-          }}</span>
-        } @else {
-          <span class="text-[22px] font-semibold">Lug {{ tuning().currentLug + 1 }}</span>
-        }
-      </div>
-      @for (lug of lugs(); track lug.index) {
-        <button
-          type="button"
-          class="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-surface font-bold tabular"
-          [class]="lug.classes"
-          [style.left.%]="lug.left"
-          [style.top.%]="lug.top"
-          [style.width.px]="lugSize()"
-          [style.height.px]="lugSize()"
-          [attr.aria-label]="lug.description"
-          [attr.aria-pressed]="lug.current"
-          (click)="selectLug(lug.index)"
-        >
-          {{ lug.label }}
-        </button>
-      }
-    </div>
-
-    <div class="flex items-center justify-between gap-3 text-[15px]">
-      <label for="drum-target">Compare with</label>
-      <select
-        #target
-        id="drum-target"
-        class="h-11 max-w-[60%] rounded-[10px] border border-stroke bg-surface px-3 text-muted"
-        (change)="setTarget(target.value)"
-      >
-        <!-- [selected] per option: a select-level [value] runs before an option added in the same
-             change (the locked average) exists, and would show the wrong choice. -->
-        <option value="average" [selected]="targetValue() === 'average'">
-          Average of all lugs
-        </option>
-        @if (averageReference(); as average) {
-          <option value="lock">Lock current average ({{ average.toFixed(1) }} Hz)</option>
-        }
-        @if (customTarget(); as custom) {
-          <option value="custom" selected>{{ custom }}</option>
-        }
-        <optgroup label="Note">
-          @for (note of targetNotes(); track note.midi) {
-            <option [value]="note.midi" [selected]="targetValue() === '' + note.midi">
-              {{ note.label }}
-            </option>
-          }
-        </optgroup>
-      </select>
-    </div>
-
-    <div class="flex flex-col gap-1.5 text-[15px] tabular" aria-live="polite">
-      @if (advice(); as advice) {
-        @let kind = advice.kind;
-        @switch (kind) {
-          @case ('empty') {
-            <p class="text-muted">
-              Tap in front of lug {{ tuning().currentLug + 1 }}. Each strike is stored and the next
-              lug lights up.
-            </p>
-          }
-          @case ('good') {
-            <p class="font-semibold text-in-tune">
-              ✓ All measured lugs within ±{{ settings.tolerance() }} ¢
-            </p>
-          }
-          @case ('fix') {
-            @for (line of advice.lines; track line) {
-              <p class="text-accent-text">{{ line }}</p>
-            }
-          }
-          @default never;
-        }
-      }
-      @if (spread(); as spread) {
-        <p class="text-muted">Spread {{ spread }} ¢</p>
-      }
-    </div>
-
-    <button
-      type="button"
-      appSurface
-      class="h-12 rounded-xl text-[15px] font-semibold"
-      (click)="clear()"
-    >
-      Clear
-    </button>
-  `,
+  imports: [NumberStepper, Surface],
+  templateUrl: './drum-tuning.html',
   host: { class: 'flex flex-col gap-5' },
 })
 export class DrumTuning {
   private readonly tuner = inject(TunerStore);
   protected readonly settings = inject(SettingsStore);
 
-  protected readonly lugForm = form(this.settings.editable, (path) => {
-    min(path.drumLugs, LUG_RANGE.min);
-    max(path.drumLugs, LUG_RANGE.max);
-  });
+  protected readonly lugRange = LUG_RANGE;
 
   /** Readings start over whenever the lug count changes; the target is kept. */
   protected readonly tuning = linkedSignal<number, ReturnType<typeof emptyTuning>>({
@@ -166,13 +54,13 @@ export class DrumTuning {
       const current = tuning.currentLug === index;
       const inTune = value !== null && Math.abs(value) <= tolerance;
       const rounded = value === null ? 0 : Math.round(value);
-      const ring = current ? 'border-[3px] border-accent' : 'border-[1.5px] border-ring';
+      const ring = current ? 'border-3 border-accent' : 'border-[1.5px] border-ring';
       const tint =
         value === null
-          ? 'text-fg text-[17px]'
+          ? 'text-fg text-17'
           : inTune
-            ? 'bg-in-tune/25 text-in-tune text-[13px]'
-            : 'bg-accent/20 text-accent-text text-[13px]';
+            ? 'bg-in-tune/25 text-in-tune text-13'
+            : 'bg-accent/20 text-accent-text text-13';
       return {
         index,
         current,

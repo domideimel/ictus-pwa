@@ -271,6 +271,3 @@ export function tempoMarking(bpm: number): string {
 export const BPM_RANGE = { min: 20, max: 300 } as const;
 /** 0.5 = straight, 0.667 = triplet feel, 0.75 = dotted. */
 export const SWING_RANGE = { min: 0.5, max: 0.75 } as const;
-
-export const clamp = (value: number, min: number, max: number): number =>
-  Math.min(Math.max(value, min), max);

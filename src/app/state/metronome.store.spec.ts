@@ -348,6 +348,15 @@ describe('MetronomeStore playback', () => {
     error.mockRestore();
   });
 
+  it('shows stopped when a phone call takes the audio away', async () => {
+    await startPlaying();
+    driver.playUntil(0.6);
+    driver.context.setState('interrupted');
+    expect(store.isPlaying()).toBe(false);
+    expect(store.currentBeat()).toBeNull();
+    driver.context.state = 'suspended';
+  });
+
   it('restarts the bar count on every start', async () => {
     await startPlaying();
     driver.playUntil(2.2);
@@ -379,6 +388,31 @@ describe('MetronomeStore playback', () => {
 
     store.endRest();
     expect(store.rest()).toBeNull();
+  });
+
+  it('finishes a rest in the background, where only the ticker runs', async () => {
+    store.startRest(1, true);
+    await driver.settle();
+    // No animation frames: step the audio clock with the ticker alone, as in a background tab.
+    for (let time = 0.025; time <= 2.2; time += 0.025) {
+      driver.context.currentTime = time;
+      driver.ticker?.reply(null);
+    }
+    expect(store.isPlaying()).toBe(false);
+    expect(store.rest()?.finished).toBe(true);
+    expect(vibrations.at(-1)).toEqual([60, 40, 60]);
+    // Nothing is scheduled past the entrance after the stop.
+    expect(driver.context.started.every((source) => source.when <= 2.06 + 1e-9)).toBe(true);
+  });
+
+  it('closes the rest counter when the audio cannot start', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(driver.context, 'resume').mockRejectedValueOnce(new Error('blocked'));
+    store.startRest(4, false);
+    await driver.settle();
+    expect(store.isPlaying()).toBe(false);
+    expect(store.rest()).toBeNull();
+    error.mockRestore();
   });
 
   it('counts audibly when asked and never for less than one bar', async () => {

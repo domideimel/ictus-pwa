@@ -8,31 +8,7 @@ import { MetronomeStore } from '../state/metronome.store';
  */
 @Component({
   selector: 'app-beat-dots',
-  template: `
-    @for (row of rows(); track $index) {
-      <div class="flex" [class]="spreadOut() ? 'justify-between px-3' : 'gap-5'">
-        @for (dot of row; track dot.index) {
-          <button
-            type="button"
-            class="flex flex-col items-center gap-1"
-            [attr.aria-label]="dot.label"
-            (click)="store.cycleLevel(dot.index)"
-          >
-            <span
-              class="flex items-center justify-center rounded-full tabular transition-colors duration-75 motion-reduce:transition-none"
-              [class]="dot.classes"
-              [style.width.px]="size() * dot.width"
-              [style.height.px]="size()"
-              [style.font-size.px]="size() * 0.35"
-            >
-              {{ dot.index + 1 }}
-            </span>
-            <span class="size-[5px] rounded-full" [class.bg-accent]="dot.groupStart"></span>
-          </button>
-        }
-      </div>
-    }
-  `,
+  templateUrl: './beat-dots.html',
   host: { class: 'flex flex-col gap-2' },
 })
 export class BeatDots {
@@ -62,7 +38,7 @@ export class BeatDots {
       const note = uneven ? `, ${durationTitle(length, unit)}` : '';
       return {
         index,
-        label: `Beat ${index + 1}${note}, ${levelTitle(level)}${current ? ', playing' : ''}`,
+        label: `Beat ${index + 1}${note}, ${levelTitle(level)}`,
         classes: dotClasses(level, current),
         groupStart: groupStarts.has(index),
         width: uneven ? length / shortest : 1,
@@ -78,8 +54,8 @@ function dotClasses(level: BeatLevel, current: boolean): string {
   if (level === BeatLevel.Mute) {
     return `border-2 border-dashed border-ring font-semibold text-faint ${current ? 'bg-stroke' : 'bg-transparent'}`;
   }
-  if (current) return 'border-[3px] border-accent bg-accent font-bold text-on-accent';
+  if (current) return 'border-3 border-accent bg-accent font-bold text-on-accent';
   if (level === BeatLevel.Accent)
-    return 'border-[3px] border-accent bg-surface font-bold text-accent-text';
+    return 'border-3 border-accent bg-surface font-bold text-accent-text';
   return 'border-2 border-ring bg-surface font-semibold text-fg';
 }

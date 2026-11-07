@@ -1,0 +1,7 @@
+<h3 class="ps-1 text-xs uppercase tracking-8 text-muted">{{ title() }}</h3>
+<div class="flex flex-col overflow-hidden rounded-14 bg-surface [&>hr]:border-stroke">
+  <ng-content />
+</div>
+@if (footnote(); as footnote) {
+  <p class="px-1 text-xs text-muted">{{ footnote }}</p>
+}

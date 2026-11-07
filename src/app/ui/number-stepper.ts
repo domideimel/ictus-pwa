@@ -11,44 +11,16 @@ import { Surface } from './surface';
 @Component({
   selector: 'app-number-stepper',
   imports: [HoldRepeat, NgTemplateOutlet, Surface],
-  template: `
-    @for (step of reversedSteps(); track step) {
-      <ng-container *ngTemplateOutlet="button; context: { $implicit: -step }" />
-    }
-    <span
-      class="min-w-13 text-center text-[15px] font-semibold tabular whitespace-nowrap"
-      aria-hidden="true"
-    >
-      {{ value() }}{{ unit() }}
-    </span>
-    @for (step of steps(); track step) {
-      <ng-container *ngTemplateOutlet="button; context: { $implicit: step }" />
-    }
-
-    <ng-template #button let-delta>
-      <button
-        type="button"
-        tabindex="-1"
-        appSurface
-        class="h-9 min-w-10 rounded-xl px-1.5 text-[13px] tabular"
-        appHoldRepeat
-        [attr.aria-label]="(delta > 0 ? 'Plus ' : 'Minus ') + abs(delta)"
-        [disabled]="disabled() || (delta > 0 ? value() >= upper() : value() <= lower())"
-        (repeat)="change(delta)"
-      >
-        {{ delta > 0 ? '+' + delta : '−' + abs(delta) }}
-      </button>
-    </ng-template>
-  `,
+  templateUrl: './number-stepper.html',
   host: {
     role: 'spinbutton',
     tabindex: '0',
-    class: 'flex items-center gap-1 rounded-[10px]',
+    class: 'flex items-center gap-1 rounded-10',
     '[attr.aria-label]': 'label()',
     '[attr.aria-valuenow]': 'value()',
-    '[attr.aria-valuemin]': 'lower()',
-    '[attr.aria-valuemax]': 'upper()',
-    '[attr.aria-valuetext]': 'value() + unit()',
+    '[attr.aria-valuemin]': 'min() ?? null',
+    '[attr.aria-valuemax]': 'max() ?? null',
+    '[attr.aria-valuetext]': 'valueText()',
     '[attr.aria-disabled]': 'disabled() || null',
     '[class.opacity-40]': 'disabled()',
     '(keydown)': 'onKeydown($event)',
@@ -67,6 +39,7 @@ export class NumberStepper implements FormValueControl<number> {
   protected readonly upper = computed(() => this.max() ?? Number.MAX_SAFE_INTEGER);
   protected readonly reversedSteps = computed(() => [...this.steps()].reverse());
   protected readonly abs = Math.abs;
+  protected readonly valueText = computed(() => `${this.value()}${this.unit()}`);
 
   protected change(delta: number): void {
     this.value.update((value) => Math.min(Math.max(value + delta, this.lower()), this.upper()));
@@ -83,7 +56,9 @@ export class NumberStepper implements FormValueControl<number> {
       PageUp: big,
       PageDown: -big,
     };
-    const delta = deltas[event.key];
+    // Home and End jump to the limits, when the field has them.
+    const limit = event.key === 'Home' ? this.min() : event.key === 'End' ? this.max() : undefined;
+    const delta = limit === undefined ? deltas[event.key] : limit - this.value();
     if (delta === undefined) return;
     event.preventDefault();
     event.stopPropagation();

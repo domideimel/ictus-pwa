@@ -142,10 +142,49 @@ describe('NameDialog', () => {
 });
 
 describe('SetlistSheet', () => {
-  it('creates a first setlist when there is none', async () => {
-    const { element } = await render(SetlistSheet);
-    expect(library.setlists().map((list) => list.name)).toEqual(['Setlist 1']);
+  it('opens empty and starts Setlist 1 with the first saved piece', async () => {
+    metronome.setBpm(84);
+    const { fixture, element } = await render(SetlistSheet);
+    // Just looking creates nothing.
+    expect(library.setlists()).toEqual([]);
+    expect(element.textContent).toContain('No setlists yet.');
+    await click(fixture, byLabel(element, 'Save current as piece'));
+    const dialog = element.querySelector('app-name-dialog dialog') as HTMLElement;
+    expect((dialog.querySelector('input') as HTMLInputElement).value).toBe('Piece 1');
+    await click(fixture, byLabel(dialog, 'Save'));
+    await fixture.whenStable();
+    const [setlist] = library.setlists();
+    expect(setlist?.name).toBe('Setlist 1');
+    expect(setlist?.pieces.map((piece) => [piece.name, piece.bpm])).toEqual([['Piece 1', 84]]);
+    expect(library.activePiece()).toEqual({
+      setlistId: setlist?.id,
+      pieceId: setlist?.pieces[0]?.id,
+    });
     expect(element.querySelector('section')?.getAttribute('aria-label')).toBe('Setlist 1');
+  });
+
+  it('asks before deleting or overwriting, and Cancel keeps everything', async () => {
+    concert();
+    const { fixture, element } = await render(SetlistSheet);
+    await click(fixture, byLabel(element, 'Edit'));
+    await click(fixture, byLabel(element, 'Delete Concert'));
+    const dialog = element.querySelector('app-confirm-dialog dialog') as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+    expect(dialog.textContent).toContain('Delete “Concert”?');
+    expect(dialog.textContent).toContain('Its 3 pieces are deleted too.');
+    expect(document.activeElement?.textContent.trim()).toBe('Cancel');
+    await click(fixture, byLabel(dialog, 'Cancel'));
+    expect(element.querySelector('app-confirm-dialog')).toBeNull();
+    expect(library.setlists()[0]?.pieces).toHaveLength(3);
+
+    metronome.setBpm(200);
+    await click(fixture, byLabel(element, 'Update Piece 1 with current settings'));
+    expect(element.querySelector('app-confirm-dialog')?.textContent).toContain(
+      'It is saved with the current settings: 200 BPM · 4/4 · ♩.',
+    );
+    await click(fixture, byLabel(element.querySelector('app-confirm-dialog')!, 'Cancel'));
+    expect(library.setlists()[0]?.pieces[0]?.bpm).toBe(60);
   });
 
   it('lists pieces with a summary and loads one on tap', async () => {
@@ -219,7 +258,8 @@ describe('SetlistSheet', () => {
     expect(element.querySelector('[aria-label="Delete Piece 1"]')).toBeNull();
     const edit = byLabel(element, 'Edit');
     await click(fixture, edit);
-    expect(edit.getAttribute('aria-pressed')).toBe('true');
+    // The label says what the button does next, so it is not also a toggle.
+    expect(edit.hasAttribute('aria-pressed')).toBe(false);
     expect(edit.textContent.trim()).toBe('Finish');
 
     expect((byLabel(element, 'Move Piece 1 up') as HTMLButtonElement).disabled).toBe(true);
@@ -237,8 +277,15 @@ describe('SetlistSheet', () => {
       'Piece 1',
     ]);
 
+    /** Answers the confirmation the last button opened. */
+    const confirmWith = async (action: string): Promise<void> => {
+      await click(fixture, byLabel(element.querySelector('app-confirm-dialog')!, action));
+      await fixture.whenStable();
+    };
+
     metronome.setBpm(200);
     await click(fixture, byLabel(element, 'Update Piece 1 with current settings'));
+    await confirmWith('Update');
     expect(library.setlists()[0]!.pieces.find((piece) => piece.id === pieces[0]!.id)?.bpm).toBe(
       200,
     );
@@ -247,11 +294,13 @@ describe('SetlistSheet', () => {
     expect(metronome.bpm()).toBe(200);
 
     await click(fixture, byLabel(element, 'Delete Piece 2'));
+    await confirmWith('Delete');
     expect(library.setlists()[0]!.pieces.map((piece) => piece.name)).toEqual([
       'Piece 3',
       'Piece 1',
     ]);
     await click(fixture, byLabel(element, 'Delete Concert'));
+    await confirmWith('Delete');
     expect(library.setlists()).toEqual([]);
 
     await click(fixture, edit);

@@ -1,7 +1,8 @@
 import type { WritableSignal } from '@angular/core';
-import { effect, linkedSignal, untracked } from '@angular/core';
+import { DOCUMENT, DestroyRef, effect, inject, linkedSignal, untracked } from '@angular/core';
 import { withStorageSync } from '@ngrx-toolkit/core';
 import type { EmptyFeatureResult } from '@ngrx/signals';
+import { signalStoreFeature, type, withHooks } from '@ngrx/signals';
 
 const PREFIX = 'ictus.';
 
@@ -10,24 +11,42 @@ export type Parser<T> = (value: unknown) => T | null;
 
 /**
  * Saves the store state (or the part `select` picks) to localStorage on every change and restores it on
- * startup. Values that fail to parse are dropped, so the store keeps its initial state.
+ * startup. Values that fail to parse are dropped, so the store keeps its initial state. A change saved
+ * by another tab or the installed app is read back at once, so neither overwrites the other's edits.
  */
 export function withPersistence<State extends object>(
   key: string,
   parse: Parser<Partial<State>>,
   select: (state: State) => unknown = (state) => state,
 ): ReturnType<typeof withStorageSync<EmptyFeatureResult & { state: State }>> {
-  return withStorageSync<EmptyFeatureResult & { state: State }>({
-    key: PREFIX + key,
-    select,
-    parse: (stored: string) => {
-      try {
-        return (parse(JSON.parse(stored)) ?? {}) as State;
-      } catch {
-        return {} as State;
-      }
-    },
-  });
+  const storageKey = PREFIX + key;
+  return signalStoreFeature(
+    { state: type<State>() },
+    withStorageSync<EmptyFeatureResult & { state: State }>({
+      key: storageKey,
+      select,
+      parse: (stored: string) => {
+        try {
+          return (parse(JSON.parse(stored)) ?? {}) as State;
+        } catch {
+          return {} as State;
+        }
+      },
+    }),
+    withHooks({
+      onInit(store) {
+        const window = inject(DOCUMENT).defaultView;
+        if (!window) return;
+        const reread = (event: StorageEvent): void => {
+          if (event.key === storageKey && event.newValue !== null) store.readFromStorage();
+        };
+        window.addEventListener('storage', reread);
+        inject(DestroyRef).onDestroy(() => {
+          window.removeEventListener('storage', reread);
+        });
+      },
+    }),
+  );
 }
 
 /**
@@ -62,4 +81,9 @@ export function withDefaults<T extends object>(defaults: T): Parser<T> {
     }
     return merged as T;
   };
+}
+
+/** The stored value when it is one of `options`, else `fallback`: an option a newer or older version knew. */
+export function oneOf<T>(options: readonly T[], value: unknown, fallback: T): T {
+  return options.find((option) => option === value) ?? fallback;
 }

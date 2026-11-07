@@ -1,0 +1,18 @@
+<span aria-hidden="true" [class]="isStraight() ? 'font-semibold text-fg' : 'text-muted'"
+  >Straight</span
+>
+<input
+  #slider
+  type="range"
+  class="h-11 min-w-0 flex-1 accent-accent"
+  aria-label="Swing"
+  step="0.01"
+  [min]="range.min"
+  [max]="range.max"
+  [value]="store.swing()"
+  [attr.aria-valuetext]="valueText()"
+  (input)="store.setSwing(slider.valueAsNumber)"
+/>
+<span aria-hidden="true" [class]="isStraight() ? 'text-muted' : 'font-semibold text-fg'"
+  >Swing</span
+>

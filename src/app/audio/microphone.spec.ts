@@ -78,6 +78,46 @@ describe('Microphone', () => {
     expect(worker().messages).toHaveLength(1);
   });
 
+  it('asks for the microphone once when started again while the permission prompt is open', async () => {
+    let calls = 0;
+    let grant: (stream: MediaStream) => void = () => undefined;
+    stubGetUserMedia(() => {
+      calls += 1;
+      return new Promise((resolve) => (grant = resolve));
+    });
+    const first = microphone.start();
+    const second = microphone.start();
+    grant(stream);
+    await Promise.all([first, second]);
+    expect(calls).toBe(1);
+    microphone.stop();
+    expect(stream.stoppedTracks).toBe(1);
+  });
+
+  it('gives the stream back when stopped while the permission prompt was open', async () => {
+    let grant: (stream: MediaStream) => void = () => undefined;
+    stubGetUserMedia(() => new Promise((resolve) => (grant = resolve)));
+    const workersBefore = FakeWorker.instances.length;
+    const started = microphone.start();
+    microphone.stop();
+    grant(stream);
+    await started;
+    expect(stream.stoppedTracks).toBe(1);
+    vi.advanceTimersByTime(500);
+    expect(FakeWorker.instances.length).toBe(workersBefore);
+  });
+
+  it('keeps analysing after the worker fails on one window', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await microphone.start();
+    vi.advanceTimersByTime(43);
+    worker().fail('boom');
+    vi.advanceTimersByTime(43);
+    expect(worker().messages).toHaveLength(2);
+    expect(error).toHaveBeenCalledWith('Pitch detection failed', 'boom');
+    error.mockRestore();
+  });
+
   it('passes on a denied permission', async () => {
     stubGetUserMedia(() => Promise.reject(new DOMException('denied', 'NotAllowedError')));
     await expect(microphone.start()).rejects.toThrow('denied');

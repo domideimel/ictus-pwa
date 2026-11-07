@@ -48,7 +48,15 @@ describe('TempoDial', () => {
     expect(store.bpm()).toBe(130);
     key(element, 'PageDown');
     expect(store.bpm()).toBe(120);
-    expect(key(element, 'Home').defaultPrevented).toBe(false);
+    expect(key(element, 'Enter').defaultPrevented).toBe(false);
+  });
+
+  it('jumps to the ends of the range with Home and End', async () => {
+    const { element } = await render(TempoDial);
+    expect(key(element, 'End').defaultPrevented).toBe(true);
+    expect(store.bpm()).toBe(300);
+    key(element, 'Home');
+    expect(store.bpm()).toBe(20);
   });
 
   it('changes the tempo by dragging around the centre', async () => {
@@ -111,7 +119,10 @@ describe('BeatDots', () => {
     await driver.settle();
     driver.playUntil(0.6);
     await fixture.whenStable();
-    expect(byLabel(element, 'Beat 2, normal, playing')).toBeTruthy();
+    const second = byLabel(element, 'Beat 2, normal');
+    expect(second.querySelector('span')?.className).toContain('bg-accent');
+    // The label stays put, so a focused dot is not announced again on every beat.
+    expect(element.querySelector('[aria-label*="playing"]')).toBeNull();
   });
 
   it('draws long counts wider when counting uneven groups', async () => {
@@ -200,6 +211,28 @@ describe('SubdivisionPicker', () => {
     expect(store.subdivision()).toBe(3);
     expect(byLabel(element, 'Triplet').getAttribute('aria-checked')).toBe('true');
     expect(byLabel(element, 'Quarter').getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('is one tab stop that moves with the arrows, Home and End', async () => {
+    const { fixture, element } = await render(SubdivisionPicker);
+    const tabStops = (): string[] =>
+      [...element.querySelectorAll<HTMLElement>('[role="radio"]')]
+        .filter((radio) => radio.tabIndex === 0)
+        .map((radio) => radio.getAttribute('aria-label') ?? '');
+    expect(tabStops()).toEqual(['Quarter']);
+    expect(key(byLabel(element, 'Quarter'), 'ArrowRight').defaultPrevented).toBe(true);
+    await fixture.whenStable();
+    expect(store.subdivision()).toBe(2);
+    expect(tabStops()).toEqual(['Eighth']);
+    expect(document.activeElement).toBe(byLabel(element, 'Eighth'));
+    key(byLabel(element, 'Eighth'), 'End');
+    expect(store.subdivision()).toBe(6);
+    key(byLabel(element, 'Sextuplet'), 'ArrowRight');
+    expect(store.subdivision()).toBe(1);
+    key(byLabel(element, 'Quarter'), 'ArrowLeft');
+    expect(store.subdivision()).toBe(6);
+    key(byLabel(element, 'Sextuplet'), 'Home');
+    expect(store.subdivision()).toBe(1);
   });
 
   it('lays out in three columns when horizontal', async () => {

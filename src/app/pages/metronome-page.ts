@@ -7,16 +7,7 @@ import { HeaderIconButton } from '../ui/header-icon-button';
 @Component({
   selector: 'app-metronome-page',
   imports: [MetronomePanel, HeaderIconButton],
-  template: `
-    <app-metronome-panel class="flex-1">
-      <app-header-icon-button
-        headerEnd
-        icon="settings"
-        label="Settings"
-        (pressed)="ui.openSettings()"
-      />
-    </app-metronome-panel>
-  `,
+  templateUrl: './metronome-page.html',
   host: { class: 'flex min-h-0 flex-1 flex-col' },
 })
 export default class MetronomePage {

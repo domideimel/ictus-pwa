@@ -13,6 +13,8 @@ export class WakeLock {
   private readonly visibility = inject(PageVisibility);
 
   private sentinel: WakeLockSentinel | null = null;
+  /** A request in flight; asking twice would leave the first lock held with nothing to release it. */
+  private requesting = false;
 
   private readonly wanted = computed(
     () =>
@@ -30,17 +32,21 @@ export class WakeLock {
   }
 
   private async acquire(): Promise<void> {
-    if (this.sentinel || !('wakeLock' in navigator)) return;
+    if (this.sentinel || this.requesting || !('wakeLock' in navigator)) return;
+    this.requesting = true;
     try {
       const sentinel = await navigator.wakeLock.request('screen');
       sentinel.addEventListener('release', () => {
         if (this.sentinel === sentinel) this.sentinel = null;
       });
       this.sentinel = sentinel;
-      if (!this.wanted()) this.release();
     } catch {
       // Low battery mode or an unsupported browser: the screen just dims as usual.
+    } finally {
+      this.requesting = false;
     }
+    // Playback stopped while the request was pending.
+    if (!this.wanted()) this.release();
   }
 
   private release(): void {

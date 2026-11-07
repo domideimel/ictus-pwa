@@ -133,6 +133,43 @@ describe('WakeLock', () => {
     await expect(settle()).resolves.toBeUndefined();
   });
 
+  it('asks once when playback stops and starts again while the lock is being granted', async () => {
+    let grant: () => void = () => undefined;
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: {
+        request: () => {
+          requested += 1;
+          return new Promise((resolve) => {
+            grant = () => {
+              resolve({
+                release: () => {
+                  released += 1;
+                  return Promise.resolve();
+                },
+                addEventListener: () => undefined,
+              });
+            };
+          });
+        },
+      },
+    });
+    TestBed.inject(WakeLock);
+    const metronome = TestBed.inject(MetronomeStore);
+    metronome.toggle();
+    await settle();
+    metronome.stop();
+    TestBed.tick();
+    metronome.toggle();
+    await settle();
+    grant();
+    await settle();
+    expect(requested).toBe(1);
+    metronome.stop();
+    await settle();
+    expect(released).toBe(1);
+  });
+
   it('lets go when playback stopped while the lock was being granted', async () => {
     TestBed.inject(WakeLock);
     const metronome = TestBed.inject(MetronomeStore);

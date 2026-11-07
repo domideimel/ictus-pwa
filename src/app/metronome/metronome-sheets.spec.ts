@@ -201,6 +201,16 @@ describe('RestCounter', () => {
     expect(dialog.querySelectorAll('[aria-hidden="true"] span.bg-accent')).toHaveLength(1);
   });
 
+  it('shows one dot per count when counting in groups', async () => {
+    store.setTimeSignature({ beats: 11, unit: 8 });
+    store.setGrouping([3, 3, 3, 2]);
+    store.setPulse('group');
+    store.startRest(3, false);
+    await driver.settle();
+    const { element } = await render(RestCounter);
+    expect(element.querySelectorAll('[aria-hidden="true"] span')).toHaveLength(4);
+  });
+
   it('signals the entrance and closes with Done', async () => {
     store.startRest(1, false);
     await driver.settle();

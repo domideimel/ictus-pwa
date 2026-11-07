@@ -1,0 +1,24 @@
+<app-sheet title="Reference pitch" (closed)="closed.emit()">
+  <form class="flex flex-col items-center gap-5 pb-2" (submit)="$event.preventDefault()">
+    <app-number-stepper
+      class="text-2xl"
+      label="Reference pitch"
+      unit=" Hz"
+      [formField]="pitchForm.referencePitch"
+    />
+    <div class="grid w-full grid-cols-4 gap-2" role="group" aria-label="Common reference pitches">
+      @for (value of quickPicks; track value) {
+        <button
+          type="button"
+          appSurface
+          pressed
+          class="h-10 rounded-full text-15 tabular-nums"
+          [selected]="settings.referencePitch() === value"
+          (click)="settings.update({ referencePitch: value })"
+        >
+          {{ value }}
+        </button>
+      }
+    </div>
+  </form>
+</app-sheet>

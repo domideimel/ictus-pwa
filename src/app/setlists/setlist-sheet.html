@@ -1,0 +1,157 @@
+<app-sheet title="Setlists" (closed)="closed.emit()">
+  <button
+    sheetAccessory
+    type="button"
+    appSurface
+    class="h-11 rounded-full px-4 text-15"
+    [selected]="editing()"
+    (click)="editing.set(!editing())"
+  >
+    {{ editing() ? 'Finish' : 'Edit' }}
+  </button>
+
+  <div class="flex flex-col gap-5">
+    @for (setlist of library.setlists(); track setlist.id) {
+      <section class="flex flex-col gap-1.5" [attr.aria-label]="setlist.name">
+        <div class="flex items-center justify-between ps-1 text-muted">
+          <h3 class="text-xs uppercase tracking-8">{{ setlist.name }}</h3>
+          @if (editing()) {
+            <div class="flex">
+              <button
+                type="button"
+                class="flex size-11 items-center justify-center"
+                [attr.aria-label]="`Rename ${setlist.name}`"
+                (click)="rename(setlist)"
+              >
+                <app-icon name="pencil" [size]="18" />
+              </button>
+              <button
+                type="button"
+                class="flex size-11 items-center justify-center"
+                [attr.aria-label]="`Delete ${setlist.name}`"
+                (click)="confirming.set({ kind: 'deleteSetlist', setlist })"
+              >
+                <app-icon name="trash" [size]="18" />
+              </button>
+            </div>
+          }
+        </div>
+        <ul class="flex flex-col overflow-hidden rounded-14 bg-surface">
+          @for (piece of setlist.pieces; track piece.id; let first = $first, last = $last) {
+            @let active = library.activePiece()?.pieceId === piece.id;
+            <li class="flex min-h-14 items-center border-b border-stroke">
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 flex-col items-start gap-0.5 px-4 py-2 text-start"
+                (click)="load(setlist, piece)"
+              >
+                <span class="font-semibold" [class.text-accent-text]="active">{{
+                  piece.name
+                }}</span>
+                <span class="text-13 text-muted tabular-nums">{{ summary(piece) }}</span>
+              </button>
+              @if (editing()) {
+                <div class="flex pe-1 text-muted">
+                  <button
+                    type="button"
+                    class="flex size-11 items-center justify-center disabled:opacity-30"
+                    [disabled]="first"
+                    [attr.aria-label]="`Move ${piece.name} up`"
+                    (click)="library.movePiece(setlist.id, piece.id, -1)"
+                  >
+                    <app-icon name="arrow-up" [size]="18" />
+                  </button>
+                  <button
+                    type="button"
+                    class="flex size-11 items-center justify-center disabled:opacity-30"
+                    [disabled]="last"
+                    [attr.aria-label]="`Move ${piece.name} down`"
+                    (click)="library.movePiece(setlist.id, piece.id, 1)"
+                  >
+                    <app-icon name="arrow-down" [size]="18" />
+                  </button>
+                  <button
+                    type="button"
+                    class="flex size-11 items-center justify-center"
+                    [attr.aria-label]="`Update ${piece.name} with current settings`"
+                    (click)="confirming.set({ kind: 'updatePiece', setlist, piece })"
+                  >
+                    <app-icon name="refresh" [size]="18" />
+                  </button>
+                  <button
+                    type="button"
+                    class="flex size-11 items-center justify-center"
+                    [attr.aria-label]="`Delete ${piece.name}`"
+                    (click)="confirming.set({ kind: 'deletePiece', setlist, piece })"
+                  >
+                    <app-icon name="trash" [size]="18" />
+                  </button>
+                </div>
+              } @else if (active) {
+                <app-icon name="check" class="pe-4 text-accent-text" [size]="20" />
+                <span class="sr-only">Loaded</span>
+              }
+            </li>
+          }
+          <li>
+            <button
+              type="button"
+              class="flex min-h-12 w-full items-center gap-2 px-4 text-15 font-semibold text-accent-text"
+              (click)="newPiece(setlist)"
+            >
+              <app-icon name="plus" [size]="20" [strokeWidth]="2.2" />
+              Save current as piece
+            </button>
+          </li>
+        </ul>
+      </section>
+    } @empty {
+      <div class="flex flex-col gap-3 rounded-14 bg-surface p-4">
+        <p class="text-15 text-muted">
+          No setlists yet. Save the current settings as a piece to start one.
+        </p>
+        <button
+          type="button"
+          class="flex min-h-12 items-center gap-2 text-15 font-semibold text-accent-text"
+          (click)="newPiece(null)"
+        >
+          <app-icon name="plus" [size]="20" [strokeWidth]="2.2" />
+          Save current as piece
+        </button>
+      </div>
+    }
+
+    <button
+      type="button"
+      class="flex min-h-12 items-center gap-2 rounded-14 bg-surface px-4 text-15 font-semibold"
+      (click)="newSetlist()"
+    >
+      <app-icon name="setlist" [size]="20" />
+      New setlist
+    </button>
+    <p class="px-1 text-xs text-muted">
+      A piece saves tempo, meter, grouping, accents, subdivision and swing. Edit to reorder, update
+      or delete.
+    </p>
+  </div>
+</app-sheet>
+
+@if (naming(); as current) {
+  <app-name-dialog
+    [title]="namingTitle(current)"
+    [initialName]="current.initial"
+    (saved)="commit(current, $event)"
+    (closed)="naming.set(null)"
+  />
+}
+
+@if (confirming(); as asking) {
+  @let text = confirmText(asking);
+  <app-confirm-dialog
+    [title]="text.title"
+    [message]="text.message"
+    [action]="text.action"
+    (confirmed)="confirm(asking)"
+    (closed)="confirming.set(null)"
+  />
+}

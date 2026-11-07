@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-section-label',
-  template: '<ng-content />',
-  host: { class: 'block text-[13px] uppercase tracking-[0.08em] text-muted' },
+  templateUrl: './section-label.html',
+  host: { class: 'block text-13 uppercase tracking-8 text-muted' },
 })
 export class SectionLabel {}

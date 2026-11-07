@@ -7,44 +7,7 @@ const SPAN = BPM_RANGE.max - BPM_RANGE.min;
 /** 270° tempo arc with a knob. Drag around the dial to change the tempo; arrow keys nudge it. */
 @Component({
   selector: 'app-tempo-dial',
-  template: `
-    <svg class="absolute inset-0" aria-hidden="true" [attr.viewBox]="viewBox()">
-      <circle
-        fill="none"
-        class="stroke-stroke"
-        stroke-width="10"
-        stroke-linecap="round"
-        [attr.cx]="center()"
-        [attr.cy]="center()"
-        [attr.r]="radius()"
-        [attr.stroke-dasharray]="track()"
-        [attr.transform]="rotation()"
-      />
-      <circle
-        fill="none"
-        class="stroke-accent"
-        stroke-width="10"
-        stroke-linecap="round"
-        [attr.cx]="center()"
-        [attr.cy]="center()"
-        [attr.r]="radius()"
-        [attr.stroke-dasharray]="fill()"
-        [attr.transform]="rotation()"
-      />
-      <circle r="12" class="fill-fg" [attr.cx]="knob().x" [attr.cy]="knob().y" />
-    </svg>
-    <div class="absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
-      <span
-        class="leading-none font-semibold tracking-[-0.03em] tabular"
-        [style.font-size.px]="diameter() * 0.387"
-      >
-        {{ store.bpm() }}
-      </span>
-      <span class="mt-1 text-sm tracking-[0.12em] text-muted"
-        ><span class="font-music tracking-normal">{{ tempoNote() }}</span> BPM</span
-      >
-    </div>
-  `,
+  templateUrl: './tempo-dial.html',
   host: {
     role: 'slider',
     tabindex: '0',
@@ -55,8 +18,7 @@ const SPAN = BPM_RANGE.max - BPM_RANGE.min;
     '[attr.aria-valuemin]': 'min',
     '[attr.aria-valuemax]': 'max',
     '[attr.aria-valuenow]': 'store.bpm()',
-    '[attr.aria-valuetext]':
-      'store.bpm() + " BPM, " + tempoNoteTitle() + " notes, " + store.tempoMarking()',
+    '[attr.aria-valuetext]': 'valueText()',
     '(pointerdown)': 'onPointerDown($event)',
     '(pointermove)': 'onPointerMove($event)',
     '(pointerup)': 'dragAngle = null',
@@ -76,6 +38,9 @@ export class TempoDial {
   );
   protected readonly tempoNoteTitle = computed(() =>
     durationTitle(this.store.tempoUnits(), this.store.timeSignature().unit),
+  );
+  protected readonly valueText = computed(
+    () => `${this.store.bpm()} BPM, ${this.tempoNoteTitle()} notes, ${this.store.tempoMarking()}`,
   );
   protected readonly center = computed(() => this.diameter() / 2);
   protected readonly radius = computed(() => this.diameter() / 2 - 12);
@@ -123,6 +88,7 @@ export class TempoDial {
     if (rounded !== this.store.bpm()) this.store.setBpm(rounded);
   }
 
+  /** Arrows ±1, Page Up/Down ±10, Home and End jump to the ends of the range. */
   protected onKeydown(event: KeyboardEvent): void {
     const deltas: Record<string, number> = {
       ArrowUp: 1,
@@ -133,10 +99,12 @@ export class TempoDial {
       PageDown: -10,
     };
     const delta = deltas[event.key];
-    if (delta === undefined) return;
+    const end = event.key === 'Home' ? BPM_RANGE.min : event.key === 'End' ? BPM_RANGE.max : null;
+    if (delta === undefined && end === null) return;
     event.preventDefault();
     event.stopPropagation();
-    this.store.nudge(delta);
+    if (end === null) this.store.nudge(delta ?? 0);
+    else this.store.setBpm(end);
   }
 
   private angle(event: PointerEvent): number {

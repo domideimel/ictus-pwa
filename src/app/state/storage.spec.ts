@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { getState, patchState, signalStore, withState } from '@ngrx/signals';
-import { withDefaults, withPersistence, writableState } from './storage';
+import { oneOf, withDefaults, withPersistence, writableState } from './storage';
 
 describe('withDefaults', () => {
   const parse = withDefaults({ count: 1, name: 'a', on: false, list: [1] });
@@ -26,6 +26,15 @@ describe('withDefaults', () => {
 
   it('rejects anything that is not an object', () => {
     for (const value of [null, undefined, 3, 'text', [1, 2]]) expect(parse(value)).toBeNull();
+  });
+});
+
+describe('oneOf', () => {
+  it('keeps a known option and falls back otherwise', () => {
+    const sounds = ['click', 'woodblock'] as const;
+    expect(oneOf(sounds, 'woodblock', 'click')).toBe('woodblock');
+    expect(oneOf(sounds, 'bell', 'click')).toBe('click');
+    expect(oneOf(sounds, 3, 'click')).toBe('click');
   });
 });
 
@@ -81,6 +90,28 @@ describe('withPersistence', () => {
     expect(getState(TestBed.inject(Store))).toEqual(
       expect.objectContaining({ count: 7, label: 'y' }),
     );
+  });
+
+  it('takes over what another tab saved, so neither overwrites the other', () => {
+    const store = TestBed.inject(Store);
+    const saved = JSON.stringify({ count: 3, label: 'other tab' });
+    localStorage.setItem('ictus.test', saved);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'ictus.test', newValue: saved }));
+    expect(getState(store)).toEqual({ count: 3, label: 'other tab', session: 1 });
+
+    // Other keys, and clearing the storage, leave the state alone.
+    window.dispatchEvent(new StorageEvent('storage', { key: 'ictus.other', newValue: '{}' }));
+    window.dispatchEvent(new StorageEvent('storage', { key: null, newValue: null }));
+    expect(getState(store).count).toBe(3);
+  });
+
+  it('stops listening to other tabs when destroyed', () => {
+    const store = TestBed.inject(Store);
+    TestBed.resetTestingModule();
+    const saved = JSON.stringify({ count: 8, label: 'z' });
+    localStorage.setItem('ictus.test', saved);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'ictus.test', newValue: saved }));
+    expect(getState(store).count).toBe(0);
   });
 
   it('keeps the initial state when the saved value is unreadable', () => {

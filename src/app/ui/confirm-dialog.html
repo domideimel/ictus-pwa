@@ -1,0 +1,33 @@
+<dialog
+  #dialog
+  class="m-auto w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-stroke bg-surface p-0 text-fg"
+  role="alertdialog"
+  [attr.aria-labelledby]="titleId"
+  [attr.aria-describedby]="messageId"
+  (close)="closed.emit()"
+>
+  <div class="flex flex-col gap-4 p-5">
+    <div class="flex flex-col gap-1.5 text-center">
+      <h2 class="text-17 font-semibold" [id]="titleId">{{ title() }}</h2>
+      <p class="text-15 text-muted" [id]="messageId">{{ message() }}</p>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <button
+        #cancel
+        type="button"
+        appSurface
+        class="h-11 rounded-xl font-semibold"
+        (click)="dialog.close()"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="h-11 rounded-xl bg-accent font-semibold text-on-accent"
+        (click)="confirm()"
+      >
+        {{ action() }}
+      </button>
+    </div>
+  </div>
+</dialog>

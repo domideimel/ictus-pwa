@@ -1,0 +1,23 @@
+@if (spelling(); as spelling) {
+  <span class="font-semibold -tracking-4" [style.font-size.px]="size()">{{
+    spelling.letterName
+  }}</span>
+  @if (spelling.nameAccidental !== 'natural') {
+    <span
+      class="font-medium"
+      [style.font-size.px]="size() * 0.45"
+      [style.margin-top.px]="size() * 0.08"
+    >
+      {{ symbol(spelling.nameAccidental) }}
+    </span>
+  }
+  <span
+    class="ms-1 font-medium text-muted"
+    [style.font-size.px]="size() * 0.31"
+    [style.margin-top.px]="size() * 0.59"
+  >
+    {{ spelling.octave }}
+  </span>
+} @else {
+  <span class="font-semibold text-stroke" [style.font-size.px]="size()">–</span>
+}

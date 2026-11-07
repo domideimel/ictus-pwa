@@ -8,8 +8,14 @@ const SPACE = 14;
 const BOTTOM_LINE_Y = 102;
 const NOTE_X = 180;
 
-/** SMuFL code points in Bravura. */
-const GLYPH = { gClef: '', fClef: '', wholeNote: '', sharp: '', flat: '' } as const;
+/** SMuFL code points in Bravura (private-use characters, so written as escapes). */
+const GLYPH = {
+  gClef: '\u{E050}',
+  fClef: '\u{E062}',
+  wholeNote: '\u{E0A2}',
+  sharp: '\u{E262}',
+  flat: '\u{E260}',
+} as const;
 
 const y = (position: number): number => BOTTOM_LINE_Y - (position * SPACE) / 2;
 
@@ -19,54 +25,8 @@ const y = (position: number): number => BOTTOM_LINE_Y - (position * SPACE) / 2;
  */
 @Component({
   selector: 'app-staff-card',
-  template: `
-    <svg
-      viewBox="0 0 310 150"
-      class="w-full max-w-[434px]"
-      role="img"
-      [attr.aria-label]="description()"
-    >
-      <g class="stroke-ink" stroke-width="1.4">
-        @for (line of staffLines; track line) {
-          <line x1="12" x2="298" [attr.y1]="line" [attr.y2]="line" />
-        }
-        @for (ledger of ledgerYs(); track ledger) {
-          <line
-            [attr.x1]="noteX - 20"
-            [attr.x2]="noteX + 20"
-            [attr.y1]="ledger"
-            [attr.y2]="ledger"
-          />
-        }
-      </g>
-      <g class="fill-ink font-bravura" [attr.font-size]="space * 4">
-        <text x="22" [attr.y]="clefY()">{{ clefGlyph() }}</text>
-        @if (note(); as note) {
-          <text [attr.x]="noteX - 12" [attr.y]="note.y">{{ glyph.wholeNote }}</text>
-          @if (note.accidental) {
-            <text [attr.x]="noteX - (note.accidental === glyph.sharp ? 36 : 34)" [attr.y]="note.y">
-              {{ note.accidental }}
-            </text>
-          }
-        }
-      </g>
-      @if (note()?.ottava; as ottava) {
-        <text
-          class="fill-ink"
-          font-size="15"
-          font-style="italic"
-          font-weight="600"
-          dominant-baseline="middle"
-          [attr.x]="noteX + 24"
-          [attr.y]="ottava.y"
-        >
-          {{ ottava.label }}
-        </text>
-      }
-    </svg>
-    <span class="text-xs uppercase tracking-[0.06em] text-paper-label">{{ caption() }}</span>
-  `,
-  host: { class: 'flex flex-col items-center rounded-[20px] bg-paper px-2 pt-2 pb-3' },
+  templateUrl: './staff-card.html',
+  host: { class: 'flex flex-col items-center rounded-20 bg-paper px-2 pt-2 pb-3' },
 })
 export class StaffCard {
   private readonly tuner = inject(TunerStore);
