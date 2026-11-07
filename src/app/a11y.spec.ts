@@ -109,6 +109,18 @@ describe('accessibility (axe)', () => {
     expect(await axeViolations(element)).toEqual([]);
   });
 
+  it('setlists with nothing saved yet, and the delete confirmation', async () => {
+    const { fixture, element } = await start('/metronome');
+    await click(fixture, byLabel(element, 'Setlists'));
+    expect(await axeViolations(element)).toEqual([]);
+
+    TestBed.inject(LibraryStore).addSetlist('Concert');
+    await fixture.whenStable();
+    await click(fixture, byLabel(element, 'Edit'));
+    await click(fixture, byLabel(element, 'Delete Concert'));
+    expect(await axeViolations(element)).toEqual([]);
+  });
+
   it('rest counter', async () => {
     const { fixture, element } = await start('/metronome');
     TestBed.inject(MetronomeStore).startRest(4, false);

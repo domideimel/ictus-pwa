@@ -29,7 +29,7 @@
                 type="button"
                 class="flex size-11 items-center justify-center"
                 [attr.aria-label]="`Delete ${setlist.name}`"
-                (click)="library.deleteSetlist(setlist.id)"
+                (click)="confirming.set({ kind: 'deleteSetlist', setlist })"
               >
                 <app-icon name="trash" [size]="18" />
               </button>
@@ -74,7 +74,7 @@
                     type="button"
                     class="flex size-11 items-center justify-center"
                     [attr.aria-label]="`Update ${piece.name} with current settings`"
-                    (click)="library.updatePiece(setlist.id, piece.id, metronome.setup())"
+                    (click)="confirming.set({ kind: 'updatePiece', setlist, piece })"
                   >
                     <app-icon name="refresh" [size]="18" />
                   </button>
@@ -82,7 +82,7 @@
                     type="button"
                     class="flex size-11 items-center justify-center"
                     [attr.aria-label]="`Delete ${piece.name}`"
-                    (click)="library.deletePiece(setlist.id, piece.id)"
+                    (click)="confirming.set({ kind: 'deletePiece', setlist, piece })"
                   >
                     <app-icon name="trash" [size]="18" />
                   </button>
@@ -105,6 +105,20 @@
           </li>
         </ul>
       </section>
+    } @empty {
+      <div class="flex flex-col gap-3 rounded-14 bg-surface p-4">
+        <p class="text-15 text-muted">
+          No setlists yet. Save the current settings as a piece to start one.
+        </p>
+        <button
+          type="button"
+          class="flex min-h-12 items-center gap-2 text-15 font-semibold text-accent-text"
+          (click)="newPiece(null)"
+        >
+          <app-icon name="plus" [size]="20" [strokeWidth]="2.2" />
+          Save current as piece
+        </button>
+      </div>
     }
 
     <button
@@ -122,11 +136,22 @@
   </div>
 </app-sheet>
 
-@if (naming(); as naming) {
+@if (naming(); as current) {
   <app-name-dialog
-    [title]="namingTitle(naming)"
-    [initialName]="naming.initial"
-    (saved)="commit(naming, $event)"
-    (closed)="this.naming.set(null)"
+    [title]="namingTitle(current)"
+    [initialName]="current.initial"
+    (saved)="commit(current, $event)"
+    (closed)="naming.set(null)"
+  />
+}
+
+@if (confirming(); as asking) {
+  @let text = confirmText(asking);
+  <app-confirm-dialog
+    [title]="text.title"
+    [message]="text.message"
+    [action]="text.action"
+    (confirmed)="confirm(asking)"
+    (closed)="confirming.set(null)"
   />
 }

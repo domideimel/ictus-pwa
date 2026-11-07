@@ -2,6 +2,7 @@ import { Component, inject, output, signal, viewChild } from '@angular/core';
 import type { Piece, Setlist } from '../state/library.store';
 import { LibraryStore, pieceSummary } from '../state/library.store';
 import { MetronomeStore } from '../state/metronome.store';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Icon } from '../ui/icon';
 import { Sheet } from '../ui/sheet';
 import { Surface } from '../ui/surface';
@@ -10,12 +11,19 @@ import { NameDialog } from './name-dialog';
 type Naming =
   | { kind: 'newSetlist'; initial: string }
   | { kind: 'renameSetlist'; setlistId: string; initial: string }
-  | { kind: 'newPiece'; setlistId: string; initial: string };
+  /** Without a setlist, saving the first piece starts "Setlist 1". */
+  | { kind: 'newPiece'; setlistId: string | null; initial: string };
+
+/** Changes that can't be undone, asked about first. */
+type Confirming =
+  | { kind: 'deleteSetlist'; setlist: Setlist }
+  | { kind: 'deletePiece'; setlist: Setlist; piece: Piece }
+  | { kind: 'updatePiece'; setlist: Setlist; piece: Piece };
 
 /** Setlists of saved pieces. Tap a piece to load it; save the current metronome as a new piece. */
 @Component({
   selector: 'app-setlist-sheet',
-  imports: [Sheet, Icon, NameDialog, Surface],
+  imports: [Sheet, ConfirmDialog, Icon, NameDialog, Surface],
   templateUrl: './setlist-sheet.html',
 })
 export class SetlistSheet {
@@ -25,12 +33,9 @@ export class SetlistSheet {
 
   protected readonly editing = signal(false);
   protected readonly naming = signal<Naming | null>(null);
+  protected readonly confirming = signal<Confirming | null>(null);
   protected readonly summary = pieceSummary;
   private readonly sheet = viewChild.required(Sheet);
-
-  constructor() {
-    if (this.library.setlists().length === 0) this.library.addSetlist('Setlist 1');
-  }
 
   protected load(setlist: Setlist, piece: Piece): void {
     if (this.editing()) return;
@@ -50,11 +55,11 @@ export class SetlistSheet {
     this.naming.set({ kind: 'renameSetlist', setlistId: setlist.id, initial: setlist.name });
   }
 
-  protected newPiece(setlist: Setlist): void {
+  protected newPiece(setlist: Setlist | null): void {
     this.naming.set({
       kind: 'newPiece',
-      setlistId: setlist.id,
-      initial: `Piece ${setlist.pieces.length + 1}`,
+      setlistId: setlist?.id ?? null,
+      initial: `Piece ${(setlist?.pieces.length ?? 0) + 1}`,
     });
   }
 
@@ -75,10 +80,61 @@ export class SetlistSheet {
         this.library.renameSetlist(naming.setlistId, name);
         break;
       case 'newPiece': {
-        const piece = this.library.addPiece(naming.setlistId, name, this.metronome.setup());
-        this.library.setActivePiece({ setlistId: naming.setlistId, pieceId: piece.id });
+        const setlistId = naming.setlistId ?? this.library.addSetlist('Setlist 1').id;
+        const piece = this.library.addPiece(setlistId, name, this.metronome.setup());
+        this.library.setActivePiece({ setlistId, pieceId: piece.id });
         break;
       }
+    }
+  }
+
+  protected confirmText(confirming: Confirming): {
+    title: string;
+    message: string;
+    action: string;
+  } {
+    switch (confirming.kind) {
+      case 'deleteSetlist': {
+        const count = confirming.setlist.pieces.length;
+        return {
+          title: `Delete “${confirming.setlist.name}”?`,
+          message:
+            count === 0
+              ? 'The setlist is empty.'
+              : `Its ${count === 1 ? 'piece is' : `${count} pieces are`} deleted too. This can't be undone.`,
+          action: 'Delete',
+        };
+      }
+      case 'deletePiece':
+        return {
+          title: `Delete “${confirming.piece.name}”?`,
+          message: `It is removed from ${confirming.setlist.name}. This can't be undone.`,
+          action: 'Delete',
+        };
+      case 'updatePiece':
+        return {
+          title: `Update “${confirming.piece.name}”?`,
+          message: `It is saved with the current settings: ${pieceSummary({ ...confirming.piece, ...this.metronome.setup() })}. Its old settings are replaced.`,
+          action: 'Update',
+        };
+    }
+  }
+
+  protected confirm(confirming: Confirming): void {
+    switch (confirming.kind) {
+      case 'deleteSetlist':
+        this.library.deleteSetlist(confirming.setlist.id);
+        break;
+      case 'deletePiece':
+        this.library.deletePiece(confirming.setlist.id, confirming.piece.id);
+        break;
+      case 'updatePiece':
+        this.library.updatePiece(
+          confirming.setlist.id,
+          confirming.piece.id,
+          this.metronome.setup(),
+        );
+        break;
     }
   }
 }
