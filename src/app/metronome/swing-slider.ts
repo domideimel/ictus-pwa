@@ -5,26 +5,8 @@ import { MetronomeStore } from '../state/metronome.store';
 /** Swing for eighths and sixteenths. The labels sit at the ends they describe: straight left, full swing right. */
 @Component({
   selector: 'app-swing-slider',
-  template: `
-    <span aria-hidden="true" [class]="isStraight() ? 'font-semibold text-fg' : 'text-muted'"
-      >Straight</span
-    >
-    <input
-      type="range"
-      class="h-11 min-w-0 flex-1 accent-accent"
-      aria-label="Swing"
-      step="0.01"
-      [min]="range.min"
-      [max]="range.max"
-      [value]="store.swing()"
-      [attr.aria-valuetext]="valueText()"
-      (input)="store.setSwing(+$any($event.target).value)"
-    />
-    <span aria-hidden="true" [class]="isStraight() ? 'text-muted' : 'font-semibold text-fg'"
-      >Swing</span
-    >
-  `,
-  host: { class: 'flex min-h-11 items-center gap-3 text-[15px]' },
+  templateUrl: './swing-slider.html',
+  host: { class: 'flex min-h-11 items-center gap-3 text-15' },
 })
 export class SwingSlider {
   protected readonly store = inject(MetronomeStore);

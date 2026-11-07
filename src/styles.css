@@ -19,6 +19,31 @@
   --font-music: 'Noto Music', serif;
   --font-bravura: 'Bravura';
 
+  /* The concept's type and corner scale, in px, so classes read like the design: text-15, rounded-14. */
+  --text-10: 10px;
+  --text-10\.5: 10.5px;
+  --text-11: 11px;
+  --text-11\.5: 11.5px;
+  --text-12\.5: 12.5px;
+  --text-13: 13px;
+  --text-15: 15px;
+  --text-17: 17px;
+  --text-22: 22px;
+  --text-26: 26px;
+
+  --radius-7: 7px;
+  --radius-9: 9px;
+  --radius-10: 10px;
+  --radius-14: 14px;
+  --radius-20: 20px;
+
+  /* Letter spacing in hundredths of an em: tracking-8 is 0.08em, -tracking-4 is -0.04em. */
+  --tracking-3: 0.03em;
+  --tracking-4: 0.04em;
+  --tracking-6: 0.06em;
+  --tracking-8: 0.08em;
+  --tracking-12: 0.12em;
+
   --color-bg: #0e0e10;
   --color-panel: #141417;
   --color-surface: #1a1a1e;
@@ -89,10 +114,6 @@
   dialog::backdrop {
     @apply bg-black/60;
   }
-}
-
-@utility tabular {
-  font-variant-numeric: tabular-nums;
 }
 
 @utility safe-bottom {

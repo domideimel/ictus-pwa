@@ -7,21 +7,7 @@ import { Surface } from '../ui/surface';
 @Component({
   selector: 'app-nudge-buttons',
   imports: [HoldRepeat, Surface],
-  template: `
-    @for (delta of deltas; track delta) {
-      <button
-        type="button"
-        appSurface
-        appHoldRepeat
-        class="rounded-xl text-base tabular"
-        [style.height.px]="height()"
-        [attr.aria-label]="(delta > 0 ? 'Plus ' : 'Minus ') + abs(delta) + ' BPM'"
-        (repeat)="store.nudge(delta)"
-      >
-        {{ delta > 0 ? '+' + delta : '−' + abs(delta) }}
-      </button>
-    }
-  `,
+  templateUrl: './nudge-buttons.html',
   host: { class: 'grid grid-cols-4 gap-2' },
 })
 export class NudgeButtons {

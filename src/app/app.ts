@@ -31,39 +31,7 @@ import { Viewport } from './ui/viewport';
     Icon,
     UpdatePrompt,
   ],
-  template: `
-    @if (viewport.isWide()) {
-      <app-combined-view />
-    } @else {
-      <main class="flex min-h-0 flex-1 flex-col">
-        <router-outlet />
-      </main>
-      <nav
-        class="grid shrink-0 grid-cols-2 border-t border-stroke bg-panel pt-1.5 safe-bottom"
-        aria-label="Screens"
-      >
-        @for (tab of tabs; track tab.path) {
-          <a
-            routerLinkActive="text-accent-text font-semibold"
-            ariaCurrentWhenActive="page"
-            class="flex flex-col items-center gap-1 py-1 text-[11.5px] font-medium text-muted"
-            [routerLink]="tab.path"
-          >
-            <app-icon [name]="tab.icon" [size]="24" />
-            {{ tab.label }}
-          </a>
-        }
-      </nav>
-    }
-
-    @if (ui.showSettings()) {
-      <app-settings-sheet (closed)="ui.closeSettings()" />
-    }
-    @if (metronome.rest()) {
-      <app-rest-counter />
-    }
-    <app-update-prompt />
-  `,
+  templateUrl: './app.html',
   host: {
     class: 'flex h-dvh flex-col overflow-hidden safe-top',
     '(document:keydown)': 'onKeydown($event)',

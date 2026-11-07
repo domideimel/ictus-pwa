@@ -12,26 +12,10 @@ export interface PillOption<T> {
  */
 @Component({
   selector: 'app-segmented-pills',
-  template: `
-    @for (option of options(); track option.value) {
-      @let selected = option.value === value();
-      <button
-        type="button"
-        role="radio"
-        class="h-8 min-w-0 flex-1 truncate rounded-[7px] px-2 text-[13px]"
-        [class]="selected ? 'bg-segment font-semibold text-fg' : 'text-muted'"
-        [attr.aria-checked]="selected"
-        [tabIndex]="selected ? 0 : -1"
-        [disabled]="disabled()"
-        (click)="select(option.value)"
-      >
-        {{ option.label }}
-      </button>
-    }
-  `,
+  templateUrl: './segmented-pills.html',
   host: {
     role: 'radiogroup',
-    class: 'flex gap-0.5 rounded-[9px] bg-bg p-0.5',
+    class: 'flex gap-0.5 rounded-9 bg-bg p-0.5',
     '[attr.aria-label]': 'label()',
     '[attr.aria-disabled]': 'disabled() || null',
     '(keydown)': 'onKeydown($event)',

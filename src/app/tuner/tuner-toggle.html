@@ -1,0 +1,9 @@
+<button
+  type="button"
+  class="flex h-13 w-full items-center justify-center gap-2 rounded-full bg-accent text-base font-semibold text-on-accent active:opacity-80"
+  [attr.aria-pressed]="tuner.switchedOn()"
+  (click)="tuner.toggle()"
+>
+  <app-icon [name]="tuner.switchedOn() ? 'stop' : 'mic'" [size]="20" [strokeWidth]="2" />
+  {{ tuner.switchedOn() ? 'Stop tuner' : 'Start tuner' }}
+</button>

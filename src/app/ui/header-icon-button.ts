@@ -7,25 +7,7 @@ import { Surface } from './surface';
 @Component({
   selector: 'app-header-icon-button',
   imports: [Icon, Surface],
-  template: `
-    <button
-      type="button"
-      appSurface
-      class="relative size-11 rounded-full"
-      [attr.aria-label]="fullLabel()"
-      (click)="pressed.emit()"
-    >
-      <app-icon [name]="icon()" />
-      @if (badge() > 0) {
-        <span
-          class="absolute -end-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-on-accent tabular"
-          aria-hidden="true"
-        >
-          {{ badge() }}
-        </span>
-      }
-    </button>
-  `,
+  templateUrl: './header-icon-button.html',
 })
 export class HeaderIconButton {
   readonly icon = input.required<IconName>();

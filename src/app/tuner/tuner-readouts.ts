@@ -6,31 +6,7 @@ import { TunerStore } from '../state/tuner.store';
 /** Large note letter (German names) with accidental and a smaller octave number. */
 @Component({
   selector: 'app-note-name',
-  template: `
-    @if (spelling(); as spelling) {
-      <span class="font-semibold tracking-[-0.04em]" [style.font-size.px]="size()">{{
-        spelling.letterName
-      }}</span>
-      @if (spelling.nameAccidental !== 'natural') {
-        <span
-          class="font-medium"
-          [style.font-size.px]="size() * 0.45"
-          [style.margin-top.px]="size() * 0.08"
-        >
-          {{ symbol(spelling.nameAccidental) }}
-        </span>
-      }
-      <span
-        class="ms-1 font-medium text-muted"
-        [style.font-size.px]="size() * 0.31"
-        [style.margin-top.px]="size() * 0.59"
-      >
-        {{ spelling.octave }}
-      </span>
-    } @else {
-      <span class="font-semibold text-stroke" [style.font-size.px]="size()">–</span>
-    }
-  `,
+  templateUrl: './note-name.html',
   host: {
     class: 'flex items-start leading-none',
     role: 'img',
@@ -57,9 +33,10 @@ export class NoteName {
 /** High / in tune / low, with symbol and text so it never relies on colour alone. */
 @Component({
   selector: 'app-tuning-state-pill',
-  template: '{{ state().text }}',
+  templateUrl: './tuning-state-pill.html',
   host: {
-    class: 'inline-flex h-9 items-center self-center rounded-full px-4 text-base font-bold tabular',
+    class:
+      'inline-flex h-9 items-center self-center rounded-full px-4 text-base font-bold tabular-nums',
     role: 'status',
     '[class]': 'state().classes',
   },
@@ -88,57 +65,8 @@ export class TuningStatePill {
 /** Needle from −50 to +50 cents with the in-tune band shaded. */
 @Component({
   selector: 'app-cents-meter',
-  template: `
-    <svg viewBox="0 0 480 96" class="w-full" role="img" [attr.aria-label]="label()">
-      <rect
-        y="14"
-        height="44"
-        rx="6"
-        class="fill-in-tune"
-        fill-opacity="0.22"
-        [attr.x]="x(-tolerance())"
-        [attr.width]="x(tolerance()) - x(-tolerance())"
-      />
-      <g class="stroke-ring" stroke-width="1.5">
-        @for (tick of ticks; track tick) {
-          @let major = tick === -50 || tick === 50;
-          <line
-            [attr.x1]="x(tick)"
-            [attr.x2]="x(tick)"
-            [attr.y1]="major ? 30 : 34"
-            [attr.y2]="major ? 44 : 40"
-          />
-        }
-      </g>
-      <line x1="20" y1="37" x2="460" y2="37" class="stroke-stroke" stroke-width="1.5" />
-      <line x1="240" y1="18" x2="240" y2="54" class="stroke-in-tune" stroke-width="2.5" />
-      @if (needle(); as needle) {
-        <g
-          class="transition-transform duration-100 ease-out motion-reduce:transition-none"
-          [style.transform]="'translateX(' + needle.x + 'px)'"
-        >
-          <line
-            x1="0"
-            y1="9"
-            x2="0"
-            y2="65"
-            stroke-width="4"
-            stroke-linecap="round"
-            [class]="needle.inTune ? 'stroke-in-tune' : 'stroke-accent'"
-          />
-          <circle cx="0" cy="37" r="7" [class]="needle.inTune ? 'fill-in-tune' : 'fill-accent'" />
-        </g>
-      }
-      <g font-size="12" text-anchor="middle" class="fill-muted">
-        <text x="20" y="84">−50</text>
-        <text x="130" y="84">▼ low</text>
-        <text x="240" y="84" class="fill-in-tune">0</text>
-        <text x="350" y="84">high ▲</text>
-        <text x="460" y="84">+50</text>
-      </g>
-    </svg>
-  `,
-  host: { class: 'block w-full max-w-[480px]' },
+  templateUrl: './cents-meter.html',
+  host: { class: 'block w-full max-w-120' },
 })
 export class CentsMeter {
   private readonly tuner = inject(TunerStore);
@@ -162,12 +90,8 @@ export class CentsMeter {
 
 @Component({
   selector: 'app-frequency-label',
-  template: `
-    @if (tuner.reading(); as reading) {
-      {{ reading.frequency.toFixed(2) }} Hz · target {{ reading.targetFrequency.toFixed(2) }} Hz
-    }
-  `,
-  host: { class: 'block min-h-5 text-sm text-muted tabular' },
+  templateUrl: './frequency-label.html',
+  host: { class: 'block min-h-5 text-sm text-muted tabular-nums' },
 })
 export class FrequencyLabel {
   protected readonly tuner = inject(TunerStore);

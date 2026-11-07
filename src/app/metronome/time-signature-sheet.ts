@@ -13,36 +13,7 @@ import { Sheet } from '../ui/sheet';
 @Component({
   selector: 'app-time-signature-sheet',
   imports: [Sheet, NumberStepper, SegmentedPills, SettingsGroup, SettingsRow, FormField],
-  template: `
-    <app-sheet title="Time signature" closeLabel="Cancel" (closed)="closed.emit()">
-      <form class="flex flex-col gap-6" (submit)="apply($event)">
-        <p class="text-center text-6xl font-semibold tabular" aria-live="polite">
-          {{ model().beats }}/{{ model().unit }}
-        </p>
-        <app-settings-group title="Meter">
-          <app-settings-row label="Beats per bar">
-            <app-number-stepper label="Beats per bar" [formField]="signatureForm.beats" />
-          </app-settings-row>
-          <hr />
-          <app-settings-row label="Beat unit">
-            <app-segmented-pills
-              class="w-44"
-              label="Beat unit"
-              [options]="units"
-              [formField]="signatureForm.unit"
-            />
-          </app-settings-row>
-        </app-settings-group>
-        <button
-          type="submit"
-          class="h-12 rounded-xl bg-accent text-base font-semibold text-on-accent disabled:opacity-40"
-          [disabled]="signatureForm().invalid()"
-        >
-          Use {{ model().beats }}/{{ model().unit }}
-        </button>
-      </form>
-    </app-sheet>
-  `,
+  templateUrl: './time-signature-sheet.html',
 })
 export class TimeSignatureSheet {
   private readonly store = inject(MetronomeStore);
