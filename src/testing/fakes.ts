@@ -74,11 +74,12 @@ class FakeAnalyser extends FakeNode {
   }
 }
 
-export class FakeAudioContext {
+export class FakeAudioContext extends EventTarget {
   static instances: FakeAudioContext[] = [];
 
   currentTime = 0;
-  state: 'suspended' | 'running' | 'closed' = 'suspended';
+  /** `interrupted` is Safari's state while a phone call or Siri has the audio. */
+  state: 'suspended' | 'running' | 'closed' | 'interrupted' = 'suspended';
   readonly sampleRate: number;
   readonly destination = new FakeNode();
   outputLatency = 0;
@@ -90,6 +91,7 @@ export class FakeAudioContext {
   resumeCount = 0;
 
   constructor(options?: { sampleRate?: number }) {
+    super();
     this.sampleRate = options?.sampleRate ?? 48_000;
     FakeAudioContext.instances.push(this);
   }
@@ -102,8 +104,15 @@ export class FakeAudioContext {
 
   resume(): Promise<void> {
     this.resumeCount += 1;
-    this.state = 'running';
+    this.setState('running');
     return Promise.resolve();
+  }
+
+  /** Changes the state as the browser would, firing `statechange`. */
+  setState(state: FakeAudioContext['state']): void {
+    if (this.state === state) return;
+    this.state = state;
+    this.dispatchEvent(new Event('statechange'));
   }
 
   createBuffer(channels: number, length: number, sampleRate: number): FakeAudioBuffer {

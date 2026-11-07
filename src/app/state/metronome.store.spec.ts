@@ -348,6 +348,15 @@ describe('MetronomeStore playback', () => {
     error.mockRestore();
   });
 
+  it('shows stopped when a phone call takes the audio away', async () => {
+    await startPlaying();
+    driver.playUntil(0.6);
+    driver.context.setState('interrupted');
+    expect(store.isPlaying()).toBe(false);
+    expect(store.currentBeat()).toBeNull();
+    driver.context.state = 'suspended';
+  });
+
   it('restarts the bar count on every start', async () => {
     await startPlaying();
     driver.playUntil(2.2);

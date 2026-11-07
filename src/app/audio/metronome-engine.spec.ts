@@ -119,6 +119,28 @@ describe('MetronomeEngine', () => {
     expect(pendingAnimationFrames()).toBe(0);
   });
 
+  it('stops and says so when the system interrupts the audio', async () => {
+    let interruptions = 0;
+    engine = new MetronomeEngine(
+      () => params,
+      () => sound,
+      (beat) => beats.push(beat),
+      () => (interruptions += 1),
+    );
+    await engine.start();
+    context.setState('interrupted');
+    expect(engine.isRunning).toBe(false);
+    expect(interruptions).toBe(1);
+    expect(ticker().messages.at(-1)).toBe('stop');
+
+    // Resuming later, or a state change while stopped, is not another interruption.
+    context.setState('running');
+    context.setState('suspended');
+    expect(interruptions).toBe(1);
+    await engine.start();
+    expect(engine.isRunning).toBe(true);
+  });
+
   it('plays the click sound when the saved sound is unknown', async () => {
     sound = 'bell' as ClickSound;
     await engine.start();

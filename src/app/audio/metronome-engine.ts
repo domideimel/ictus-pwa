@@ -24,11 +24,14 @@ export class MetronomeEngine {
   private pendingBeats: ScheduledBeat[] = [];
   private frame = 0;
   private sources = new Set<AudioBufferSourceNode>();
+  private watching = false;
 
+  /** `onInterrupted`: the system took the audio away while playing (a phone call, Siri, another app). */
   constructor(
     private readonly params: () => ClickParams,
     private readonly sound: () => ClickSound,
     private readonly onBeat: (beat: ScheduledBeat) => void,
+    private readonly onInterrupted: () => void = () => undefined,
   ) {}
 
   get isRunning(): boolean {
@@ -40,6 +43,7 @@ export class MetronomeEngine {
     if (this.scheduler) return;
     const context = sharedAudioContext();
     this.context = context;
+    this.watchState(context);
     if (context.state !== 'running') await context.resume();
     // A second start while the context was resuming may have won the race.
     if (this.isRunning) return;
@@ -66,6 +70,20 @@ export class MetronomeEngine {
     this.stop();
     this.ticker?.terminate();
     this.ticker = null;
+  }
+
+  /**
+   * An interrupted or suspended context plays nothing while the clock stands still, so the metronome
+   * would look like it plays in silence. Stop instead, so Start works again once the call is over.
+   */
+  private watchState(context: AudioContext): void {
+    if (this.watching) return;
+    this.watching = true;
+    context.addEventListener('statechange', () => {
+      if (!this.scheduler || context.state === 'running') return;
+      this.stop();
+      this.onInterrupted();
+    });
   }
 
   private createTicker(): Worker {

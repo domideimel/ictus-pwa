@@ -349,10 +349,17 @@ export const MetronomeStore = signalStore(
       }
     };
 
+    /** The engine already stopped itself; the screen follows. */
+    const interrupted = (): void => {
+      store._playing.set(false);
+      store._beat.set(null);
+    };
+
     const engine = new MetronomeEngine(
       () => untracked(store._clickParams),
       () => untracked(store._settings.clickSound),
       showBeat,
+      interrupted,
     );
     inject(DestroyRef).onDestroy(() => {
       engine.dispose();

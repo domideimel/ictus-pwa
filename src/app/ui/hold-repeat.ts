@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, inject, output } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, inject, output } from '@angular/core';
 
 const FIRST_DELAY_MS = 400;
 const REPEAT_MS = 80;
@@ -11,15 +11,15 @@ const REPEAT_MS = 80;
     '(pointerup)': 'end()',
     '(pointercancel)': 'end()',
     '(pointerleave)': 'end()',
-    '(click)': 'onClick()',
+    '(click)': 'onClick($event)',
     '(contextmenu)': '$event.preventDefault()',
   },
 })
 export class HoldRepeat {
+  private readonly button = inject<ElementRef<HTMLButtonElement>>(ElementRef).nativeElement;
   readonly repeat = output();
 
   private timer: ReturnType<typeof setTimeout> | undefined;
-  private fromPointer = false;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
@@ -29,9 +29,13 @@ export class HoldRepeat {
 
   protected begin(event: PointerEvent): void {
     if (event.button !== 0) return;
-    this.fromPointer = true;
     this.repeat.emit();
     const tick = (): void => {
+      // Held up to the limit: the button is disabled now and may never see the pointer go up.
+      if (this.button.disabled) {
+        this.end();
+        return;
+      }
       this.repeat.emit();
       this.timer = setTimeout(tick, REPEAT_MS);
     };
@@ -43,9 +47,11 @@ export class HoldRepeat {
     this.timer = undefined;
   }
 
-  /** Keyboard activation (Enter / Space) arrives as a click without a pointer press. */
-  protected onClick(): void {
-    if (!this.fromPointer) this.repeat.emit();
-    this.fromPointer = false;
+  /**
+   * Keyboard activation (Enter / Space) and assistive tech arrive as a click with `detail` 0 and no
+   * press before it; a click after a pointer press has `detail` 1 or more and was already counted.
+   */
+  protected onClick(event: MouseEvent): void {
+    if (event.detail === 0) this.repeat.emit();
   }
 }

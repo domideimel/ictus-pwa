@@ -129,7 +129,8 @@ describe('NumberStepper', () => {
     pointer(byLabel(host, 'Plus 10'), 'pointerup');
     await fixture.whenStable();
     expect(value()).toBe(15);
-    byLabel(host, 'Plus 10').click();
+    // The click the browser fires after that press.
+    byLabel(host, 'Plus 10').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
     await fixture.whenStable();
     expect(value()).toBe(15);
     pointer(byLabel(host, 'Plus 10'), 'pointerdown', { button: 0 });
@@ -270,12 +271,37 @@ describe('HoldRepeat', () => {
     expect(count()).toBe(5);
   });
 
+  /** The click a browser fires after a pointer press counts the presses in `detail`. */
+  const pointerClick = (button: HTMLButtonElement): void => {
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  };
+
   it('does not count the click that follows a press', () => {
     const { button, count } = setup();
     pointer(button, 'pointerdown', { button: 0 });
     pointer(button, 'pointerup');
-    button.click();
+    pointerClick(button);
     expect(count()).toBe(1);
+  });
+
+  it('still counts a keyboard click after a press that slid off the button', () => {
+    const { button, count } = setup();
+    pointer(button, 'pointerdown', { button: 0 });
+    pointer(button, 'pointerleave');
+    button.click();
+    expect(count()).toBe(2);
+  });
+
+  it('stops repeating once the button is disabled at its limit', () => {
+    const { button, count } = setup();
+    pointer(button, 'pointerdown', { button: 0 });
+    vi.advanceTimersByTime(400 + 80);
+    expect(count()).toBe(3);
+    button.disabled = true;
+    vi.advanceTimersByTime(80 * 5);
+    button.disabled = false;
+    vi.advanceTimersByTime(80 * 5);
+    expect(count()).toBe(3);
   });
 
   it('counts keyboard clicks', () => {

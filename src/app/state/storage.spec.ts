@@ -92,6 +92,28 @@ describe('withPersistence', () => {
     );
   });
 
+  it('takes over what another tab saved, so neither overwrites the other', () => {
+    const store = TestBed.inject(Store);
+    const saved = JSON.stringify({ count: 3, label: 'other tab' });
+    localStorage.setItem('ictus.test', saved);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'ictus.test', newValue: saved }));
+    expect(getState(store)).toEqual({ count: 3, label: 'other tab', session: 1 });
+
+    // Other keys, and clearing the storage, leave the state alone.
+    window.dispatchEvent(new StorageEvent('storage', { key: 'ictus.other', newValue: '{}' }));
+    window.dispatchEvent(new StorageEvent('storage', { key: null, newValue: null }));
+    expect(getState(store).count).toBe(3);
+  });
+
+  it('stops listening to other tabs when destroyed', () => {
+    const store = TestBed.inject(Store);
+    TestBed.resetTestingModule();
+    const saved = JSON.stringify({ count: 8, label: 'z' });
+    localStorage.setItem('ictus.test', saved);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'ictus.test', newValue: saved }));
+    expect(getState(store).count).toBe(0);
+  });
+
   it('keeps the initial state when the saved value is unreadable', () => {
     localStorage.setItem('ictus.test', 'not json');
     expect(getState(TestBed.inject(Store))).toEqual({ count: 0, label: 'x', session: 1 });

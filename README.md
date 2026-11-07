@@ -54,8 +54,10 @@ When a new version is deployed, the app offers a **Reload** button.
 - **CI** (`.github/workflows/ci.yml`) runs on every pull request and push to `main`: formatting, ESLint,
   type-check, unit tests with coverage thresholds (summary in the run, report as an artifact) and a production build.
 - **Deploy:** Vercel's Git integration builds every push: `main` goes to production, other branches and
-  pull requests get preview URLs. `vercel.json` adds the fallback to `index.html` (so `/tuner` works on reload)
-  and keeps the service worker files from being cached.
+  pull requests get preview URLs. `vercel.json` adds the fallback to `index.html` (so `/tuner` works on reload),
+  keeps the service worker files from being cached, and sends the security headers: a Content Security Policy
+  that allows only the app's own scripts (critical CSS is not inlined, so `index.html` has no inline script),
+  `Permissions-Policy` limiting the microphone to the app, `nosniff`, a referrer policy and no framing.
 
 ## Structure
 
