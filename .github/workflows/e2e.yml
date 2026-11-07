@@ -1,0 +1,101 @@
+# End-to-end tests with Playwright against the production build, served with the vercel.json headers.
+# One job per browser and OS, all in parallel; each job builds the app itself (a few seconds), which
+# is faster than waiting for a shared build job. Chrome and Edge are already on the runners; Firefox and
+# WebKit are downloaded once per Playwright version and then restored from the cache.
+name: E2E
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  e2e:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux: every project. Chrome and the Android emulation use the runner's Google Chrome.
+          - { name: Chrome · Linux, os: ubuntu-latest, project: chrome, channel: chrome }
+          - {
+              name: Android (Pixel 7) · Linux,
+              os: ubuntu-latest,
+              project: android,
+              channel: chrome,
+            }
+          - { name: Firefox · Linux, os: ubuntu-latest, project: firefox, browser: firefox }
+          - { name: Safari (WebKit) · Linux, os: ubuntu-latest, project: safari, browser: webkit }
+          - { name: iPhone (WebKit) · Linux, os: ubuntu-latest, project: iphone, browser: webkit }
+          - { name: iPad (WebKit) · Linux, os: ubuntu-latest, project: ipad, browser: webkit }
+          # WebKit on Apple's own OS, closest to Safari on Mac, iPhone and iPad.
+          - { name: Safari (WebKit) · macOS, os: macos-latest, project: safari, browser: webkit }
+          - { name: iPhone (WebKit) · macOS, os: macos-latest, project: iphone, browser: webkit }
+          # Edge on Windows, already installed on the runner.
+          - { name: Edge · Windows, os: windows-latest, project: chrome, channel: msedge }
+    env:
+      E2E_CHROMIUM_CHANNEL: ${{ matrix.channel }}
+    steps:
+      - uses: actions/checkout@v6
+
+      # Uses the pnpm version from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright version
+        if: matrix.browser
+        id: playwright
+        shell: bash
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Restore ${{ matrix.browser }}
+        if: matrix.browser
+        id: browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/Library/Caches/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ matrix.browser }}-${{ steps.playwright.outputs.version }}
+
+      - name: Download ${{ matrix.browser }}
+        if: matrix.browser && steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      # The cache holds the browser, not the system libraries it needs on Linux.
+      - name: System libraries for ${{ matrix.browser }}
+        if: matrix.browser && steps.browsers.outputs.cache-hit == 'true' && runner.os == 'Linux'
+        run: pnpm exec playwright install-deps ${{ matrix.browser }}
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm exec playwright test --project ${{ matrix.project }}
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ matrix.project }}-${{ runner.os }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

@@ -38,7 +38,6 @@
         pressed
         class="h-8.5 shrink-0 rounded-full px-3.5 text-sm tabular-nums"
         [selected]="option.join('+') === store.grouping().join('+')"
-        [attr.aria-label]="`Grouping ${option.join(' plus ')}`"
         (click)="store.setGrouping(option)"
       >
         {{ option.join('+') }}

@@ -25,6 +25,8 @@ pnpm typecheck      # tsc for app, specs and workers
 pnpm check:contrast # theme colour pairs against WCAG AA, light and dark
 pnpm format         # Prettier; CI runs pnpm format:check
 pnpm build          # production build in dist/ictus-pwa/browser
+pnpm e2e            # build, then the Playwright end-to-end tests in every browser
+pnpm e2e --project iphone   # one browser/device: chrome, firefox, safari, android, iphone, ipad
 ```
 
 TypeScript runs with every strict flag (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
@@ -34,6 +36,16 @@ Husky runs ESLint and Prettier on staged files plus the type-check before each c
 Tests run in jsdom against the real stores, scheduler and components. `src/testing` has the fakes for Web Audio,
 workers, animation frames and the microphone, and drivers that move the audio clock beat by beat
 (`MetronomeDriver`) or feed the tuner pitches (`TunerDriver`). The coverage report is in `coverage/ictus-pwa`.
+
+### End-to-end tests
+
+`e2e/` drives the production build in real browsers with Playwright: desktop Chrome, Firefox and
+Safari (WebKit), an Android phone (Pixel 7), an iPhone and an iPad. `scripts/serve-dist.mjs` serves
+the build with the headers from `vercel.json`, so every test also fails on a Content Security Policy
+violation, a page error or a console error. Before the app loads, each page gets a recorder for the
+clicks the metronome schedules and a stand-in microphone that plays a tone the test picks, so the
+tuner can be tested the same way in every browser. `e2e/a11y.spec.ts` runs axe on every screen and
+sheet in light and dark mode. Install the browsers once with `pnpm exec playwright install`.
 
 The service worker only runs in production builds. To try offline mode and installing locally:
 
@@ -54,6 +66,9 @@ When a new version is deployed, the app offers a **Reload** button.
 
 - **CI** (`.github/workflows/ci.yml`) runs on every pull request and push to `main`: formatting, ESLint,
   type-check, unit tests with coverage thresholds (summary in the run, report as an artifact) and a production build.
+- **E2E** (`.github/workflows/e2e.yml`) runs the Playwright tests in parallel, one job per browser and OS:
+  every project on Linux, WebKit on macOS, Edge on Windows. Chrome and Edge come with the runners; Firefox
+  and WebKit are cached per Playwright version. A failing job uploads its report and traces.
 - **Deploy:** Vercel's Git integration builds every push: `main` goes to production, other branches and
   pull requests get preview URLs. `vercel.json` adds the fallback to `index.html` (so `/tuner` works on reload),
   keeps the service worker files from being cached, and sends the security headers: a Content Security Policy
@@ -70,8 +85,9 @@ When a new version is deployed, the app offers a **Reload** button.
 | `src/app/shared`                                              | Small helpers without a domain, e.g. `clamp`                                                                    |
 | `src/app/ui`                                                  | Shared controls: sheet (native `<dialog>`), segmented pills, number stepper, switch (all signal-forms controls) |
 | `src/app/metronome`, `tuner`, `setlists`, `settings`, `pages` | Screens and their components                                                                                    |
-| `src/testing`                                                 | Test fakes, drivers and the axe helper (not part of the app build)                                              |
-| `scripts`                                                     | `check-contrast.mjs`, run in CI                                                                                 |
+| `src/testing`                                                 | Test fakes and drivers for the unit tests (not part of the app build)                                           |
+| `e2e`                                                         | Playwright end-to-end and accessibility tests                                                                   |
+| `scripts`                                                     | `check-contrast.mjs` (run in CI), `serve-dist.mjs` (serves the build for the e2e tests)                         |
 
 ## Differences from the native app
 

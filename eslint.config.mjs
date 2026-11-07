@@ -71,7 +71,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/**/*.spec.ts', 'src/testing/**/*.ts', 'src/test-setup.ts'],
+    files: ['src/**/*.spec.ts', 'src/testing/**/*.ts', 'src/test-setup.ts', 'e2e/**/*.ts'],
     rules: {
       // Tests assert on elements they just rendered.
       '@typescript-eslint/no-non-null-assertion': 'off',

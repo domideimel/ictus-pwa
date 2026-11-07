@@ -45,6 +45,9 @@
     },
     {
       "path": "./tsconfig.worker.json"
+    },
+    {
+      "path": "./e2e/tsconfig.json"
     }
   ]
 }
