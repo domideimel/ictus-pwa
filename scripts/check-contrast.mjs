@@ -1,23 +1,28 @@
-// Checks the theme's colour pairs against WCAG 2.2 AA in both colour schemes: 4.5:1 for text,
-// 3:1 for the parts of controls you need to see (1.4.11). jsdom has no layout, so axe can't check
-// colour contrast in the unit tests; this reads the tokens straight from src/styles.css instead.
+// Checks the colour pairs Ictus composes itself from the ng-liquid-glass tokens against WCAG 2.2 AA,
+// in light and dark mode: 4.5:1 for text, 3:1 for the parts of controls you need to see (1.4.11).
+// The library checks its own pairs (AAA) with `lg-contrast`; this covers the app's dial, beat dots,
+// tuner and staff. jsdom has no layout, so axe can't check colour contrast in the unit tests.
 // Run: node scripts/check-contrast.mjs
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
-const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+const require = createRequire(import.meta.url);
+const css = readFileSync(require.resolve('@domideimel/ng-liquid-glass/theme.css'), 'utf8');
 
-/** `--color-name: #rrggbb` declarations inside the block that starts at `marker`. */
-function tokens(marker) {
-  const start = css.indexOf(marker);
-  if (start < 0) throw new Error(`No "${marker}" block in styles.css`);
-  const block = css.slice(start, css.indexOf('}', start));
-  return Object.fromEntries(
-    [...block.matchAll(/--color-([\w-]+):\s*(#[0-9a-f]{6})/gi)].map(([, name, hex]) => [name, hex]),
-  );
+/** `--lg-name: light-dark(#light, #dark)` (or a plain hex) from the first top-level :root block. */
+function tokens() {
+  const block = /:root\s*\{([^}]*)\}/.exec(css.replace(/\/\*[\s\S]*?\*\//g, ''))?.[1];
+  if (!block) throw new Error('No :root block in the ng-liquid-glass theme');
+  const light = {};
+  const dark = {};
+  for (const [, name, value] of block.matchAll(/--lg-([\w-]+):\s*([^;]+);/g)) {
+    const pair = /^light-dark\(\s*(#[\da-f]{6})\s*,\s*(#[\da-f]{6})\s*\)$/i.exec(value.trim());
+    const hex = /^#[\da-f]{6}$/i.exec(value.trim());
+    if (pair) [light[name], dark[name]] = [pair[1], pair[2]];
+    else if (hex) light[name] = dark[name] = hex[0];
+  }
+  return { light, dark };
 }
-
-const dark = tokens('@theme');
-const schemes = { dark, light: { ...dark, ...tokens('(prefers-color-scheme: light)') } };
 
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 const channel = (value) => {
@@ -32,51 +37,42 @@ const ratio = (a, b) => {
   const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (high + 0.05) / (low + 0.05);
 };
-/** A Tailwind `bg-x/15` tint: `x` at `alpha` over `under`. */
-const tint = (color, alpha, under) =>
-  color.map((c, i) => Math.round(alpha * c + (1 - alpha) * under[i]));
 
 const TEXT = 4.5;
 const UI = 3;
 
-/** [foreground, background, minimum, where]; a background is a token or [token, alpha, under]. */
+/** [foreground, background, minimum, where] with token names without the `--lg-` prefix. */
 const PAIRS = [
-  ...['bg', 'panel', 'surface'].flatMap((under) => [
-    ['fg', under, TEXT, 'body text'],
-    ['muted', under, TEXT, 'secondary text'],
-    ['accent-text', under, TEXT, 'amber text and links'],
-    ['in-tune', under, TEXT, 'in-tune text'],
-    ['ring', under, UI, 'beat dot, lug and switch borders'],
-    ['accent', under, UI, 'tempo arc, play button'],
+  ...['bg', 'surface'].flatMap((under) => [
+    ['accent', under, TEXT, 'accented beat number, loaded piece, "Play!"'],
+    ['accent', under, UI, 'tempo arc, accent beat ring, current lug'],
+    ['control-border', under, UI, 'beat dot and lug rings'],
+    ['success', under, UI, 'tuner needle in tune, microphone dot'],
+    ['warning', under, UI, 'tuner needle off pitch'],
+    ['warning', under, TEXT, 'drum advice, tuner notice'],
+    ['fg-muted', under, TEXT, 'section labels, captions'],
   ]),
-  ['faint', 'bg', TEXT, 'muted beat number'],
-  ['faint', 'surface', TEXT, 'muted beat number'],
-  ['accent-text', ['accent', 0.15, 'bg'], TEXT, 'practice chips, tuning pill'],
-  ['accent-text', ['accent', 0.15, 'panel'], TEXT, 'practice chips on the tablet card'],
-  ['accent-text', ['accent', 0.2, 'surface'], TEXT, 'drum lug off pitch'],
-  ['in-tune', ['in-tune', 0.15, 'bg'], TEXT, 'in-tune pill'],
-  ['in-tune', ['in-tune', 0.25, 'surface'], TEXT, 'drum lug in tune'],
-  ['muted', ['muted', 0.15, 'bg'], TEXT, 'neutral tuning pill'],
-  ['on-accent', 'accent', TEXT, 'text on amber buttons'],
-  ['bg', 'fg', TEXT, 'selected chips'],
-  ['ink', 'paper', TEXT, 'staff card'],
-  ['paper-label', 'paper', TEXT, 'staff card caption'],
+  ['on-accent', 'accent', TEXT, 'playing beat, play button'],
+  ['accent', 'accent-surface', TEXT, 'practice chips'],
+  ['success', 'success-surface', TEXT, 'in-tune pill, lug in tune'],
+  ['warning', 'warning-surface', TEXT, 'off-pitch pill, lug off pitch'],
+  ['fg-muted', 'surface-muted', TEXT, 'neutral tuning pill, staff caption'],
+  ['fg', 'surface-muted', TEXT, 'staff notes on the paper card'],
+  ['fg-muted', 'border', TEXT, 'muted beat while it plays'],
 ];
 
 let failures = 0;
-for (const [scheme, colors] of Object.entries(schemes)) {
+for (const [scheme, colors] of Object.entries(tokens())) {
   const color = (name) => {
-    if (!colors[name]) throw new Error(`Unknown colour token "${name}"`);
+    if (!colors[name]) throw new Error(`Unknown colour token "--lg-${name}"`);
     return rgb(colors[name]);
   };
   for (const [fg, bg, minimum, where] of PAIRS) {
-    const back = Array.isArray(bg) ? tint(color(bg[0]), bg[1], color(bg[2])) : color(bg);
-    const value = ratio(color(fg), back);
+    const value = ratio(color(fg), color(bg));
     if (value < minimum) {
       failures += 1;
-      const label = Array.isArray(bg) ? `${bg[0]}/${bg[1] * 100} over ${bg[2]}` : bg;
       console.error(
-        `${scheme}: ${fg} on ${label} is ${value.toFixed(2)}:1, needs ${minimum}:1 (${where})`,
+        `${scheme}: ${fg} on ${bg} is ${value.toFixed(2)}:1, needs ${minimum}:1 (${where})`,
       );
     }
   }

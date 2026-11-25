@@ -1,6 +1,10 @@
 <button
   type="button"
-  class="flex items-center justify-center rounded-full bg-accent text-on-accent transition-transform active:scale-95 motion-reduce:transition-none"
+  lgButton
+  variant="accent"
+  shape="circle"
+  size="xl"
+  class="transition-transform active:scale-95 motion-reduce:transition-none"
   [style.width.px]="size()"
   [style.height.px]="size()"
   [attr.aria-label]="store.isPlaying() ? 'Stop metronome' : 'Start metronome'"

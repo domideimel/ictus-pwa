@@ -1,25 +1,30 @@
 <app-sheet title="Setlists" (closed)="closed.emit()">
-  <button
-    sheetAccessory
-    type="button"
-    appSurface
-    class="h-11 rounded-full px-4 text-15"
-    [selected]="editing()"
-    (click)="editing.set(!editing())"
-  >
-    {{ editing() ? 'Finish' : 'Edit' }}
-  </button>
+  <!-- Nothing to edit until there is a setlist. -->
+  @if (library.setlists().length > 0) {
+    <button
+      sheetAccessory
+      type="button"
+      lgButton
+      class="rounded-full"
+      [variant]="editing() ? 'primary' : 'secondary'"
+      (click)="editing.set(!editing())"
+    >
+      {{ editing() ? 'Finish' : 'Edit' }}
+    </button>
+  }
 
   <div class="flex flex-col gap-5">
     @for (setlist of library.setlists(); track setlist.id) {
       <section class="flex flex-col gap-1.5" [attr.aria-label]="setlist.name">
-        <div class="flex items-center justify-between ps-1 text-muted">
-          <h3 class="text-xs uppercase tracking-8">{{ setlist.name }}</h3>
+        <div class="flex items-center justify-between ps-1 text-lg-fg-muted">
+          <h3 class="text-xs uppercase tracking-wider">{{ setlist.name }}</h3>
           @if (editing()) {
             <div class="flex">
               <button
                 type="button"
-                class="flex size-11 items-center justify-center"
+                lgButton
+                variant="ghost"
+                shape="circle"
                 [attr.aria-label]="`Rename ${setlist.name}`"
                 (click)="rename(setlist)"
               >
@@ -27,7 +32,9 @@
               </button>
               <button
                 type="button"
-                class="flex size-11 items-center justify-center"
+                lgButton
+                variant="ghost"
+                shape="circle"
                 [attr.aria-label]="`Delete ${setlist.name}`"
                 (click)="confirming.set({ kind: 'deleteSetlist', setlist })"
               >
@@ -36,25 +43,25 @@
             </div>
           }
         </div>
-        <ul class="flex flex-col overflow-hidden rounded-14 bg-surface">
+        <ul class="flex flex-col overflow-hidden rounded-lg-surface bg-lg-surface">
           @for (piece of setlist.pieces; track piece.id; let first = $first, last = $last) {
             @let active = library.activePiece()?.pieceId === piece.id;
-            <li class="flex min-h-14 items-center border-b border-stroke">
+            <li class="flex min-h-14 items-center border-b border-lg-border">
               <button
                 type="button"
                 class="flex min-w-0 flex-1 flex-col items-start gap-0.5 px-4 py-2 text-start"
                 (click)="load(setlist, piece)"
               >
-                <span class="font-semibold" [class.text-accent-text]="active">{{
-                  piece.name
-                }}</span>
-                <span class="text-13 text-muted tabular-nums">{{ summary(piece) }}</span>
+                <span class="font-semibold" [class.text-lg-accent]="active">{{ piece.name }}</span>
+                <span class="text-sm text-lg-fg-muted tabular-nums">{{ summary(piece) }}</span>
               </button>
               @if (editing()) {
-                <div class="flex pe-1 text-muted">
+                <div class="flex pe-1 text-lg-fg-muted">
                   <button
                     type="button"
-                    class="flex size-11 items-center justify-center disabled:opacity-30"
+                    lgButton
+                    variant="ghost"
+                    shape="circle"
                     [disabled]="first"
                     [attr.aria-label]="`Move ${piece.name} up`"
                     (click)="library.movePiece(setlist.id, piece.id, -1)"
@@ -63,7 +70,9 @@
                   </button>
                   <button
                     type="button"
-                    class="flex size-11 items-center justify-center disabled:opacity-30"
+                    lgButton
+                    variant="ghost"
+                    shape="circle"
                     [disabled]="last"
                     [attr.aria-label]="`Move ${piece.name} down`"
                     (click)="library.movePiece(setlist.id, piece.id, 1)"
@@ -72,7 +81,9 @@
                   </button>
                   <button
                     type="button"
-                    class="flex size-11 items-center justify-center"
+                    lgButton
+                    variant="ghost"
+                    shape="circle"
                     [attr.aria-label]="`Update ${piece.name} with current settings`"
                     (click)="confirming.set({ kind: 'updatePiece', setlist, piece })"
                   >
@@ -80,7 +91,9 @@
                   </button>
                   <button
                     type="button"
-                    class="flex size-11 items-center justify-center"
+                    lgButton
+                    variant="ghost"
+                    shape="circle"
                     [attr.aria-label]="`Delete ${piece.name}`"
                     (click)="confirming.set({ kind: 'deletePiece', setlist, piece })"
                   >
@@ -88,7 +101,7 @@
                   </button>
                 </div>
               } @else if (active) {
-                <app-icon name="check" class="pe-4 text-accent-text" [size]="20" />
+                <app-icon name="check" class="pe-4 text-lg-accent" [size]="20" />
                 <span class="sr-only">Loaded</span>
               }
             </li>
@@ -96,7 +109,7 @@
           <li>
             <button
               type="button"
-              class="flex min-h-12 w-full items-center gap-2 px-4 text-15 font-semibold text-accent-text"
+              class="flex min-h-12 w-full items-center gap-2 px-4 text-base font-semibold text-lg-accent"
               (click)="newPiece(setlist)"
             >
               <app-icon name="plus" [size]="20" [strokeWidth]="2.2" />
@@ -106,13 +119,13 @@
         </ul>
       </section>
     } @empty {
-      <div class="flex flex-col gap-3 rounded-14 bg-surface p-4">
-        <p class="text-15 text-muted">
+      <div class="flex flex-col gap-3 rounded-lg-surface bg-lg-surface p-4">
+        <p class="text-base text-lg-fg-muted">
           No setlists yet. Save the current settings as a piece to start one.
         </p>
         <button
           type="button"
-          class="flex min-h-12 items-center gap-2 text-15 font-semibold text-accent-text"
+          class="flex min-h-12 items-center gap-2 text-base font-semibold text-lg-accent"
           (click)="newPiece(null)"
         >
           <app-icon name="plus" [size]="20" [strokeWidth]="2.2" />
@@ -123,13 +136,13 @@
 
     <button
       type="button"
-      class="flex min-h-12 items-center gap-2 rounded-14 bg-surface px-4 text-15 font-semibold"
+      class="flex min-h-12 items-center gap-2 rounded-lg-surface bg-lg-surface px-4 text-base font-semibold"
       (click)="newSetlist()"
     >
       <app-icon name="setlist" [size]="20" />
       New setlist
     </button>
-    <p class="px-1 text-xs text-muted">
+    <p class="px-1 text-xs text-lg-fg-muted">
       A piece saves tempo, meter, grouping, accents, subdivision and swing. Edit to reorder, update
       or delete.
     </p>
@@ -151,6 +164,7 @@
     [title]="text.title"
     [message]="text.message"
     [action]="text.action"
+    [danger]="asking.kind !== 'updatePiece'"
     (confirmed)="confirm(asking)"
     (closed)="confirming.set(null)"
   />

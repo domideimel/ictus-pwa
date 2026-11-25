@@ -1,40 +1,27 @@
-import type { ElementRef } from '@angular/core';
-import { Component, afterNextRender, input, output, viewChild } from '@angular/core';
-import { HeaderIconButton } from './header-icon-button';
+import { Component, input, output, signal } from '@angular/core';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgDialog, LgDialogClose, LgDialogTitle } from '@domideimel/ng-liquid-glass/dialog';
+import { Icon } from './icon';
 
 /**
- * Bottom sheet on phones, centered card on wider screens. Built on the native modal `<dialog>`,
- * so focus is trapped, Escape closes it and the page behind is inert.
- * Render it with `@if`; it opens itself and emits `closed` when dismissed.
+ * Bottom sheet on phones, centred dialog on wider screens: `lg-dialog placement="sheet"` with a title,
+ * an optional accessory (`sheetAccessory`) and a round close button. Render it with `@if`; it opens
+ * itself and emits `closed` when dismissed (close button, Escape or a click on the backdrop).
  */
 @Component({
   selector: 'app-sheet',
-  imports: [HeaderIconButton],
+  imports: [Icon, LgButton, LgDialog, LgDialogClose, LgDialogTitle],
   templateUrl: './sheet.html',
 })
 export class Sheet {
-  private static nextId = 0;
-
   readonly title = input.required<string>();
   /** Accessible name of the round × button, e.g. "Cancel" when closing discards the input. */
   readonly closeLabel = input('Close');
   readonly closed = output();
 
-  protected readonly titleId = `sheet-title-${Sheet.nextId++}`;
-  private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
-
-  constructor() {
-    afterNextRender(() => {
-      this.dialog().nativeElement.showModal();
-    });
-  }
+  protected readonly open = signal(true);
 
   close(): void {
-    this.dialog().nativeElement.close();
-  }
-
-  /** A click on the dialog element itself (not its content) is a click on the backdrop. */
-  protected onBackdropClick(event: MouseEvent): void {
-    if (event.target === this.dialog().nativeElement) this.close();
+    this.open.set(false);
   }
 }

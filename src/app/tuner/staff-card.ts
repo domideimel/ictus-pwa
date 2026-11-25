@@ -26,7 +26,9 @@ const y = (position: number): number => BOTTOM_LINE_Y - (position * SPACE) / 2;
 @Component({
   selector: 'app-staff-card',
   templateUrl: './staff-card.html',
-  host: { class: 'flex flex-col items-center rounded-20 bg-paper px-2 pt-2 pb-3' },
+  host: {
+    class: 'flex flex-col items-center rounded-lg-surface bg-lg-surface-muted px-2 pt-2 pb-3',
+  },
 })
 export class StaffCard {
   private readonly tuner = inject(TunerStore);

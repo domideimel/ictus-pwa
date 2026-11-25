@@ -1,12 +1,12 @@
 import { Component, computed, input, output } from '@angular/core';
 import type { IconName } from './icon';
 import { Icon } from './icon';
-import { Surface } from './surface';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
 
-/** Round 44 px icon button used in screen headers; `badge` shows how many things behind it are on. */
+/** Round icon button (`lgButton shape="circle"`) used in screen headers; `badge` shows how many things behind it are on. */
 @Component({
   selector: 'app-header-icon-button',
-  imports: [Icon, Surface],
+  imports: [Icon, LgButton],
   templateUrl: './header-icon-button.html',
 })
 export class HeaderIconButton {

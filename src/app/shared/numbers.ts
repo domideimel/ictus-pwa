@@ -10,3 +10,9 @@ export const clamp = (value: number, min: number, max: number): number =>
 /** The nearest whole number inside `range`. */
 export const wholeIn = (value: number, range: NumberRange): number =>
   clamp(Math.round(value), range.min, range.max);
+
+/** `aria-valuetext` for a number with a unit, e.g. `withUnit('Hz')(442)` is "442 Hz". */
+export const withUnit =
+  (unit: string) =>
+  (value: number): string =>
+    `${value} ${unit}`;

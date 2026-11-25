@@ -241,10 +241,9 @@ describe('App', () => {
       expect(key(closeButton, 'ArrowLeft').defaultPrevented).toBe(false);
       expect(metronome.isPlaying()).toBe(false);
 
-      // A radio group moves its own selection with the arrows; the pedal action doesn't fire.
-      const radio = element.querySelector('app-subdivision-picker [role="radio"]') as HTMLElement;
-      key(radio, 'ArrowRight');
-      expect(metronome.subdivision()).toBe(2);
+      // A native radio group moves its own selection with the arrows; the pedal action doesn't fire.
+      const radio = element.querySelector('app-subdivision-picker input[type="radio"]')!;
+      expect(key(radio, 'ArrowRight').defaultPrevented).toBe(false);
       expect(metronome.isPlaying()).toBe(false);
     });
   });

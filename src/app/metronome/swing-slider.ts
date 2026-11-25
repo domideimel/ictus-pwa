@@ -6,7 +6,7 @@ import { MetronomeStore } from '../state/metronome.store';
 @Component({
   selector: 'app-swing-slider',
   templateUrl: './swing-slider.html',
-  host: { class: 'flex min-h-11 items-center gap-3 text-15' },
+  host: { class: 'flex min-h-11 items-center gap-3 text-base' },
 })
 export class SwingSlider {
   protected readonly store = inject(MetronomeStore);

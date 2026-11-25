@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { byLabel, click, key, pointer, render } from '../../testing/dom';
+import { byLabel, click, control, key, pressStep, radio, render } from '../../testing/dom';
 import { MetronomeDriver } from '../../testing/metronome-driver';
 import { MetronomeStore } from '../state/metronome.store';
 import { PracticeSheet } from './practice-sheet';
@@ -21,12 +21,6 @@ afterEach(() => {
   store.stop();
 });
 
-const press = (element: Element, label: string): void => {
-  const button = byLabel(element, label);
-  pointer(button, 'pointerdown', { button: 0 });
-  pointer(button, 'pointerup');
-};
-
 describe('PracticeSheet', () => {
   it('says how many tools are on and turns them all off', async () => {
     const { fixture, element } = await render(PracticeSheet);
@@ -47,14 +41,14 @@ describe('PracticeSheet', () => {
 
   it('switches the gap click on and edits its bars', async () => {
     const { fixture, element } = await render(PracticeSheet);
-    const playBars = element.querySelector('[aria-label="Play bars"]')!;
-    expect(playBars.getAttribute('aria-disabled')).toBe('true');
+    const playBars = control(element, 'Play bars');
+    expect(playBars.disabled).toBe(true);
     await click(fixture, byLabel(element, 'Gap click', '[role="switch"]'));
     TestBed.tick();
     expect(store.practice().gapClick.enabled).toBe(true);
     await fixture.whenStable();
-    expect(playBars.getAttribute('aria-disabled')).toBeNull();
-    press(playBars, 'Plus 1');
+    expect(playBars.disabled).toBe(false);
+    pressStep(playBars, 'increase');
     TestBed.tick();
     expect(store.practice().gapClick.play).toBe(3);
   });
@@ -62,7 +56,8 @@ describe('PracticeSheet', () => {
   it('keeps gap bars within 1 to 16', async () => {
     const { fixture, element } = await render(PracticeSheet);
     await click(fixture, byLabel(element, 'Gap click', '[role="switch"]'));
-    const muteBars = element.querySelector('[aria-label="Mute bars"]')!;
+    await fixture.whenStable();
+    const muteBars = control(element, 'Mute bars');
     expect(muteBars.getAttribute('aria-valuemin')).toBe('1');
     expect(muteBars.getAttribute('aria-valuemax')).toBe('16');
     key(muteBars, 'PageDown');
@@ -72,10 +67,10 @@ describe('PracticeSheet', () => {
 
   it('picks a polyrhythm', async () => {
     const { fixture, element } = await render(PracticeSheet);
-    await click(fixture, byLabel(element, '4:3', '[role="radio"]'));
+    await click(fixture, radio(element, '4:3'));
     TestBed.tick();
     expect(store.practice().polyrhythm).toBe('4:3');
-    await click(fixture, byLabel(element, 'Off', '[role="radio"]'));
+    await click(fixture, radio(element, 'Off'));
     TestBed.tick();
     expect(store.practice().polyrhythm).toBe('off');
   });
@@ -85,10 +80,14 @@ describe('PracticeSheet', () => {
     const { fixture, element } = await render(PracticeSheet);
     expect(element.textContent).toContain('Starts at the metronome tempo (96 BPM)');
     await click(fixture, byLabel(element, 'Speed trainer', '[role="switch"]'));
-    press(element.querySelector('[aria-label="Target BPM"]')!, 'Plus 10');
-    press(element.querySelector('[aria-label="Raise by"]')!, 'Minus 1');
-    press(element.querySelector('[aria-label="Every"]')!, 'Plus 1');
+    await fixture.whenStable();
+    // Page Up takes the large step of 10, as the ±10 buttons did.
+    key(control(element, 'Target BPM'), 'PageUp');
+    pressStep(control(element, 'Raise by'), 'decrease');
+    pressStep(control(element, 'Every'), 'increase');
     TestBed.tick();
+    await fixture.whenStable();
+    expect(control(element, 'Raise by').getAttribute('aria-valuetext')).toBe('3 BPM');
     expect(store.practice().speedTrainer).toEqual({
       enabled: true,
       step: 3,
@@ -99,8 +98,8 @@ describe('PracticeSheet', () => {
 
   it('starts the rest counter with the chosen bars and closes', async () => {
     const { fixture, element } = await render(PracticeSheet);
-    press(element.querySelector('[aria-label="Bars tacet"]')!, 'Plus 10');
-    await click(fixture, byLabel(element, 'Click audible', '[role="switch"]'));
+    key(control(element, 'Bars tacet'), 'PageUp');
+    await click(fixture, control(element, 'Click audible'));
     TestBed.tick();
     let closed = false;
     fixture.componentInstance.closed.subscribe(() => (closed = true));
@@ -198,7 +197,7 @@ describe('RestCounter', () => {
     await fixture.whenStable();
     expect(dialog.textContent).toMatch(/2\s*of 3/);
     expect(dialog.textContent).toContain('1 to go');
-    expect(dialog.querySelectorAll('[aria-hidden="true"] span.bg-accent')).toHaveLength(1);
+    expect(dialog.querySelectorAll('[aria-hidden="true"] span.bg-lg-accent')).toHaveLength(1);
   });
 
   it('shows one dot per count when counting in groups', async () => {
@@ -255,8 +254,8 @@ describe('TimeSignatureSheet', () => {
   it('starts from the current meter and applies a new one', async () => {
     const { fixture, element } = await render(TimeSignatureSheet);
     expect(element.textContent).toContain('4/4');
-    press(element.querySelector('[aria-label="Beats per bar"]')!, 'Plus 1');
-    await click(fixture, byLabel(element, '8', '[role="radio"]'));
+    pressStep(control(element, 'Beats per bar'), 'increase');
+    await click(fixture, radio(element, '8'));
     expect(element.textContent).toContain('5/8');
     let closed = false;
     fixture.componentInstance.closed.subscribe(() => (closed = true));
@@ -268,7 +267,7 @@ describe('TimeSignatureSheet', () => {
 
   it('keeps beats within 1 to 16 and changes nothing on Cancel', async () => {
     const { fixture, element } = await render(TimeSignatureSheet);
-    const beats = element.querySelector('[aria-label="Beats per bar"]')!;
+    const beats = control(element, 'Beats per bar');
     expect(beats.getAttribute('aria-valuemax')).toBe('16');
     for (let i = 0; i < 20; i++) key(beats, 'ArrowUp');
     await fixture.whenStable();

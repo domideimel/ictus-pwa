@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pick, test } from './fixtures';
 
 const pill = (page: Page) => page.locator('app-tuning-state-pill');
 const note = (page: Page) => page.getByRole('img', { name: /^(No note|[A-H][♯♭]? \d)$/ });
@@ -37,7 +37,7 @@ test('names the note it hears and says whether it is in tune, high or low', asyn
 test('follows the reference pitch and the accidentals setting', async ({ page, app }) => {
   await page.getByRole('button', { name: 'Reference pitch: A = 442 Hz' }).click();
   const sheet = page.getByRole('dialog', { name: 'Reference pitch' });
-  await sheet.getByRole('button', { name: '440', exact: true }).click();
+  await pick(sheet.getByRole('radio', { name: '440', exact: true }));
   await sheet.getByRole('button', { name: 'Close' }).click();
   await expect(page.getByRole('button', { name: 'Reference pitch: A = 440 Hz' })).toBeVisible();
 
@@ -49,7 +49,7 @@ test('follows the reference pitch and the accidentals setting', async ({ page, a
 
   await page.getByRole('button', { name: 'Settings' }).click();
   const settings = page.getByRole('dialog', { name: 'Settings' });
-  await settings.getByRole('radio', { name: '♯ Sharps' }).click();
+  await pick(settings.getByRole('radio', { name: '♯ Sharps' }));
   await settings.getByRole('button', { name: 'Close' }).click();
   await expect(note(page)).toHaveAccessibleName('A♯ 4');
 });
@@ -77,7 +77,7 @@ test('drum lugs: stores a strike per lug and says which to tighten or loosen', a
   page,
   app,
 }) => {
-  await page.getByRole('radio', { name: 'Drum lugs' }).click();
+  await pick(page.getByRole('radio', { name: 'Drum lugs' }));
   const lugs = page.getByRole('spinbutton', { name: 'Lugs' });
   await lugs.focus();
   await page.keyboard.press('Home');

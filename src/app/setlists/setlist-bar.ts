@@ -1,4 +1,5 @@
 import { Component, inject, output } from '@angular/core';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
 import { LibraryStore } from '../state/library.store';
 import { MetronomeStore } from '../state/metronome.store';
 import { Icon } from '../ui/icon';
@@ -6,7 +7,7 @@ import { Icon } from '../ui/icon';
 /** Shows the loaded piece with previous / next buttons for stepping through a setlist on stage. */
 @Component({
   selector: 'app-setlist-bar',
-  imports: [Icon],
+  imports: [Icon, LgButton],
   templateUrl: './setlist-bar.html',
 })
 export class SetlistBar {

@@ -2,13 +2,15 @@
   <form class="flex flex-col gap-5" (submit)="$event.preventDefault()">
     @if (store.activePractice().length > 0) {
       <div
-        class="flex items-center justify-between gap-3 rounded-xl bg-accent/15 ps-4 pe-1 text-accent-text"
+        class="flex items-center justify-between gap-3 rounded-lg-surface bg-lg-accent-surface ps-4 pe-1 text-lg-accent"
         role="status"
       >
-        <span class="text-15 font-semibold">{{ activeSummary() }}</span>
+        <span class="font-semibold">{{ activeSummary() }}</span>
         <button
           type="button"
-          class="h-11 px-3 text-15 font-semibold underline underline-offset-2"
+          lgButton
+          variant="ghost"
+          class="underline underline-offset-2"
           (click)="store.turnOffPractice()"
         >
           Turn all off
@@ -19,16 +21,23 @@
       title="Gap click"
       footnote="Plays some bars, then stays silent so you keep time on your own."
     >
-      <app-settings-row label="On">
-        <app-toggle-switch label="Gap click" [formField]="practice.gapClick.enabled" />
+      <app-settings-row label="On" for="practice-gap-click">
+        <input
+          id="practice-gap-click"
+          type="checkbox"
+          role="switch"
+          lgSwitch
+          aria-label="Gap click"
+          [formField]="practice.gapClick.enabled"
+        />
       </app-settings-row>
       <hr />
-      <app-settings-row label="Play bars">
-        <app-number-stepper label="Play bars" [formField]="practice.gapClick.play" />
+      <app-settings-row label="Play bars" for="practice-play-bars">
+        <lg-number-field id="practice-play-bars" [formField]="practice.gapClick.play" />
       </app-settings-row>
       <hr />
-      <app-settings-row label="Mute bars">
-        <app-number-stepper label="Mute bars" [formField]="practice.gapClick.mute" />
+      <app-settings-row label="Mute bars" for="practice-mute-bars">
+        <lg-number-field id="practice-mute-bars" [formField]="practice.gapClick.mute" />
       </app-settings-row>
     </app-settings-group>
 
@@ -38,7 +47,7 @@
     >
       <app-settings-row label="Pattern">
         <app-segmented-pills
-          class="w-52"
+          class="w-56"
           label="Polyrhythm"
           [options]="polyrhythms"
           [formField]="practice.polyrhythm"
@@ -50,26 +59,43 @@
       title="Speed trainer"
       [footnote]="`Starts at the metronome tempo (${store.bpm()} BPM) and speeds up on the bar line.`"
     >
-      <app-settings-row label="On">
-        <app-toggle-switch label="Speed trainer" [formField]="practice.speedTrainer.enabled" />
-      </app-settings-row>
-      <hr />
-      <app-settings-row label="Raise by">
-        <app-number-stepper label="Raise by" unit=" BPM" [formField]="practice.speedTrainer.step" />
-      </app-settings-row>
-      <hr />
-      <app-settings-row label="Every">
-        <app-number-stepper
-          label="Every"
-          unit=" bars"
-          [formField]="practice.speedTrainer.everyBars"
+      <app-settings-row label="On" for="practice-speed-trainer">
+        <input
+          id="practice-speed-trainer"
+          type="checkbox"
+          role="switch"
+          lgSwitch
+          aria-label="Speed trainer"
+          [formField]="practice.speedTrainer.enabled"
         />
       </app-settings-row>
       <hr />
-      <app-settings-row label="Target BPM">
-        <app-number-stepper
-          label="Target BPM"
-          [steps]="[1, 10]"
+      <app-settings-row label="Raise by" for="practice-raise-by">
+        <span class="flex items-center gap-2">
+          <lg-number-field
+            id="practice-raise-by"
+            [valueText]="bpm"
+            [formField]="practice.speedTrainer.step"
+          />
+          <span class="w-9 text-lg-fg-muted" aria-hidden="true">BPM</span>
+        </span>
+      </app-settings-row>
+      <hr />
+      <app-settings-row label="Every" for="practice-every">
+        <span class="flex items-center gap-2">
+          <lg-number-field
+            id="practice-every"
+            [valueText]="bars"
+            [formField]="practice.speedTrainer.everyBars"
+          />
+          <span class="w-9 text-lg-fg-muted" aria-hidden="true">bars</span>
+        </span>
+      </app-settings-row>
+      <hr />
+      <app-settings-row label="Target BPM" for="practice-target">
+        <lg-number-field
+          id="practice-target"
+          [largeStep]="10"
           [formField]="practice.speedTrainer.target"
         />
       </app-settings-row>
@@ -79,20 +105,26 @@
       title="Rest counter"
       footnote="Counts bars at the current tempo and meter with a big bar number, and signals your entrance."
     >
-      <app-settings-row label="Bars tacet">
-        <app-number-stepper label="Bars tacet" [steps]="[1, 10]" [formField]="practice.restBars" />
+      <app-settings-row label="Bars tacet" for="practice-bars-tacet">
+        <lg-number-field
+          id="practice-bars-tacet"
+          [largeStep]="10"
+          [formField]="practice.restBars"
+        />
       </app-settings-row>
       <hr />
-      <app-settings-row label="Click audible">
-        <app-toggle-switch label="Click audible" [formField]="practice.restAudible" />
+      <app-settings-row label="Click audible" for="practice-click-audible">
+        <input
+          id="practice-click-audible"
+          type="checkbox"
+          role="switch"
+          lgSwitch
+          [formField]="practice.restAudible"
+        />
       </app-settings-row>
       <hr />
       <div class="p-3">
-        <button
-          type="button"
-          class="h-12 w-full rounded-xl bg-accent text-base font-semibold text-on-accent"
-          (click)="startRest()"
-        >
+        <button type="button" lgButton variant="accent" class="w-full" (click)="startRest()">
           Start counting
         </button>
       </div>

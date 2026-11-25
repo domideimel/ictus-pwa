@@ -1,8 +1,10 @@
 @if (library.activePosition(); as position) {
-  <div class="flex items-center gap-2 rounded-14 border border-stroke bg-surface p-1">
+  <div class="flex items-center gap-2 rounded-lg-surface border border-lg-border bg-lg-surface p-1">
     <button
       type="button"
-      class="flex size-11 items-center justify-center disabled:opacity-30"
+      lgButton
+      variant="ghost"
+      shape="circle"
       aria-label="Previous piece"
       [disabled]="position.index === 0"
       (click)="step(-1)"
@@ -15,14 +17,16 @@
       aria-haspopup="dialog"
       (click)="open.emit()"
     >
-      <span class="max-w-full truncate text-15 font-semibold">{{ position.piece.name }}</span>
-      <span class="max-w-full truncate text-11.5 text-muted">
+      <span class="max-w-full truncate text-base font-semibold">{{ position.piece.name }}</span>
+      <span class="max-w-full truncate text-xs text-lg-fg-muted">
         {{ position.index + 1 }} of {{ position.count }} · {{ position.setlist.name }}
       </span>
     </button>
     <button
       type="button"
-      class="flex size-11 items-center justify-center disabled:opacity-30"
+      lgButton
+      variant="ghost"
+      shape="circle"
       aria-label="Next piece"
       [disabled]="position.index >= position.count - 1"
       (click)="step(1)"

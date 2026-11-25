@@ -1,5 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { byLabel, click, key, pointer, render, queryAllText } from '../../testing/dom';
+import {
+  byLabel,
+  click,
+  key,
+  pointer,
+  queryAllText,
+  radio,
+  radioNames,
+  render,
+} from '../../testing/dom';
 import { MetronomeDriver } from '../../testing/metronome-driver';
 import { BeatLevel } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
@@ -120,7 +129,7 @@ describe('BeatDots', () => {
     driver.playUntil(0.6);
     await fixture.whenStable();
     const second = byLabel(element, 'Beat 2, normal');
-    expect(second.querySelector('span')?.className).toContain('bg-accent');
+    expect(second.querySelector('span')?.className).toContain('bg-lg-accent');
     // The label stays put, so a focused dot is not announced again on every beat.
     expect(element.querySelector('[aria-label*="playing"]')).toBeNull();
   });
@@ -143,7 +152,7 @@ describe('BeatDots', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]!.querySelectorAll('button')).toHaveLength(8);
     const marks = [...element.querySelectorAll('button')].map((button) =>
-      button.querySelector('span:last-child')!.classList.contains('bg-accent'),
+      button.querySelector('span:last-child')!.classList.contains('bg-lg-accent'),
     );
     expect(marks.flatMap((marked, index) => (marked ? [index] : []))).toEqual([3, 6, 9]);
   });
@@ -195,11 +204,11 @@ describe('PlayButton', () => {
 });
 
 describe('SubdivisionPicker', () => {
-  it('is a radio group of the six subdivisions', async () => {
+  it('is a fieldset of native radios for the six subdivisions', async () => {
     const { fixture, element } = await render(SubdivisionPicker);
-    expect(element.getAttribute('role')).toBe('radiogroup');
-    const radios = [...element.querySelectorAll('[role="radio"]')];
-    expect(radios.map((radio) => radio.getAttribute('aria-label'))).toEqual([
+    expect(element.querySelector('legend')?.textContent.trim()).toBe('Subdivision');
+    // The note symbols are decorative; each radio is named by its title.
+    expect(radioNames(element)).toEqual([
       'Quarter',
       'Eighth',
       'Triplet',
@@ -207,39 +216,28 @@ describe('SubdivisionPicker', () => {
       'Quintuplet',
       'Sextuplet',
     ]);
-    await click(fixture, byLabel(element, 'Triplet'));
+    await click(fixture, radio(element, 'Triplet'));
     expect(store.subdivision()).toBe(3);
-    expect(byLabel(element, 'Triplet').getAttribute('aria-checked')).toBe('true');
-    expect(byLabel(element, 'Quarter').getAttribute('aria-checked')).toBe('false');
+    expect(radio(element, 'Triplet').checked).toBe(true);
+    expect(radio(element, 'Quarter').checked).toBe(false);
   });
 
-  it('is one tab stop that moves with the arrows, Home and End', async () => {
-    const { fixture, element } = await render(SubdivisionPicker);
-    const tabStops = (): string[] =>
-      [...element.querySelectorAll<HTMLElement>('[role="radio"]')]
-        .filter((radio) => radio.tabIndex === 0)
-        .map((radio) => radio.getAttribute('aria-label') ?? '');
-    expect(tabStops()).toEqual(['Quarter']);
-    expect(key(byLabel(element, 'Quarter'), 'ArrowRight').defaultPrevented).toBe(true);
-    await fixture.whenStable();
-    expect(store.subdivision()).toBe(2);
-    expect(tabStops()).toEqual(['Eighth']);
-    expect(document.activeElement).toBe(byLabel(element, 'Eighth'));
-    key(byLabel(element, 'Eighth'), 'End');
-    expect(store.subdivision()).toBe(6);
-    key(byLabel(element, 'Sextuplet'), 'ArrowRight');
-    expect(store.subdivision()).toBe(1);
-    key(byLabel(element, 'Quarter'), 'ArrowLeft');
-    expect(store.subdivision()).toBe(6);
-    key(byLabel(element, 'Sextuplet'), 'Home');
-    expect(store.subdivision()).toBe(1);
+  it('shares one radio name, so the arrows move the selection as in any radio group', async () => {
+    const { element } = await render(SubdivisionPicker);
+    const names = new Set(
+      [...element.querySelectorAll<HTMLInputElement>('input[type="radio"]')].map((r) => r.name),
+    );
+    expect(names.size).toBe(1);
+    store.setSubdivision(6);
+    TestBed.tick();
+    expect(radio(element, 'Sextuplet').checked).toBe(true);
   });
 
   it('lays out in three columns when horizontal', async () => {
     const fixture = TestBed.createComponent(SubdivisionPicker);
     fixture.componentRef.setInput('horizontal', true);
     await fixture.whenStable();
-    expect(fixture.nativeElement.className).toContain('grid-cols-3');
+    expect(fixture.nativeElement.querySelector('fieldset').className).toContain('grid-cols-3');
   });
 });
 
@@ -262,35 +260,41 @@ describe('SwingSlider', () => {
 });
 
 describe('TimeSignatureChips', () => {
-  it('selects quick picks as toggle chips', async () => {
+  const group = (element: HTMLElement, legend: string): HTMLFieldSetElement => {
+    const found = [...element.querySelectorAll('fieldset')].find(
+      (fieldset) => fieldset.querySelector('legend')?.textContent.trim() === legend,
+    );
+    if (!found) throw new Error(`No ${legend} group`);
+    return found;
+  };
+
+  it('selects quick picks as a radio group', async () => {
     const { fixture, element } = await render(TimeSignatureChips);
-    expect(byLabel(element, '4/4').getAttribute('aria-pressed')).toBe('true');
-    await click(fixture, byLabel(element, '3/4'));
+    const picks = group(element, 'Time signature');
+    expect(radio(picks, '4/4').checked).toBe(true);
+    await click(fixture, radio(picks, '3/4'));
     expect(store.timeSignature()).toEqual({ beats: 3, unit: 4 });
-    expect(byLabel(element, '3/4').getAttribute('aria-pressed')).toBe('true');
-    expect(byLabel(element, '4/4').getAttribute('aria-pressed')).toBe('false');
+    expect(radio(picks, '3/4').checked).toBe(true);
+    expect(radio(picks, '4/4').checked).toBe(false);
   });
 
   it('offers groupings for odd meters', async () => {
     const { fixture, element } = await render(TimeSignatureChips);
-    expect(element.querySelector('[aria-label="Grouping"]')).toBeNull();
-    await click(fixture, byLabel(element, '7/8'));
-    expect(queryAllText(element, '[aria-label="Grouping"] button')).toEqual([
-      '2+2+3',
-      '2+3+2',
-      '3+2+2',
-    ]);
-    await click(fixture, byLabel(element, '3+2+2'));
+    expect(() => group(element, 'Grouping')).toThrow();
+    await click(fixture, radio(element, '7/8'));
+    const groupings = group(element, 'Grouping');
+    expect(radioNames(groupings)).toEqual(['2+2+3', '2+3+2', '3+2+2']);
+    await click(fixture, radio(groupings, '3+2+2'));
     expect(store.grouping()).toEqual([3, 2, 2]);
-    expect(byLabel(element, '3+2+2').getAttribute('aria-pressed')).toBe('true');
+    expect(radio(groupings, '3+2+2').checked).toBe(true);
   });
 
   it('counts odd meters in notes or in groups', async () => {
     store.setTimeSignature({ beats: 11, unit: 8 });
     const { fixture, element } = await render(TimeSignatureChips);
-    const count = element.querySelector('[aria-label="Count"]')!;
-    expect(queryAllText(count, 'button')).toEqual(['Eighths · 11', 'Groups · 4']);
-    await click(fixture, byLabel(element, 'Groups · 4'));
+    const count = group(element, 'Count');
+    expect(radioNames(count)).toEqual(['Eighths · 11', 'Groups · 4']);
+    await click(fixture, radio(count, 'Groups · 4'));
     expect(store.pulse()).toBe('group');
     expect(store.levels()).toHaveLength(4);
   });
@@ -308,5 +312,8 @@ describe('TimeSignatureChips', () => {
     fixture.componentRef.setInput('wraps', true);
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('div').className).toContain('flex-wrap');
+    // One line of tighter segments across the card instead of a scrolling row.
+    expect(fixture.nativeElement.querySelector('fieldset').className).toContain('w-full');
+    expect(fixture.nativeElement.querySelector('label').className).toContain('flex-1');
   });
 });

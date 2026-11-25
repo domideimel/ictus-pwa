@@ -1,5 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { LgKbd } from '@domideimel/ng-liquid-glass/kbd';
 import { MetronomePanel } from '../metronome/metronome-panel';
 import { TunerStore } from '../state/tuner.store';
 import { UiStore } from '../state/ui.store';
@@ -10,7 +11,7 @@ import { Viewport } from '../ui/viewport';
 /** Tablet and desktop: metronome and tuner on one screen, side by side from 1024 px, stacked below. */
 @Component({
   selector: 'app-combined-view',
-  imports: [MetronomePanel, TunerPanel, HeaderIconButton, NgOptimizedImage],
+  imports: [MetronomePanel, TunerPanel, HeaderIconButton, LgKbd, NgOptimizedImage],
   templateUrl: './combined-view.html',
   host: { class: 'flex min-h-0 flex-1 flex-col' },
 })

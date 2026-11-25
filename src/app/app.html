@@ -5,17 +5,22 @@
     <router-outlet />
   </main>
   <nav
-    class="grid shrink-0 grid-cols-2 border-t border-stroke bg-panel pt-1.5 safe-bottom"
+    class="grid shrink-0 grid-cols-2 border-t border-lg-border bg-lg-surface pt-1.5 lg-safe-bottom"
     aria-label="Screens"
   >
     @for (tab of tabs; track tab.path) {
+      <!-- The active tab gets a tinted pill behind its icon, not just a colour change. -->
       <a
-        routerLinkActive="text-accent-text font-semibold"
+        routerLinkActive="is-active font-semibold text-lg-accent"
         ariaCurrentWhenActive="page"
-        class="flex flex-col items-center gap-1 py-1 text-11.5 font-medium text-muted"
+        class="group flex flex-col items-center gap-1 py-1 text-xs font-medium text-lg-fg-muted"
         [routerLink]="tab.path"
       >
-        <app-icon [name]="tab.icon" [size]="24" />
+        <span
+          class="flex h-8 w-16 items-center justify-center rounded-full group-[.is-active]:bg-lg-accent-surface"
+        >
+          <app-icon [name]="tab.icon" [size]="24" />
+        </span>
         {{ tab.label }}
       </a>
     }

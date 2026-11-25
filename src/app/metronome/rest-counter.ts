@@ -1,15 +1,15 @@
 import type { ElementRef } from '@angular/core';
 import { Component, afterNextRender, computed, inject, viewChild } from '@angular/core';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
 import { signatureLabel } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
 import { HeaderIconButton } from '../ui/header-icon-button';
 import { SectionLabel } from '../ui/section-label';
-import { Surface } from '../ui/surface';
 
 /** Full-screen bar counter for long rests, e.g. 87 bars tacet. */
 @Component({
   selector: 'app-rest-counter',
-  imports: [HeaderIconButton, SectionLabel, Surface],
+  imports: [HeaderIconButton, LgButton, SectionLabel],
   templateUrl: './rest-counter.html',
 })
 export class RestCounter {

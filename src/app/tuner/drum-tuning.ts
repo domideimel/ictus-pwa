@@ -7,16 +7,17 @@ import {
   referencePitch,
   spread,
 } from '../music/drum-tuning';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgInput } from '@domideimel/ng-liquid-glass/forms';
+import { LgNumberField } from '@domideimel/ng-liquid-glass/number-field';
 import { midiFrequency, readNote, spell } from '../music/note';
 import { SettingsStore } from '../state/settings.store';
 import { TunerStore } from '../state/tuner.store';
-import { NumberStepper } from '../ui/number-stepper';
-import { Surface } from '../ui/surface';
 
 /** Tap the head about 2–3 cm in front of each lug; every strike is stored for the highlighted lug. */
 @Component({
   selector: 'app-drum-tuning',
-  imports: [NumberStepper, Surface],
+  imports: [LgButton, LgInput, LgNumberField],
   templateUrl: './drum-tuning.html',
   host: { class: 'flex flex-col gap-5' },
 })
@@ -54,13 +55,15 @@ export class DrumTuning {
       const current = tuning.currentLug === index;
       const inTune = value !== null && Math.abs(value) <= tolerance;
       const rounded = value === null ? 0 : Math.round(value);
-      const ring = current ? 'border-3 border-accent' : 'border-[1.5px] border-ring';
+      const ring = current
+        ? 'border-3 border-lg-accent'
+        : 'border-[1.5px] border-lg-control-border';
       const tint =
         value === null
-          ? 'text-fg text-17'
+          ? 'text-lg-fg text-lg'
           : inTune
-            ? 'bg-in-tune/25 text-in-tune text-13'
-            : 'bg-accent/20 text-accent-text text-13';
+            ? 'bg-lg-success-surface text-lg-success text-sm'
+            : 'bg-lg-warning-surface text-lg-warning text-sm';
       return {
         index,
         current,
@@ -150,6 +153,11 @@ export class DrumTuning {
           ? this.reference()
           : midiFrequency(Number(value), this.settings.referencePitch());
     this.tuning.update((tuning) => ({ ...tuning, target }));
+  }
+
+  /** The number field is empty (null) while the text is cleared; the lug count keeps its last value. */
+  protected setLugs(lugs: number | null): void {
+    if (lugs !== null) this.settings.update({ drumLugs: lugs });
   }
 
   protected clear(): void {

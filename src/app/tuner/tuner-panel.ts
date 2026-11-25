@@ -1,20 +1,29 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgCard } from '@domideimel/ng-liquid-glass/card';
 import type { TunerMode } from '../state/settings.store';
 import { SettingsStore } from '../state/settings.store';
 import { TunerStore } from '../state/tuner.store';
+import { clamp } from '../shared/numbers';
 import { Icon } from '../ui/icon';
 import type { PillOption } from '../ui/segmented-pills';
 import { SegmentedPills } from '../ui/segmented-pills';
 import { SectionLabel } from '../ui/section-label';
+import { Viewport } from '../ui/viewport';
 import { DrumTuning } from './drum-tuning';
 import { ReferencePitchButton } from './reference-pitch';
 import { StaffCard } from './staff-card';
 import { CentsMeter, FrequencyLabel, NoteName, TuningStatePill } from './tuner-readouts';
 
+/** Height of the phone tuner around the note name: header, modes, staff, pill, meter, button and tabs. */
+const PHONE_TUNER_FIXED_HEIGHT = 600;
+/** The note name's size range on phones. */
+const PHONE_NOTE = { min: 64, max: 128 } as const;
+
 /** Starts and stops listening; the microphone stays off until this is pressed. */
 @Component({
   selector: 'app-tuner-toggle',
-  imports: [Icon],
+  imports: [Icon, LgButton],
   templateUrl: './tuner-toggle.html',
 })
 export class TunerToggle {
@@ -31,6 +40,7 @@ export class TunerToggle {
     CentsMeter,
     DrumTuning,
     FrequencyLabel,
+    LgCard,
     NoteName,
     ReferencePitchButton,
     SectionLabel,
@@ -45,7 +55,16 @@ export class TunerToggle {
 export class TunerPanel {
   protected readonly tuner = inject(TunerStore);
   private readonly settings = inject(SettingsStore);
+  private readonly viewport = inject(Viewport);
   readonly wide = input(false);
+
+  /**
+   * The note name on phones shrinks on short screens, so the state pill and the cents meter (what
+   * the tuner says) stay on screen without scrolling, as the dial does on the metronome.
+   */
+  protected readonly phoneNote = computed(() =>
+    clamp(this.viewport.height() - PHONE_TUNER_FIXED_HEIGHT, PHONE_NOTE.min, PHONE_NOTE.max),
+  );
 
   protected readonly modes: PillOption<TunerMode>[] = [
     { value: 'chromatic', label: 'Chromatic' },

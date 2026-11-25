@@ -190,9 +190,9 @@ importers:
       '@angular/service-worker':
         specifier: ^22.2.0
         version: 22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@fontsource-variable/inter':
-        specifier: ^5.3.0
-        version: 5.3.0
+      '@domideimel/ng-liquid-glass':
+        specifier: https://github.com/domideimel/ng-liquid-glass/releases/download/v0.3.0/domideimel-ng-liquid-glass-0.3.0.tgz
+        version: https://github.com/domideimel/ng-liquid-glass/releases/download/v0.3.0/domideimel-ng-liquid-glass-0.3.0.tgz(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(@angular/forms@22.2.4(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(@angular/platform-browser@22.2.4(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2)))(rxjs@7.8.2))(tailwindcss@4.3.4)
       '@fontsource/noto-music':
         specifier: ^5.3.0
         version: 5.3.0
@@ -607,6 +607,22 @@ packages:
     resolution: {integrity: sha512-OoKoR0f76dCY666JlcbhmVTs2drYj1GUXZTYTcbUgJjh9Nv41aFfZ21bPQTERm5+L5cBDo466NltB2lplS5GBw==}
     engines: {node: '>=20.19.0'}
 
+  '@domideimel/ng-liquid-glass@https://github.com/domideimel/ng-liquid-glass/releases/download/v0.3.0/domideimel-ng-liquid-glass-0.3.0.tgz':
+    resolution: {integrity: sha512-Q1YQuQDpz/5/G7SQdNjd0eN1jiy5xTBFYlZVvnVKfGq7m1dc07fuNZQn5NqE9AtUIANFrtybmC53DRFnuEp7lw==, tarball: https://github.com/domideimel/ng-liquid-glass/releases/download/v0.3.0/domideimel-ng-liquid-glass-0.3.0.tgz}
+    version: 0.3.0
+    hasBin: true
+    peerDependencies:
+      '@angular/cdk': ^22.2.0
+      '@angular/common': ^22.2.0
+      '@angular/core': ^22.2.0
+      '@angular/forms': ^22.2.0
+      tailwindcss: ^4.1.0
+    peerDependenciesMeta:
+      '@angular/cdk':
+        optional: true
+      '@angular/forms':
+        optional: true
+
   '@emnapi/core@2.0.0-alpha.6':
     resolution: {integrity: sha512-MNVvMV7WtEJMgqaWJMvCyupK7Oi8sZctUIgPRZTsiS3cVvefk8DXPflOU3MSBddtj/rrYHygpYgpHDgwXnI3+w==}
 
@@ -818,9 +834,6 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
-
-  '@fontsource-variable/inter@5.3.0':
-    resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
 
   '@fontsource/noto-music@5.3.0':
     resolution: {integrity: sha512-aFVtYIoLbUWPX8+/GVXLud/wMpb7ijY+vKe8AA2uK9Ji2uqUxBGBpXAUPy9hrY6XcJ7uBs15SR/+1bRKdjsVKQ==}
@@ -3504,6 +3517,15 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.2': {}
 
+  '@domideimel/ng-liquid-glass@https://github.com/domideimel/ng-liquid-glass/releases/download/v0.3.0/domideimel-ng-liquid-glass-0.3.0.tgz(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(@angular/forms@22.2.4(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(@angular/platform-browser@22.2.4(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2)))(rxjs@7.8.2))(tailwindcss@4.3.4)':
+    dependencies:
+      '@angular/common': 22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2)
+      tailwindcss: 4.3.4
+      tslib: 2.9.1
+    optionalDependencies:
+      '@angular/forms': 22.2.4(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(@angular/platform-browser@22.2.4(@angular/common@22.2.4(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.4(@angular/compiler@22.2.4)(rxjs@7.8.2)))(rxjs@7.8.2)
+
   '@emnapi/core@2.0.0-alpha.6':
     dependencies:
       '@emnapi/wasi-threads': 2.2.0
@@ -3645,8 +3667,6 @@ snapshots:
       levn: 0.4.1
 
   '@exodus/bytes@1.16.0': {}
-
-  '@fontsource-variable/inter@5.3.0': {}
 
   '@fontsource/noto-music@5.3.0': {}
 

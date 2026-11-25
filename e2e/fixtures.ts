@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { test as base, expect } from '@playwright/test';
 
 /** What the stand-ins below expose on `window.__e2e`. */
@@ -142,5 +142,13 @@ export const test = base.extend<Fixtures>({
     await use(new AppHarness(page));
   },
 });
+
+/**
+ * Picks a native radio drawn as a segment (`lgSegment`, the subdivisions): the input itself is visually
+ * hidden, so click its label, as a user does.
+ */
+export async function pick(radio: Locator): Promise<void> {
+  await radio.locator('xpath=ancestor::label[1]').click();
+}
 
 export { expect };
