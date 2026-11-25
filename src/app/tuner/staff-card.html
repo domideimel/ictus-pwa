@@ -1,5 +1,10 @@
-<svg viewBox="0 0 310 150" class="w-full max-w-108.5" role="img" [attr.aria-label]="description()">
-  <g class="stroke-ink" stroke-width="1.4">
+<svg
+  viewBox="0 0 310 150"
+  class="max-h-40 w-full max-w-108.5"
+  role="img"
+  [attr.aria-label]="description()"
+>
+  <g class="stroke-lg-fg" stroke-width="1.4">
     @for (line of staffLines; track line) {
       <line x1="12" x2="298" [attr.y1]="line" [attr.y2]="line" />
     }
@@ -7,7 +12,7 @@
       <line [attr.x1]="noteX - 20" [attr.x2]="noteX + 20" [attr.y1]="ledger" [attr.y2]="ledger" />
     }
   </g>
-  <g class="fill-ink font-bravura" [attr.font-size]="space * 4">
+  <g class="fill-lg-fg font-bravura" [attr.font-size]="space * 4">
     <text x="22" [attr.y]="clefY()">{{ clefGlyph() }}</text>
     @if (note(); as note) {
       <text [attr.x]="noteX - 12" [attr.y]="note.y">{{ glyph.wholeNote }}</text>
@@ -20,7 +25,7 @@
   </g>
   @if (note()?.ottava; as ottava) {
     <text
-      class="fill-ink"
+      class="fill-lg-fg"
       font-size="15"
       font-style="italic"
       font-weight="600"
@@ -32,4 +37,4 @@
     </text>
   }
 </svg>
-<span class="text-xs uppercase tracking-6 text-paper-label">{{ caption() }}</span>
+<span class="text-xs uppercase tracking-wider text-lg-fg-muted">{{ caption() }}</span>

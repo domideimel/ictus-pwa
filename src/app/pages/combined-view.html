@@ -1,18 +1,18 @@
 <header
-  class="flex h-16 shrink-0 items-center justify-between border-b border-stroke bg-panel px-6 lg:px-8"
+  class="flex h-16 shrink-0 items-center justify-between border-b border-lg-border bg-lg-surface px-6 lg:px-8"
 >
   <div class="flex items-center gap-3">
     <img ngSrc="icons/icon.svg" alt="" width="28" height="28" priority />
-    <h1 class="text-17 font-semibold">Metronome &amp; Tuner</h1>
+    <h1 class="text-lg font-semibold">Metronome &amp; Tuner</h1>
   </div>
   <div class="flex items-center gap-3">
     <span
-      class="flex h-9 items-center gap-2 rounded-full border border-stroke bg-surface px-3.5 text-sm text-muted"
+      class="flex h-9 items-center gap-2 rounded-full border border-lg-border bg-lg-surface px-3.5 text-sm text-lg-fg-muted"
       role="status"
     >
       <span
         class="size-2 rounded-full"
-        [class]="tuner.isListening() ? 'bg-in-tune' : 'bg-ring'"
+        [class]="tuner.isListening() ? 'bg-lg-success' : 'bg-lg-control-border'"
       ></span>
       {{
         tuner.isListening()
@@ -37,13 +37,11 @@
 
 @if (viewport.finePointer()) {
   <footer
-    class="hidden h-12 shrink-0 items-center justify-center gap-6 border-t border-stroke text-13 text-muted lg:flex"
+    class="hidden h-12 shrink-0 items-center justify-center gap-6 border-t border-lg-border text-sm text-lg-fg-muted lg:flex"
   >
     @for (shortcut of shortcuts; track shortcut.key) {
       <span class="flex items-center gap-2">
-        <kbd
-          class="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-kbd bg-surface px-2 font-sans text-xs text-fg"
-        >
+        <kbd lgKbd>
           {{ shortcut.key }}
         </kbd>
         {{ shortcut.action }}

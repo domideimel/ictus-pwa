@@ -23,7 +23,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - It MUST follow all WCAG AA minimums, including focus management, color contrast, and ARIA attributes.
 - `e2e/a11y.spec.ts` runs axe (including colour contrast) on every screen, sheet and dialog, in light and dark mode, in every browser; add new screens and dialogs to it.
 - New features get an end-to-end test in `e2e/` (Playwright) as well as unit tests.
-- Colour pairs are checked by `pnpm check:contrast` (`scripts/check-contrast.mjs`); add a pair there when a new colour combination is used.
+- Colour pairs the app composes itself are checked by `pnpm check:contrast` (`scripts/check-contrast.mjs`); add a pair there when a new colour combination is used.
 
 ## Components
 
@@ -39,7 +39,9 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Do NOT use `ngStyle`, use `style` bindings instead
 - Do NOT import `CommonModule`, import only the directives and pipes the template uses, such as `AsyncPipe` or `DatePipe`
 - When using external templates/styles, use paths relative to the component TS file.
-- In Tailwind classes, prefer native utilities over arbitrary values whenever the theme scale has an equivalent (e.g. `size-1.25` instead of `size-[5px]`, `border-3` instead of `border-[3px]`, `tabular-nums` instead of a custom utility). Font sizes and radii from the design live in `@theme` in `src/styles.css` as tokens: font sizes and radii named in px (`text-15`, `rounded-14`), letter spacing in hundredths of an em (`tracking-8`, `-tracking-4`). Add a token there instead of writing `text-[15px]` or `tracking-[0.08em]`.
+- The design system is `@domideimel/ng-liquid-glass` (installed from its GitHub release tarball). Use its components and directives first (`lgButton`, `lg-dialog`, `lgSegmented`, `lgSwitch`, `lg-number-field`, `lgCard`, …) and only its `lg-*` tokens (`bg-lg-surface`, `text-lg-fg-muted`, `rounded-lg-control`, `text-lg-display-md`). Do NOT add colour, font-size or radius tokens to `src/styles.css`; if something is missing, it belongs in the library.
+- In Tailwind classes, prefer native utilities over arbitrary values whenever the theme scale has an equivalent (e.g. `size-1.25` instead of `size-[5px]`, `border-3` instead of `border-[3px]`, `tabular-nums` instead of a custom utility).
+- When importing a new library entry point, remove it from the `@source not` list in `src/styles.css`, or its classes are missing from the CSS.
 
 ## State Management
 

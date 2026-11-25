@@ -1,53 +1,55 @@
-<div class="flex gap-2" [class]="wraps() ? 'flex-wrap' : 'no-scrollbar overflow-x-auto px-5'">
-  @for (signature of quickPicks; track label(signature)) {
-    @let selected = isSelected(signature);
+<div
+  class="flex items-center gap-2"
+  [class]="wraps() ? 'flex-wrap' : 'no-scrollbar overflow-x-auto px-5'"
+>
+  <!-- "More" sits at the end of the same track, so it never ends up alone on a line. -->
+  <!-- On wide cards the segments are tighter, so all quick picks and More fit on one line. -->
+  <fieldset lgSegmented [class]="wraps() ? 'w-full flex-nowrap!' : 'shrink-0 flex-nowrap!'">
+    <legend>Time signature</legend>
+    @for (signature of quickPicks; track label(signature)) {
+      <label lgSegment class="tabular-nums" [class]="wraps() ? 'flex-1 px-2!' : ''">
+        <input
+          type="radio"
+          [name]="name"
+          [checked]="isSelected(signature)"
+          (change)="store.setTimeSignature(signature)"
+        />
+        {{ label(signature) }}
+      </label>
+    }
     <button
       type="button"
-      appSurface
-      pressed
-      class="h-11 shrink-0 rounded-full px-4 text-15 tabular-nums"
-      [selected]="selected"
-      (click)="store.setTimeSignature(signature)"
+      lgButton
+      class="shrink-0 px-3! tabular-nums"
+      aria-haspopup="dialog"
+      [variant]="isCustom() ? 'primary' : 'ghost'"
+      (click)="showCustom.set(true)"
     >
-      {{ label(signature) }}
+      {{ isCustom() ? `${label(store.timeSignature())} ⋯` : 'More' }}
     </button>
-  }
-  <button
-    type="button"
-    appSurface
-    class="h-11 shrink-0 rounded-full px-4 text-15 tabular-nums"
-    aria-haspopup="dialog"
-    [selected]="isCustom()"
-    (click)="showCustom.set(true)"
-  >
-    {{ isCustom() ? `${label(store.timeSignature())} ⋯` : 'More' }}
-  </button>
+  </fieldset>
 </div>
-
 @if (groupings().length > 0) {
-  <div
-    class="flex gap-2"
-    role="group"
-    aria-label="Grouping"
-    [class]="wraps() ? 'flex-wrap' : 'no-scrollbar overflow-x-auto px-5'"
-  >
-    @for (option of groupings(); track option.join('+')) {
-      <button
-        type="button"
-        appSurface
-        pressed
-        class="h-8.5 shrink-0 rounded-full px-3.5 text-sm tabular-nums"
-        [selected]="option.join('+') === store.grouping().join('+')"
-        (click)="store.setGrouping(option)"
-      >
-        {{ option.join('+') }}
-      </button>
-    }
+  <div [class]="wraps() ? '' : 'no-scrollbar overflow-x-auto px-5'">
+    <fieldset lgSegmented data-density="compact" [class]="wraps() ? '' : 'flex-nowrap!'">
+      <legend>Grouping</legend>
+      @for (option of groupings(); track option.join('+')) {
+        <label lgSegment class="tabular-nums">
+          <input
+            type="radio"
+            [name]="`${name}-grouping`"
+            [checked]="option.join('+') === store.grouping().join('+')"
+            (change)="store.setGrouping(option)"
+          />
+          {{ option.join('+') }}
+        </label>
+      }
+    </fieldset>
   </div>
   <div class="flex items-center gap-3" [class.px-5]="!wraps()">
-    <span class="text-sm text-muted" aria-hidden="true">Count</span>
+    <span class="text-sm text-lg-fg-muted" aria-hidden="true">Count</span>
     <app-segmented-pills
-      class="max-w-72 flex-1"
+      class="max-w-80 flex-1"
       label="Count"
       [options]="pulses()"
       [value]="store.pulse()"

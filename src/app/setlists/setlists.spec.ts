@@ -104,6 +104,8 @@ describe('NameDialog', () => {
     expect(dialog.querySelector('h2')?.textContent).toBe('Save piece');
     const input = dialog.querySelector('input')!;
     expect(input.value).toBe('Piece 1');
+    // The browser focuses the field when the modal opens (jsdom doesn't, so focus it here).
+    input.focus();
     expect([input.selectionStart, input.selectionEnd]).toEqual([0, 7]);
   });
 
@@ -129,8 +131,10 @@ describe('NameDialog', () => {
     await fixture.whenStable();
     expect(fixture.componentInstance.saved).toEqual([]);
     expect(dialog.open).toBe(true);
-    expect(dialog.querySelector('input')!.getAttribute('aria-invalid')).toBe('true');
-    expect(dialog.querySelector('#name-dialog-error')?.textContent.trim()).toBe(message);
+    const input = dialog.querySelector('input')!;
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    const error = dialog.querySelector(`#${input.getAttribute('aria-describedby')}`);
+    expect(error?.textContent.trim()).toBe(message);
   });
 
   it('cancels without saving', async () => {
@@ -173,7 +177,11 @@ describe('SetlistSheet', () => {
     expect(dialog.getAttribute('role')).toBe('alertdialog');
     expect(dialog.textContent).toContain('Delete “Concert”?');
     expect(dialog.textContent).toContain('Its 3 pieces are deleted too.');
-    expect(document.activeElement?.textContent.trim()).toBe('Cancel');
+    // Cancel takes the focus when the modal opens (autofocus; checked in the browsers by e2e).
+    expect(byLabel(dialog, 'Cancel').hasAttribute('autofocus')).toBe(true);
+    // Deleting is destructive, so the action is in the danger colour, not the accent.
+    expect(byLabel(dialog, 'Delete').className).toContain('bg-lg-danger');
+    expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
     await click(fixture, byLabel(dialog, 'Cancel'));
     expect(element.querySelector('app-confirm-dialog')).toBeNull();
     expect(library.setlists()[0]?.pieces).toHaveLength(3);
@@ -285,6 +293,10 @@ describe('SetlistSheet', () => {
 
     metronome.setBpm(200);
     await click(fixture, byLabel(element, 'Update Piece 1 with current settings'));
+    // Overwriting a piece is not destructive: the action keeps the accent colour.
+    expect(byLabel(element.querySelector('app-confirm-dialog')!, 'Update').className).toContain(
+      'bg-lg-accent',
+    );
     await confirmWith('Update');
     expect(library.setlists()[0]!.pieces.find((piece) => piece.id === pieces[0]!.id)?.bpm).toBe(
       200,
@@ -302,8 +314,11 @@ describe('SetlistSheet', () => {
     await click(fixture, byLabel(element, 'Delete Concert'));
     await confirmWith('Delete');
     expect(library.setlists()).toEqual([]);
-
-    await click(fixture, edit);
-    expect(edit.textContent.trim()).toBe('Edit');
+    // Nothing left to edit: the button goes, and a new setlist starts out of edit mode.
+    expect(() => byLabel(element, 'Finish')).toThrow();
+    library.addSetlist('Gig');
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(byLabel(element, 'Edit')).toBeTruthy();
   });
 });

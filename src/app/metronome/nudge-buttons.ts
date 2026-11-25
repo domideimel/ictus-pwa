@@ -1,12 +1,12 @@
 import { Component, inject, input } from '@angular/core';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
 import { MetronomeStore } from '../state/metronome.store';
 import { HoldRepeat } from '../ui/hold-repeat';
-import { Surface } from '../ui/surface';
 
 /** −5 −1 +1 +5; hold to keep changing. */
 @Component({
   selector: 'app-nudge-buttons',
-  imports: [HoldRepeat, Surface],
+  imports: [HoldRepeat, LgButton],
   templateUrl: './nudge-buttons.html',
   host: { class: 'grid grid-cols-4 gap-2' },
 })

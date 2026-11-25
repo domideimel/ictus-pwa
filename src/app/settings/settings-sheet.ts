@@ -1,5 +1,8 @@
 import { Component, inject, output } from '@angular/core';
 import { FormField, form, max, min } from '@angular/forms/signals';
+import { LgInput, LgSlider, LgSwitch } from '@domideimel/ng-liquid-glass/forms';
+import { LgNumberField } from '@domideimel/ng-liquid-glass/number-field';
+import { LgThemeSwitcher } from '@domideimel/ng-liquid-glass/theme';
 import { CLICK_SOUNDS } from '../audio/click-synth';
 import type { AccidentalStyle } from '../music/note';
 import type { ClefSetting } from '../music/staff';
@@ -10,24 +13,26 @@ import {
   SettingsStore,
   TOLERANCE_OPTIONS,
 } from '../state/settings.store';
-import { NumberStepper } from '../ui/number-stepper';
 import type { PillOption } from '../ui/segmented-pills';
 import { SegmentedPills } from '../ui/segmented-pills';
 import { SettingsGroup, SettingsRow } from '../ui/settings-group';
+import { withUnit } from '../shared/numbers';
 import { Sheet } from '../ui/sheet';
-import { ToggleSwitch } from '../ui/toggle-switch';
 
-/** Settings grouped as in the concept: Tuner, Metronome, General. Every change is saved at once. */
+/** Settings grouped as in the concept: Appearance, Tuner, Metronome, General. Every change is saved at once. */
 @Component({
   selector: 'app-settings-sheet',
   imports: [
     Sheet,
     SettingsGroup,
     SettingsRow,
-    NumberStepper,
     SegmentedPills,
-    ToggleSwitch,
     FormField,
+    LgInput,
+    LgNumberField,
+    LgSlider,
+    LgSwitch,
+    LgThemeSwitcher,
   ],
   templateUrl: './settings-sheet.html',
 })
@@ -61,6 +66,7 @@ export class SettingsSheet {
     { value: 'sharps', label: '♯ Sharps' },
     { value: 'flats', label: '♭ Flats' },
   ];
+  protected readonly hz = withUnit('Hz');
   protected readonly sounds = CLICK_SOUNDS;
   protected readonly pedalModes = PEDAL_MODES;
   protected readonly volumes = [

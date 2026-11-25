@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject } from '@angular/core';
+import { LgTheme } from '@domideimel/ng-liquid-glass/theme';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -33,7 +34,7 @@ import { Viewport } from './ui/viewport';
   ],
   templateUrl: './app.html',
   host: {
-    class: 'flex h-dvh flex-col overflow-hidden safe-top',
+    class: 'flex h-dvh flex-col overflow-hidden lg-safe-top',
     '(document:keydown)': 'onKeydown($event)',
   },
 })
@@ -64,6 +65,8 @@ export class App {
   );
 
   constructor() {
+    // Applies the stored light, dark or system choice before the first paint of the app.
+    inject(LgTheme);
     inject(WakeLock);
     effect(() => {
       this.tuner.setOnScreen(this.tunerOnScreen());
@@ -114,11 +117,11 @@ export class App {
   }
 }
 
+/** Text fields, number fields, selects and sliders use the keys themselves; radios and switches don't type. */
 function isTyping(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
-  );
+  if (!(target instanceof HTMLElement)) return false;
+  if (target instanceof HTMLInputElement) return !['radio', 'checkbox'].includes(target.type);
+  return target.isContentEditable || ['TEXTAREA', 'SELECT'].includes(target.tagName);
 }
 
 function isInsideDialog(target: EventTarget | null): boolean {
@@ -127,5 +130,5 @@ function isInsideDialog(target: EventTarget | null): boolean {
 
 /** Radio groups (segmented pills, subdivisions) use the arrow keys themselves. */
 function isRadio(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && target.closest('[role="radiogroup"]') !== null;
+  return target instanceof HTMLInputElement && target.type === 'radio';
 }

@@ -1,5 +1,14 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/inter/wght.css';
+/* Colours, focus ring, dialogs and controls come from ng-liquid-glass; Ictus adds no theme of its own. */
+@import '@domideimel/ng-liquid-glass/theme.css';
+/*
+ * The theme makes Tailwind scan the whole library. Skip its source maps and the entry points Ictus
+ * doesn't import, so their classes don't end up in the CSS; add an entry back here when importing it.
+ * The paths are pnpm's real location of the package, which is what the theme's `@source` scans.
+ */
+@source not '../node_modules/.pnpm/@domideimel+ng-liquid-glass*/node_modules/@domideimel/ng-liquid-glass/fesm2022/*.map';
+@source not '../node_modules/.pnpm/@domideimel+ng-liquid-glass*/node_modules/@domideimel/ng-liquid-glass/{schematics,bin,types}';
+@source not '../node_modules/.pnpm/@domideimel+ng-liquid-glass*/node_modules/@domideimel/ng-liquid-glass/fesm2022/domideimel-ng-liquid-glass-{accordion,alert,avatar,badge,breadcrumbs,combobox,file-input,layout,link,menu,navigation,pagination,popover,progress,select,separator,skeleton,stepper,table,tabs,tag,testing,toast,toolbar,tooltip,tree}.mjs';
 @import '@fontsource/noto-music/music.css';
 @import '@fontsource/noto-music/latin.css';
 
@@ -10,86 +19,20 @@
   font-display: block;
 }
 
-/*
- * Design tokens from the concept. Dark is the stage look; light follows the system setting,
- * with the same values as the native app.
- */
+/* Music glyph fonts: functional, not theming. */
 @theme {
-  --font-sans: 'Inter Variable', system-ui, -apple-system, sans-serif;
   --font-music: 'Noto Music', serif;
   --font-bravura: 'Bravura';
-
-  /* The concept's type and corner scale, in px, so classes read like the design: text-15, rounded-14. */
-  --text-10: 10px;
-  --text-10\.5: 10.5px;
-  --text-11: 11px;
-  --text-11\.5: 11.5px;
-  --text-12\.5: 12.5px;
-  --text-13: 13px;
-  --text-15: 15px;
-  --text-17: 17px;
-  --text-22: 22px;
-  --text-26: 26px;
-
-  --radius-7: 7px;
-  --radius-9: 9px;
-  --radius-10: 10px;
-  --radius-14: 14px;
-  --radius-20: 20px;
-
-  /* Letter spacing in hundredths of an em: tracking-8 is 0.08em, -tracking-4 is -0.04em. */
-  --tracking-3: 0.03em;
-  --tracking-4: 0.04em;
-  --tracking-6: 0.06em;
-  --tracking-8: 0.08em;
-  --tracking-12: 0.12em;
-
-  --color-bg: #0e0e10;
-  --color-panel: #141417;
-  --color-surface: #1a1a1e;
-  --color-stroke: #2a2a30;
-  --color-kbd: #3a3a42;
-  --color-segment: #3a3a42;
-  --color-fg: #f2f2f0;
-  --color-muted: #a1a1a8;
-  --color-faint: #8a8a92;
-  --color-ring: #66666f;
-  --color-accent: #f2a33a;
-  --color-accent-text: #f2a33a;
-  --color-on-accent: #0e0e10;
-  --color-in-tune: #3fc1a5;
-  --color-paper: #f4f1ea;
-  --color-ink: #1c1c1f;
-  --color-paper-label: #55555c;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-bg: #f6f5f2;
-    --color-panel: #fdfcfa;
-    --color-surface: #ffffff;
-    --color-stroke: #dedcd6;
-    --color-kbd: #cfcdc6;
-    --color-segment: #d9d7d1;
-    --color-fg: #141416;
-    --color-muted: #5f5f66;
-    --color-faint: #707077;
-    --color-ring: #8b8b91;
-    --color-accent: #c57d1b;
-    --color-accent-text: #965709;
-    --color-in-tune: #116654;
-  }
 }
 
 @layer base {
   :root {
-    color-scheme: dark light;
     -webkit-tap-highlight-color: transparent;
   }
 
   html,
   body {
-    @apply h-full bg-bg font-sans text-fg antialiased;
+    @apply h-full antialiased;
   }
 
   body {
@@ -98,8 +41,7 @@
     touch-action: manipulation;
   }
 
-  button,
-  [role='switch'] {
+  button {
     @apply cursor-pointer select-none;
   }
 
@@ -107,21 +49,19 @@
     @apply cursor-default;
   }
 
+  /* The library's focus ring (lg-focus-ring) for the app's own controls too: dial, beat dots, lugs. */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-accent;
-  }
-
-  dialog::backdrop {
-    @apply bg-black/60;
+    @apply outline-3 outline-offset-2 outline-lg-focus;
   }
 }
 
-@utility safe-bottom {
-  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
-}
-
-@utility safe-top {
-  padding-top: env(safe-area-inset-top);
+/*
+ * Workaround for ng-liquid-glass 0.3.0: lgButton always adds rounded-lg-control, which Tailwind emits
+ * after rounded-full, so shape="circle" buttons came out as rounded squares. Remove once
+ * https://github.com/domideimel/ng-liquid-glass/issues/57 is fixed.
+ */
+[lgButton][shape='circle'] {
+  border-radius: calc(infinity * 1px);
 }
 
 @utility no-scrollbar {

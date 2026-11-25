@@ -52,10 +52,10 @@ export class BeatDots {
 
 function dotClasses(level: BeatLevel, current: boolean): string {
   if (level === BeatLevel.Mute) {
-    return `border-2 border-dashed border-ring font-semibold text-faint ${current ? 'bg-stroke' : 'bg-transparent'}`;
+    return `border-2 border-dashed border-lg-control-border font-semibold text-lg-fg-muted ${current ? 'bg-lg-border' : 'bg-transparent'}`;
   }
-  if (current) return 'border-3 border-accent bg-accent font-bold text-on-accent';
+  if (current) return 'border-3 border-lg-accent bg-lg-accent font-bold text-lg-on-accent';
   if (level === BeatLevel.Accent)
-    return 'border-3 border-accent bg-surface font-bold text-accent-text';
-  return 'border-2 border-ring bg-surface font-semibold text-fg';
+    return 'border-3 border-lg-accent bg-lg-surface font-bold text-lg-accent';
+  return 'border-2 border-lg-control-border bg-lg-surface font-semibold text-lg-fg';
 }

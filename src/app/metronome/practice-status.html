@@ -6,7 +6,7 @@
   >
     @for (chip of chips(); track chip.tool) {
       <span
-        class="flex h-8 items-center rounded-full bg-accent/15 text-12.5 font-semibold text-accent-text tabular-nums"
+        class="flex h-8 items-center rounded-full bg-lg-accent-surface text-sm font-semibold text-lg-accent tabular-nums"
       >
         <button
           type="button"
@@ -19,7 +19,7 @@
         </button>
         <button
           type="button"
-          class="flex size-8 items-center justify-center rounded-full active:bg-accent/20"
+          class="flex size-8 items-center justify-center rounded-full active:bg-lg-surface-muted"
           [attr.aria-label]="`Turn off ${chip.name}`"
           (click)="store.turnOffPractice(chip.tool)"
         >
@@ -30,7 +30,7 @@
     @if (chips().length > 1) {
       <button
         type="button"
-        class="h-8 rounded-full px-2.5 text-12.5 font-semibold text-muted underline underline-offset-2"
+        class="h-8 rounded-full px-2.5 text-sm font-semibold text-lg-fg-muted underline underline-offset-2"
         (click)="store.turnOffPractice()"
       >
         Turn all off

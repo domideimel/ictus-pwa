@@ -13,6 +13,16 @@ It installs to the home screen on iPhone, iPad, Android and desktop, works offli
   Drum-lug tuner that compares every tension rod with the average or a target note. The microphone is only used after you press **Start tuner**.
 - **Keys and pedals:** Space starts/stops, T taps. Bluetooth page-turner pedals (←/→, ↑/↓, Page Up/Down) tap and start/stop, or step through a setlist.
 
+## Design system
+
+The UI is built on [ng-liquid-glass](https://github.com/domideimel/ng-liquid-glass): its theme (colours, focus ring,
+light / dark / system), its controls and dialogs. Ictus has no theme of its own. The package is installed from the
+tarball on its GitHub release, so no registry token is needed; to update, change the version in the URL:
+
+```bash
+pnpm add https://github.com/domideimel/ng-liquid-glass/releases/download/v0.3.0/domideimel-ng-liquid-glass-0.3.0.tgz
+```
+
 ## Develop
 
 ```bash
@@ -22,7 +32,7 @@ pnpm test           # unit tests (Vitest), watch mode
 pnpm test:ci        # one run with coverage and thresholds, as in CI
 pnpm lint           # ESLint: typescript-eslint strict + stylistic (type-checked), all angular-eslint rules
 pnpm typecheck      # tsc for app, specs and workers
-pnpm check:contrast # theme colour pairs against WCAG AA, light and dark
+pnpm check:contrast # the app's own colour pairs of ng-liquid-glass tokens against WCAG AA, light and dark
 pnpm format         # Prettier; CI runs pnpm format:check
 pnpm build          # production build in dist/ictus-pwa/browser
 pnpm e2e            # build, then the Playwright end-to-end tests in every browser
@@ -77,17 +87,17 @@ When a new version is deployed, the app offers a **Reload** button.
 
 ## Structure
 
-| Folder                                                        | Contents                                                                                                        |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `src/app/music`                                               | Pure music logic: meters, groupings, note names, staff placement, practice tools, drum tuning                   |
-| `src/app/audio`                                               | Web Audio click scheduler, click synthesis, YIN pitch detector (in a web worker), microphone                    |
-| `src/app/state`                                               | Signal-based stores, saved to localStorage                                                                      |
-| `src/app/shared`                                              | Small helpers without a domain, e.g. `clamp`                                                                    |
-| `src/app/ui`                                                  | Shared controls: sheet (native `<dialog>`), segmented pills, number stepper, switch (all signal-forms controls) |
-| `src/app/metronome`, `tuner`, `setlists`, `settings`, `pages` | Screens and their components                                                                                    |
-| `src/testing`                                                 | Test fakes and drivers for the unit tests (not part of the app build)                                           |
-| `e2e`                                                         | Playwright end-to-end and accessibility tests                                                                   |
-| `scripts`                                                     | `check-contrast.mjs` (run in CI), `serve-dist.mjs` (serves the build for the e2e tests)                         |
+| Folder                                                        | Contents                                                                                                     |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/app/music`                                               | Pure music logic: meters, groupings, note names, staff placement, practice tools, drum tuning                |
+| `src/app/audio`                                               | Web Audio click scheduler, click synthesis, YIN pitch detector (in a web worker), microphone                 |
+| `src/app/state`                                               | Signal-based stores, saved to localStorage                                                                   |
+| `src/app/shared`                                              | Small helpers without a domain, e.g. `clamp`                                                                 |
+| `src/app/ui`                                                  | Thin wrappers around ng-liquid-glass: sheet, confirm dialog, segmented pills (a signal-forms control), icons |
+| `src/app/metronome`, `tuner`, `setlists`, `settings`, `pages` | Screens and their components                                                                                 |
+| `src/testing`                                                 | Test fakes and drivers for the unit tests (not part of the app build)                                        |
+| `e2e`                                                         | Playwright end-to-end and accessibility tests                                                                |
+| `scripts`                                                     | `check-contrast.mjs` (run in CI), `serve-dist.mjs` (serves the build for the e2e tests)                      |
 
 ## Differences from the native app
 

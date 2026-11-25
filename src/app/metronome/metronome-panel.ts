@@ -1,4 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgCard } from '@domideimel/ng-liquid-glass/card';
 import { canSwing, groupingOptions, signatureLabel } from '../music/meter';
 import { LibraryStore } from '../state/library.store';
 import { clamp } from '../shared/numbers';
@@ -7,7 +9,6 @@ import { SetlistBar } from '../setlists/setlist-bar';
 import { SetlistSheet } from '../setlists/setlist-sheet';
 import { HeaderIconButton } from '../ui/header-icon-button';
 import { SectionLabel } from '../ui/section-label';
-import { Surface } from '../ui/surface';
 import { Viewport } from '../ui/viewport';
 import { BeatDots } from './beat-dots';
 import { NudgeButtons } from './nudge-buttons';
@@ -24,7 +25,7 @@ const PHONE_FIXED_HEIGHT = 640;
 /** Rows that only show up sometimes, each taking this much height from the dial. */
 const SETLIST_BAR_HEIGHT = 52;
 const PRACTICE_CHIPS_HEIGHT = 44;
-const GROUPING_ROWS_HEIGHT = 84;
+const GROUPING_ROWS_HEIGHT = 96;
 const SWING_SLIDER_HEIGHT = 44;
 /** The dial's size range on phones; below the smallest the screen scrolls instead. */
 const PHONE_DIAL = { min: 140, max: 248 } as const;
@@ -38,6 +39,8 @@ const PHONE_DIAL = { min: 140, max: 248 } as const;
   imports: [
     BeatDots,
     HeaderIconButton,
+    LgButton,
+    LgCard,
     NudgeButtons,
     PlayButton,
     PracticeSheet,
@@ -46,7 +49,6 @@ const PHONE_DIAL = { min: 140, max: 248 } as const;
     SetlistBar,
     SetlistSheet,
     SubdivisionPicker,
-    Surface,
     SwingSlider,
     TempoDial,
     TimeSignatureChips,

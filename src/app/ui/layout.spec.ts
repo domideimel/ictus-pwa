@@ -7,7 +7,6 @@ import { Icon } from './icon';
 import { SectionLabel } from './section-label';
 import { SettingsGroup, SettingsRow } from './settings-group';
 import { Sheet } from './sheet';
-import { Surface } from './surface';
 import { Viewport } from './viewport';
 
 @Component({
@@ -74,7 +73,23 @@ describe('Sheet', () => {
     const { fixture, dialog } = await setup();
     await click(fixture, dialog.querySelector('p')!);
     expect(fixture.componentInstance.closedCount).toBe(0);
-    await click(fixture, dialog);
+    // A backdrop click targets the dialog element itself, outside its box.
+    dialog.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 500, clientY: 500 }));
+    await fixture.whenStable();
+    expect(fixture.componentInstance.closedCount).toBe(1);
+  });
+
+  it('is a sheet on phones and a centred dialog on wider screens', async () => {
+    const { dialog } = await setup();
+    expect(dialog.className).toContain('mt-auto');
+    expect(dialog.className).toContain('sm:m-auto');
+  });
+
+  it('closes from close()', async () => {
+    const fixture = TestBed.createComponent(SheetHost);
+    await fixture.whenStable();
+    fixture.debugElement.query((node) => node.name === 'app-sheet').componentInstance.close();
+    await fixture.whenStable();
     expect(fixture.componentInstance.closedCount).toBe(1);
   });
 
@@ -82,35 +97,6 @@ describe('Sheet', () => {
     const one = await setup();
     const two = await setup();
     expect(one.dialog.querySelector('h2')!.id).not.toBe(two.dialog.querySelector('h2')!.id);
-  });
-});
-
-@Component({
-  imports: [Surface],
-  template: `
-    <button type="button" appSurface>Plain</button>
-    <button type="button" appSurface pressed [selected]="selected()">Chip</button>
-  `,
-})
-class SurfaceHost {
-  readonly selected = signal(false);
-}
-
-describe('Surface', () => {
-  it('styles buttons and exposes aria-pressed only for toggle chips', async () => {
-    const fixture = TestBed.createComponent(SurfaceHost);
-    await fixture.whenStable();
-    const [plain, chip] = [...fixture.nativeElement.querySelectorAll('button')] as [
-      HTMLButtonElement,
-      HTMLButtonElement,
-    ];
-    expect(plain.hasAttribute('aria-pressed')).toBe(false);
-    expect(plain.className).toContain('bg-surface');
-    expect(chip.getAttribute('aria-pressed')).toBe('false');
-    fixture.componentInstance.selected.set(true);
-    await fixture.whenStable();
-    expect(chip.getAttribute('aria-pressed')).toBe('true');
-    expect(chip.className).toContain('bg-fg');
   });
 });
 
@@ -143,6 +129,9 @@ const ICON_NAMES: readonly IconName[] = [
     <app-header-icon-button icon="settings" label="Settings" (pressed)="presses = presses + 1" />
     <app-settings-group title="Tuner" [footnote]="footnote()">
       <app-settings-row label="Clef" labelId="clef-label"><span>Bass</span></app-settings-row>
+      <app-settings-row label="Vibration" for="vibration">
+        <input id="vibration" type="checkbox" />
+      </app-settings-row>
     </app-settings-group>
     <app-section-label>Tempo</app-section-label>
     @for (name of icons; track name) {
@@ -170,6 +159,9 @@ describe('layout pieces', () => {
     const group = fixture.nativeElement.querySelector('app-settings-group') as HTMLElement;
     expect(group.querySelector('h3')?.textContent).toBe('Tuner');
     expect(group.querySelector('#clef-label')?.textContent).toBe('Clef');
+    // With `for`, the row's label names the control and toggles it on a tap.
+    const label = [...group.querySelectorAll('label')].find((l) => l.textContent === 'Vibration');
+    expect(label?.htmlFor).toBe('vibration');
     expect(group.querySelector('p')?.textContent).toBe('Applies at once.');
     fixture.componentInstance.footnote.set(undefined);
     await fixture.whenStable();

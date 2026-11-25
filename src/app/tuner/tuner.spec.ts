@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { byLabel, click, pointer, render } from '../../testing/dom';
+import { byLabel, click, control, pressStep, radio, render } from '../../testing/dom';
 import { stubGetUserMedia } from '../../testing/fakes';
 import { TunerDriver } from '../../testing/tuner-driver';
 import { MetronomeStore } from '../state/metronome.store';
@@ -82,11 +82,12 @@ describe('TuningStatePill', () => {
     driver.hear(cents(442, 3), cents(442, 3));
     await fixture.whenStable();
     expect(text(element)).toBe('✓ In tune · +3 ¢');
-    expect(element.className).toContain('text-in-tune');
+    expect(element.className).toContain('text-lg-success');
 
     driver.hear(cents(442, 20), cents(442, 20), cents(442, 20));
     await fixture.whenStable();
     expect(text(element)).toBe('▲ High · +20 ¢');
+    expect(element.className).toContain('text-lg-warning');
 
     driver.hear(null, null, cents(442, -12), cents(442, -12));
     await fixture.whenStable();
@@ -227,13 +228,11 @@ describe('ReferencePitchButton', () => {
     await click(fixture, button);
     const dialog = element.querySelector('dialog') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
-    expect(byLabel(dialog, '442').getAttribute('aria-pressed')).toBe('true');
+    expect(radio(dialog, '442').checked).toBe(true);
 
-    await click(fixture, byLabel(dialog, '440'));
+    await click(fixture, radio(dialog, '440'));
     expect(settings.referencePitch()).toBe(440);
-    pointer(byLabel(dialog.querySelector('app-number-stepper')!, 'Plus 1'), 'pointerdown', {
-      button: 0,
-    });
+    pressStep(control(dialog, 'Reference pitch'), 'increase');
     TestBed.tick();
     await fixture.whenStable();
     expect(settings.referencePitch()).toBe(441);
@@ -308,9 +307,7 @@ describe('DrumTuning', () => {
 
   it('starts over when the lug count changes', async () => {
     const { fixture, element } = await render(DrumTuning);
-    pointer(byLabel(element.querySelector('app-number-stepper')!, 'Plus 1'), 'pointerdown', {
-      button: 0,
-    });
+    pressStep(control(element, 'Lugs'), 'increase');
     TestBed.tick();
     await fixture.whenStable();
     expect(settings.drumLugs()).toBe(9);
@@ -363,7 +360,7 @@ describe('TunerPanel', () => {
   it('switches between chromatic and drum modes', async () => {
     const { fixture, element } = await render(TunerPanel);
     expect(element.querySelector('app-staff-card')).not.toBeNull();
-    await click(fixture, byLabel(element, 'Drum lugs', '[role="radio"]'));
+    await click(fixture, radio(element, 'Drum lugs'));
     TestBed.tick();
     await fixture.whenStable();
     expect(settings.tunerMode()).toBe('drum');
@@ -411,7 +408,7 @@ describe('TunerPanel', () => {
     const section = fixture.nativeElement.querySelector('section') as HTMLElement;
     expect(section.getAttribute('aria-labelledby')).toBe('tuner-title');
     expect(section.querySelector('app-tuner-toggle')).not.toBeNull();
-    await click(fixture, byLabel(section, 'Drum lugs', '[role="radio"]'));
+    await click(fixture, radio(section, 'Drum lugs'));
     TestBed.tick();
     await fixture.whenStable();
     expect(section.querySelector('app-drum-tuning')).not.toBeNull();

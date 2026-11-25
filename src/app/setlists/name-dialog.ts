@@ -1,12 +1,22 @@
-import type { ElementRef } from '@angular/core';
-import { Component, afterNextRender, input, linkedSignal, output, viewChild } from '@angular/core';
+import { Component, input, linkedSignal, output, signal } from '@angular/core';
 import { FormField, form, maxLength, required, submit, validate } from '@angular/forms/signals';
-import { Surface } from '../ui/surface';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgDialog, LgDialogClose, LgDialogTitle } from '@domideimel/ng-liquid-glass/dialog';
+import { LgFormField, LgInput, LgLabel } from '@domideimel/ng-liquid-glass/forms';
 
 /** Small modal asking for a setlist or piece name. Uses a signal form so an empty name can't be saved. */
 @Component({
   selector: 'app-name-dialog',
-  imports: [FormField, Surface],
+  imports: [
+    FormField,
+    LgButton,
+    LgDialog,
+    LgDialogClose,
+    LgDialogTitle,
+    LgFormField,
+    LgInput,
+    LgLabel,
+  ],
   templateUrl: './name-dialog.html',
 })
 export class NameDialog {
@@ -26,26 +36,13 @@ export class NameDialog {
     );
   });
 
-  protected showError(): boolean {
-    const field = this.nameForm.name();
-    return field.touched() && field.invalid();
-  }
-
-  private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
-  private readonly input = viewChild.required<ElementRef<HTMLInputElement>>('input');
-
-  constructor() {
-    afterNextRender(() => {
-      this.dialog().nativeElement.showModal();
-      this.input().nativeElement.select();
-    });
-  }
+  protected readonly open = signal(true);
 
   protected save(event: Event): void {
     event.preventDefault();
     void submit(this.nameForm, () => {
       this.saved.emit(this.model().name.trim());
-      this.dialog().nativeElement.close();
+      this.open.set(false);
       return Promise.resolve();
     });
   }
