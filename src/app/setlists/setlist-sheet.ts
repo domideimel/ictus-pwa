@@ -1,11 +1,11 @@
 import { Component, inject, output, signal, viewChild } from '@angular/core';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
 import type { Piece, Setlist } from '../state/library.store';
 import { LibraryStore, pieceSummary } from '../state/library.store';
 import { MetronomeStore } from '../state/metronome.store';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Icon } from '../ui/icon';
 import { Sheet } from '../ui/sheet';
-import { Surface } from '../ui/surface';
 import { NameDialog } from './name-dialog';
 
 type Naming =
@@ -23,7 +23,7 @@ type Confirming =
 /** Setlists of saved pieces. Tap a piece to load it; save the current metronome as a new piece. */
 @Component({
   selector: 'app-setlist-sheet',
-  imports: [Sheet, ConfirmDialog, Icon, NameDialog, Surface],
+  imports: [Sheet, ConfirmDialog, Icon, LgButton, NameDialog],
   templateUrl: './setlist-sheet.html',
 })
 export class SetlistSheet {
@@ -124,6 +124,8 @@ export class SetlistSheet {
     switch (confirming.kind) {
       case 'deleteSetlist':
         this.library.deleteSetlist(confirming.setlist.id);
+        // The Edit button goes away with the last setlist, so edit mode ends with it.
+        if (this.library.setlists().length === 0) this.editing.set(false);
         break;
       case 'deletePiece':
         this.library.deletePiece(confirming.setlist.id, confirming.piece.id);

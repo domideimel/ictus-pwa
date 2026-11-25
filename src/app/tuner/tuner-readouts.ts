@@ -47,7 +47,7 @@ export class TuningStatePill {
   private readonly tuner = inject(TunerStore);
 
   protected readonly state = computed(() => {
-    const neutral = 'bg-muted/15 text-muted';
+    const neutral = 'bg-lg-surface-muted text-lg-fg-muted';
     if (this.tuner.microphoneDenied()) {
       const text = 'Microphone access needed';
       return { text, announcement: text, classes: neutral };
@@ -67,13 +67,13 @@ export class TuningStatePill {
       return {
         text: `✓ In tune · ${signed} ¢`,
         announcement: 'In tune',
-        classes: 'bg-in-tune/15 text-in-tune',
+        classes: 'bg-lg-success-surface text-lg-success',
       };
     const high = reading.cents > 0;
     return {
       text: `${high ? '▲ High' : '▼ Low'} · ${signed} ¢`,
       announcement: high ? 'High' : 'Low',
-      classes: 'bg-accent/15 text-accent-text',
+      classes: 'bg-lg-warning-surface text-lg-warning',
     };
   });
 }
@@ -107,7 +107,7 @@ export class CentsMeter {
 @Component({
   selector: 'app-frequency-label',
   templateUrl: './frequency-label.html',
-  host: { class: 'block min-h-5 text-sm text-muted tabular-nums' },
+  host: { class: 'block min-h-5 text-sm text-lg-fg-muted tabular-nums' },
 })
 export class FrequencyLabel {
   protected readonly tuner = inject(TunerStore);

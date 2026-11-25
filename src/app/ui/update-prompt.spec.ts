@@ -60,7 +60,10 @@ describe('UpdatePrompt', () => {
     versionUpdates.next(ready);
     await fixture.whenStable();
     expect(dialog.open).toBe(true);
-    expect(dialog.getAttribute('aria-labelledby')).toBe('update-title');
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+    expect(dialog.querySelector(`#${dialog.getAttribute('aria-labelledby')}`)?.textContent).toBe(
+      'Update available',
+    );
     expect(dialog.textContent).toContain('A new version of Ictus is ready.');
     expect(byLabel(dialog, 'Reload')).toBeTruthy();
   });

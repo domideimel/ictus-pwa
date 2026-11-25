@@ -93,7 +93,7 @@ describe('MetronomePanel', () => {
     TestBed.tick();
     await fixture.whenStable();
     // Setlist bar, practice chips, grouping chips with the count toggle, and swing slider.
-    expect(dial()).toBe(`${1100 - 640 - 52 - 44 - 84 - 44}px`);
+    expect(dial()).toBe(`${1100 - 640 - 52 - 44 - 96 - 44}px`);
 
     resize(390, 600);
     TestBed.resetTestingModule();

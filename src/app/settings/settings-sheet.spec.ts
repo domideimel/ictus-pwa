@@ -1,5 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { byLabel, click, key, pointer, render } from '../../testing/dom';
+import {
+  byLabel,
+  click,
+  control,
+  key,
+  pressStep,
+  radio,
+  render,
+  selectControl,
+} from '../../testing/dom';
 import { SettingsStore } from '../state/settings.store';
 import { SettingsSheet } from './settings-sheet';
 
@@ -21,9 +30,10 @@ describe('SettingsSheet', () => {
     return { ...result, changed };
   };
 
-  it('groups settings into Tuner, Metronome and General', async () => {
+  it('groups settings into Appearance, Tuner, Metronome and General', async () => {
     const { element } = await setup();
-    expect([...element.querySelectorAll('h3')].map((title) => title.textContent)).toEqual([
+    expect([...element.querySelectorAll('h3')].map((title) => title.textContent.trim())).toEqual([
+      'Appearance',
       'Tuner',
       'Metronome',
       'General',
@@ -32,11 +42,12 @@ describe('SettingsSheet', () => {
 
   it('edits the reference pitch within 430–450 Hz', async () => {
     const { element, changed } = await setup();
-    const pitch = element.querySelector('[aria-label="Reference pitch"]')!;
+    const pitch = control(element, 'Reference pitch');
+    expect(pitch.getAttribute('role')).toBe('spinbutton');
     expect(pitch.getAttribute('aria-valuetext')).toBe('442 Hz');
     expect(pitch.getAttribute('aria-valuemin')).toBe('430');
     expect(pitch.getAttribute('aria-valuemax')).toBe('450');
-    pointer(byLabel(pitch, 'Minus 1'), 'pointerdown', { button: 0 });
+    pressStep(pitch, 'decrease');
     await changed();
     expect(settings.referencePitch()).toBe(441);
     for (let i = 0; i < 30; i++) key(pitch, 'ArrowUp');
@@ -46,9 +57,9 @@ describe('SettingsSheet', () => {
 
   it('picks tolerance, clef and accidentals', async () => {
     const { fixture, element, changed } = await setup();
-    await click(fixture, byLabel(element, '±10 ¢', '[role="radio"]'));
-    await click(fixture, byLabel(element, 'Treble', '[role="radio"]'));
-    await click(fixture, byLabel(element, '♯ Sharps', '[role="radio"]'));
+    await click(fixture, radio(element, '±10 ¢'));
+    await click(fixture, radio(element, 'Treble'));
+    await click(fixture, radio(element, '♯ Sharps'));
     await changed();
     expect(settings.tolerance()).toBe(10);
     expect(settings.clef()).toBe('treble');
@@ -59,8 +70,8 @@ describe('SettingsSheet', () => {
   // real browser saves it (checked in Chromium). Here the select must mirror the stored setting.
   it('shows the click sound and pedal mode from the settings', async () => {
     const { element, changed } = await setup();
-    const sound = element.querySelector('select[aria-label="Click sound"]') as HTMLSelectElement;
-    const pedal = element.querySelector('select[aria-label="Pedal"]') as HTMLSelectElement;
+    const sound = selectControl(element, 'Click sound');
+    const pedal = selectControl(element, 'Pedal');
     expect([...sound.options].map((option) => option.textContent.trim())).toEqual([
       'Click',
       'Woodblock',
@@ -94,11 +105,29 @@ describe('SettingsSheet', () => {
 
   it('toggles vibration and keep awake', async () => {
     const { fixture, element, changed } = await setup();
-    await click(fixture, byLabel(element, 'Vibration', '[role="switch"]'));
-    await click(fixture, byLabel(element, 'Keep screen awake', '[role="switch"]'));
+    const vibration = control(element, 'Vibration');
+    const awake = control(element, 'Keep screen awake');
+    // Native checkboxes with the switch role, so screen readers announce on and off.
+    expect([vibration.type, vibration.getAttribute('role'), vibration.checked]).toEqual([
+      'checkbox',
+      'switch',
+      true,
+    ]);
+    await click(fixture, vibration);
+    await click(fixture, awake);
     await changed();
     expect(settings.vibration()).toBe(false);
     expect(settings.keepAwake()).toBe(false);
+  });
+
+  it('picks light, dark or the system colours', async () => {
+    const { fixture, element } = await setup();
+    const switcher = element.querySelector('lg-theme-switcher')!;
+    expect(radio(switcher, 'System').checked).toBe(true);
+    await click(fixture, radio(switcher, 'Dark'));
+    expect(document.documentElement.dataset['theme']).toBe('dark');
+    await click(fixture, radio(switcher, 'System'));
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
   });
 
   it('explains the pedals and keys', async () => {

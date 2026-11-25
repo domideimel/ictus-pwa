@@ -1,9 +1,10 @@
 import { Component, inject, output, signal, viewChild } from '@angular/core';
 import { FormField, form, max, min, submit } from '@angular/forms/signals';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgNumberField } from '@domideimel/ng-liquid-glass/number-field';
 import type { TimeSignature } from '../music/meter';
 import { BEAT_RANGE, BEAT_UNITS } from '../music/meter';
 import { MetronomeStore } from '../state/metronome.store';
-import { NumberStepper } from '../ui/number-stepper';
 import type { PillOption } from '../ui/segmented-pills';
 import { SegmentedPills } from '../ui/segmented-pills';
 import { SettingsGroup, SettingsRow } from '../ui/settings-group';
@@ -12,7 +13,7 @@ import { Sheet } from '../ui/sheet';
 /** Free input for meters beyond the quick picks: 1–16 beats over 2, 4, 8 or 16. */
 @Component({
   selector: 'app-time-signature-sheet',
-  imports: [Sheet, NumberStepper, SegmentedPills, SettingsGroup, SettingsRow, FormField],
+  imports: [Sheet, LgButton, LgNumberField, SegmentedPills, SettingsGroup, SettingsRow, FormField],
   templateUrl: './time-signature-sheet.html',
 })
 export class TimeSignatureSheet {

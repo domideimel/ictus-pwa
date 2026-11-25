@@ -34,6 +34,7 @@ test('starts empty, saves pieces, and steps through them on stage', async ({ pag
   await openSetlists(page);
   await savePiece(page, 'Finale', 'Setlist 1');
   await sheet(page).getByRole('button', { name: 'Close' }).click();
+  await expect(sheet(page)).toBeHidden();
 
   // The bar shows the loaded piece; previous / next load the neighbours.
   await expect(page.getByRole('button', { name: /^Finale/ })).toContainText('2 of 2 · Setlist 1');
@@ -106,6 +107,7 @@ test('page-turner pedals step through the setlist in previous / next mode', asyn
   await openSetlists(page);
   await savePiece(page, 'Slow');
   await sheet(page).getByRole('button', { name: 'Close' }).click();
+  await expect(sheet(page)).toBeHidden();
   await page.getByRole('button', { name: 'Plus 5 BPM' }).click();
   await openSetlists(page);
   await savePiece(page, 'Fast', 'Setlist 1');
@@ -117,6 +119,8 @@ test('page-turner pedals step through the setlist in previous / next mode', asyn
     .getByRole('combobox', { name: 'Pedal' })
     .selectOption({ label: 'Previous · Next piece' });
   await settings.getByRole('button', { name: 'Close' }).click();
+  // Keys inside an open dialog stay there; the pedals work once it has closed.
+  await expect(settings).toBeHidden();
 
   await page.keyboard.press('ArrowRight');
   await expect(tempo(page)).toHaveAttribute('aria-valuenow', '125');

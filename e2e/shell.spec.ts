@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, pick, test } from './fixtures';
 
 test.describe('phones', () => {
   test.skip(({ wide }) => wide, 'Phones only: tablets and desktops show one combined screen.');
@@ -64,7 +64,11 @@ test('keeps settings after a reload', async ({ page, wide }) => {
   const settings = page.getByRole('dialog', { name: 'Settings' });
   await settings.getByRole('combobox', { name: 'Click sound' }).selectOption('woodblock');
   await settings.getByRole('switch', { name: 'Vibration' }).click();
-  await settings.getByRole('radio', { name: 'Treble' }).click();
+  await pick(settings.getByRole('radio', { name: 'Treble' }));
+  // Settings are saved on the next render after a change; reload once they are.
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('ictus.settings')))
+    .toContain('"clef":"treble"');
   // Escape closes a sheet, as the native dialog does.
   await page.keyboard.press('Escape');
   await expect(settings).toBeHidden();
@@ -72,14 +76,36 @@ test('keeps settings after a reload', async ({ page, wide }) => {
   await page.reload();
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(settings.getByRole('combobox', { name: 'Click sound' })).toHaveValue('woodblock');
-  await expect(settings.getByRole('switch', { name: 'Vibration' })).toHaveAttribute(
-    'aria-checked',
-    'false',
-  );
-  await expect(settings.getByRole('radio', { name: 'Treble' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  await expect(settings.getByRole('switch', { name: 'Vibration' })).not.toBeChecked();
+  await expect(settings.getByRole('radio', { name: 'Treble' })).toBeChecked();
+});
+
+test('picks light, dark or the system colours, and the status bar follows', async ({
+  page,
+  wide,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto(wide ? '/' : '/metronome');
+  const themeColor = page.locator('meta[name="theme-color"]');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const settings = page.getByRole('dialog', { name: 'Settings' });
+  await expect(settings.getByRole('radio', { name: 'System' })).toBeChecked();
+
+  await pick(settings.getByRole('radio', { name: 'Dark' }));
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // The library's dark background, #09090b, in the status bar of the installed app.
+  await expect(themeColor).toHaveAttribute('content', 'rgb(9, 9, 11)');
+
+  // The choice is remembered.
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(settings.getByRole('radio', { name: 'Dark' })).toBeChecked();
+
+  // System follows the device again.
+  await pick(settings.getByRole('radio', { name: 'System' }));
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme');
+  await expect(themeColor).toHaveAttribute('content', 'rgb(255, 255, 255)');
 });
 
 test('is served with the security headers from vercel.json', async ({ page }) => {

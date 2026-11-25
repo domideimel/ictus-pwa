@@ -1,11 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import type { AppHarness } from './fixtures';
-import { expect, test } from './fixtures';
+import { expect, pick, test } from './fixtures';
 
 /**
  * Every screen, sheet and dialog passes axe (WCAG 2.2 A and AA, best practices), in light and dark
- * mode, in every browser and device. Real layout, so colour contrast is checked too.
+ * mode, in every browser and device. Real layout, so colour contrast is checked too. A few screens are
+ * also checked with the theme chosen in Settings against the system's, and with forced colours.
  */
 interface Scenario {
   readonly name: string;
@@ -38,16 +39,21 @@ const SCENARIOS: readonly Scenario[] = [
     skipFirefox: true,
     setup: async (page, _, wide) => {
       await metronome(page, wide);
-      await page.getByRole('button', { name: '7/8', exact: true }).click();
-      await page.getByRole('radio', { name: /^Groups/ }).click();
-      await page.getByRole('radio', { name: 'Eighth', exact: true }).click();
+      await pick(
+        page
+          .getByRole('group', { name: 'Time signature' })
+          .getByRole('radio', { name: '7/8', exact: true }),
+      );
+      await pick(page.getByRole('radio', { name: /^Groups/ }));
+      await pick(page.getByRole('radio', { name: 'Eighth', exact: true }));
       await page.getByRole('button', { name: /^Practice tools/ }).click();
       const sheet = page.getByRole('dialog', { name: 'Practice' });
       await sheet.getByRole('switch', { name: 'Gap click' }).click();
       await sheet.getByRole('switch', { name: 'Speed trainer' }).click();
       await sheet.getByRole('button', { name: 'Close' }).click();
+      await expect(sheet).toBeHidden();
       await page.getByRole('button', { name: 'Start metronome' }).click();
-      await expect(page.locator('app-beat-dots .bg-accent').first()).toBeVisible();
+      await expect(page.locator('app-beat-dots .bg-lg-accent').first()).toBeVisible();
     },
   },
   {
@@ -56,7 +62,7 @@ const SCENARIOS: readonly Scenario[] = [
       await metronome(page, wide);
       await page.getByRole('button', { name: /^Practice tools/ }).click();
       await page.getByRole('switch', { name: 'Gap click' }).click();
-      await page.getByRole('radio', { name: '3:2' }).click();
+      await pick(page.getByRole('radio', { name: '3:2' }));
     },
   },
   {
@@ -152,7 +158,7 @@ const SCENARIOS: readonly Scenario[] = [
     skipFirefox: true,
     setup: async (page, app, wide) => {
       await tuner(page, wide);
-      await page.getByRole('radio', { name: 'Drum lugs' }).click();
+      await pick(page.getByRole('radio', { name: 'Drum lugs' }));
       await page.getByRole('button', { name: 'Start tuner' }).click();
       await app.tone(200);
       await expect(page.getByRole('button', { name: /^Lug 1, -?\d+ cents/ })).toBeVisible();
@@ -172,29 +178,70 @@ const SCENARIOS: readonly Scenario[] = [
   },
 ];
 
+async function expectNoViolations(page: Page): Promise<void> {
+  // Let transitions (needle, switches, pressed states) settle before measuring contrast.
+  await page.waitForTimeout(250);
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+    .analyze();
+  const found = violations.flatMap((violation) =>
+    violation.nodes.map(
+      (node) => `${violation.id}: ${node.target.join(' ')} (${node.failureSummary ?? ''})`,
+    ),
+  );
+  expect(found).toEqual([]);
+}
+
+const FIREFOX_SKIP = 'Firefox crashes under axe in this state; checked in Chromium and WebKit.';
+
 for (const colorScheme of ['light', 'dark'] as const) {
   test.describe(`${colorScheme} mode`, () => {
     test.use({ colorScheme });
 
     for (const scenario of SCENARIOS) {
       test(scenario.name, async ({ page, app, wide, browserName }) => {
-        test.skip(
-          browserName === 'firefox' && scenario.skipFirefox === true,
-          'Firefox crashes under axe in this state; checked in Chromium and WebKit.',
-        );
+        test.skip(browserName === 'firefox' && scenario.skipFirefox === true, FIREFOX_SKIP);
         await scenario.setup(page, app, wide);
-        // Let transitions (needle, switches, pressed states) settle before measuring contrast.
-        await page.waitForTimeout(250);
-        const { violations } = await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-          .analyze();
-        const found = violations.flatMap((violation) =>
-          violation.nodes.map(
-            (node) => `${violation.id}: ${node.target.join(' ')} (${node.failureSummary ?? ''})`,
-          ),
-        );
-        expect(found).toEqual([]);
+        await expectNoViolations(page);
       });
     }
   });
 }
+
+/** Screens with every kind of control: buttons, segments, switches, number fields, dialogs. */
+const SAMPLE = new Set(['metronome', 'settings', 'tuner in tune', 'delete confirmation']);
+
+// The theme picked in Settings (stored by LgTheme) wins over the system setting.
+for (const [theme, colorScheme] of [
+  ['dark', 'light'],
+  ['light', 'dark'],
+] as const) {
+  test.describe(`${theme} theme chosen on a ${colorScheme} system`, () => {
+    test.use({ colorScheme });
+    test.beforeEach(async ({ page }) => {
+      await page.addInitScript((chosen) => {
+        localStorage.setItem('lg-theme', chosen);
+      }, theme);
+    });
+
+    for (const scenario of SCENARIOS.filter(({ name }) => SAMPLE.has(name))) {
+      test(scenario.name, async ({ page, app, wide }) => {
+        await scenario.setup(page, app, wide);
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expectNoViolations(page);
+      });
+    }
+  });
+}
+
+// Windows High Contrast: the system palette replaces the colours, selections must stay visible.
+test.describe('forced colours', () => {
+  test.use({ forcedColors: 'active' });
+
+  for (const scenario of SCENARIOS.filter(({ name }) => SAMPLE.has(name))) {
+    test(scenario.name, async ({ page, app, wide }) => {
+      await scenario.setup(page, app, wide);
+      await expectNoViolations(page);
+    });
+  }
+});

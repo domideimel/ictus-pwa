@@ -1,65 +1,65 @@
 @if (wide()) {
-  <section
-    aria-labelledby="metronome-title"
-    class="flex flex-col gap-6 rounded-20 border border-stroke bg-panel p-6 lg:p-7"
-  >
-    <header class="flex items-center justify-between gap-4">
-      <div class="flex flex-col gap-0.5">
-        <app-section-label id="metronome-title">Metronome</app-section-label>
-        <span class="text-xl font-semibold">{{ store.tempoMarking() }}</span>
-      </div>
-      <div class="flex gap-2">
-        <app-header-icon-button
-          icon="setlist"
-          label="Setlists"
-          (pressed)="showSetlists.set(true)"
-        />
-        <app-header-icon-button
-          icon="practice"
-          label="Practice tools"
-          [badge]="store.activePractice().length"
-          (pressed)="showPractice.set(true)"
-        />
-      </div>
-    </header>
+  <section lgCard glass aria-labelledby="metronome-title" class="lg:p-7">
+    <div class="flex flex-col gap-6">
+      <header class="flex items-center justify-between gap-4">
+        <div class="flex flex-col gap-0.5">
+          <app-section-label id="metronome-title">Metronome</app-section-label>
+          <span class="text-xl font-semibold">{{ store.tempoMarking() }}</span>
+        </div>
+        <div class="flex gap-2">
+          <app-header-icon-button
+            icon="setlist"
+            label="Setlists"
+            (pressed)="showSetlists.set(true)"
+          />
+          <app-header-icon-button
+            icon="practice"
+            label="Practice tools"
+            [badge]="store.activePractice().length"
+            (pressed)="showPractice.set(true)"
+          />
+        </div>
+      </header>
 
-    <app-setlist-bar (open)="showSetlists.set(true)" />
-    <app-practice-status (open)="showPractice.set(true)" />
+      <app-setlist-bar (open)="showSetlists.set(true)" />
+      <app-practice-status (open)="showPractice.set(true)" />
 
-    <div class="flex flex-wrap items-center gap-7 lg:gap-8">
-      <app-tempo-dial [diameter]="viewport.width() >= 1280 ? 240 : 220" />
-      <div class="flex min-w-60 flex-1 flex-col gap-3">
-        <app-nudge-buttons [height]="48" />
-        <div class="flex items-center gap-4">
-          <app-play-button [size]="viewport.width() >= 1280 ? 112 : 104" />
-          <button
-            type="button"
-            appSurface
-            class="h-18 flex-1 rounded-2xl text-base font-semibold"
-            (click)="store.tap()"
-          >
-            Tap tempo
-          </button>
+      <div class="flex flex-wrap items-center gap-7 lg:gap-8">
+        <app-tempo-dial [diameter]="viewport.width() >= 1280 ? 240 : 220" />
+        <div class="flex min-w-60 flex-1 flex-col gap-3">
+          <app-nudge-buttons [height]="48" />
+          <div class="flex items-center gap-4">
+            <app-play-button [size]="viewport.width() >= 1280 ? 112 : 104" />
+            <button
+              type="button"
+              lgButton
+              size="lg"
+              class="flex-1 font-semibold whitespace-nowrap"
+              (click)="store.tap()"
+            >
+              Tap tempo
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="flex flex-col gap-2.5">
-      <app-section-label
-        >Beats · {{ viewport.finePointer() ? 'click' : 'tap' }} to accent</app-section-label
-      >
-      <app-beat-dots [spreadOut]="false" [maxSize]="56" />
-    </div>
+      <div class="flex flex-col gap-2.5">
+        <app-section-label
+          >Beats · {{ viewport.finePointer() ? 'click' : 'tap' }} to accent</app-section-label
+        >
+        <app-beat-dots [spreadOut]="false" [maxSize]="56" />
+      </div>
 
-    <div class="flex flex-col gap-2.5">
-      <app-section-label>Time signature</app-section-label>
-      <app-time-signature-chips [wraps]="true" />
-    </div>
+      <div class="flex flex-col gap-2.5">
+        <app-section-label>Time signature</app-section-label>
+        <app-time-signature-chips [wraps]="true" />
+      </div>
 
-    <app-subdivision-picker [horizontal]="true" />
-    @if (swingAvailable()) {
-      <app-swing-slider />
-    }
+      <app-subdivision-picker [horizontal]="true" />
+      @if (swingAvailable()) {
+        <app-swing-slider />
+      }
+    </div>
   </section>
 } @else {
   <header class="flex items-center justify-between px-5 pt-3">
@@ -85,7 +85,7 @@
     <div class="flex flex-col items-center pt-2">
       <app-tempo-dial [diameter]="phoneDial()" />
       <app-nudge-buttons class="mt-1 w-73" />
-      <app-practice-status class="px-5" (open)="showPractice.set(true)" />
+      <app-practice-status class="mt-2 px-5" (open)="showPractice.set(true)" />
     </div>
 
     <div class="flex flex-col gap-2.5 px-5 pt-4">
@@ -107,11 +107,13 @@
     </div>
   </div>
 
-  <div class="flex items-center justify-between px-7 pt-2 pb-3">
+  <div class="flex items-center justify-between border-t border-lg-border px-7 pt-3 pb-3">
     <button
       type="button"
-      appSurface
-      class="size-18 rounded-full text-15 font-semibold"
+      lgButton
+      shape="circle"
+      size="lg"
+      class="font-semibold"
       aria-label="Tap tempo"
       (click)="store.tap()"
     >
@@ -124,7 +126,7 @@
       role="group"
     >
       <span class="text-xl font-semibold tabular-nums">{{ signature() }}</span>
-      <span class="text-11.5 text-muted tabular-nums">
+      <span class="text-xs text-lg-fg-muted tabular-nums">
         <span class="font-music">{{ symbol() }}</span> · {{ store.currentTempo() }}
       </span>
     </div>

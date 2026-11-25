@@ -1,5 +1,8 @@
 import { Component, computed, inject, output, viewChild } from '@angular/core';
 import { FormField, disabled, form, max, min } from '@angular/forms/signals';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgSwitch } from '@domideimel/ng-liquid-glass/forms';
+import { LgNumberField } from '@domideimel/ng-liquid-glass/number-field';
 import { BPM_RANGE } from '../music/meter';
 import type { Polyrhythm } from '../music/practice';
 import {
@@ -9,13 +12,12 @@ import {
   TRAINER_BAR_RANGE,
   TRAINER_STEP_RANGE,
 } from '../music/practice';
+import { withUnit } from '../shared/numbers';
 import { MetronomeStore } from '../state/metronome.store';
-import { NumberStepper } from '../ui/number-stepper';
 import type { PillOption } from '../ui/segmented-pills';
 import { SegmentedPills } from '../ui/segmented-pills';
 import { SettingsGroup, SettingsRow } from '../ui/settings-group';
 import { Sheet } from '../ui/sheet';
-import { ToggleSwitch } from '../ui/toggle-switch';
 
 /**
  * Practice tools behind the dumbbell button. The signal form edits the stored practice setup directly,
@@ -27,16 +29,20 @@ import { ToggleSwitch } from '../ui/toggle-switch';
     Sheet,
     SettingsGroup,
     SettingsRow,
-    NumberStepper,
     SegmentedPills,
-    ToggleSwitch,
     FormField,
+    LgButton,
+    LgNumberField,
+    LgSwitch,
   ],
   templateUrl: './practice-sheet.html',
 })
 export class PracticeSheet {
   protected readonly store = inject(MetronomeStore);
   readonly closed = output();
+
+  protected readonly bpm = withUnit('BPM');
+  protected readonly bars = withUnit('bars');
 
   protected readonly polyrhythms: PillOption<Polyrhythm>[] = POLYRHYTHMS.map((value) => ({
     value,

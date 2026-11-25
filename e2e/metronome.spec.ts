@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pick, test } from './fixtures';
 
 const open = async (page: Page, wide: boolean): Promise<void> => {
   await page.goto(wide ? '/' : '/metronome');
@@ -7,6 +7,9 @@ const open = async (page: Page, wide: boolean): Promise<void> => {
 };
 
 const tempo = (page: Page) => page.getByRole('slider', { name: 'Tempo' });
+/** A quick-pick time signature, e.g. 7/8: a radio in the Time signature group. */
+const signature = (page: Page, name: string) =>
+  page.getByRole('group', { name: 'Time signature' }).getByRole('radio', { name, exact: true });
 const beat = (page: Page, n: number) =>
   page.getByRole('button', { name: new RegExp(`^Beat ${n},`) });
 /** Gaps between the scheduled clicks, rounded to the millisecond. */
@@ -22,7 +25,7 @@ test('starts and stops with the play button and Space, lighting the beats as the
 }) => {
   await page.getByRole('button', { name: 'Start metronome' }).click();
   // Within a beat or two one of the dots lights up, in step with the audio clock.
-  await expect(page.locator('app-beat-dots .bg-accent').first()).toBeVisible();
+  await expect(page.locator('app-beat-dots .bg-lg-accent').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Stop metronome' })).toBeVisible();
 
   await page.keyboard.press('Space');
@@ -33,7 +36,7 @@ test('starts and stops with the play button and Space, lighting the beats as the
 });
 
 test('schedules the clicks at the tempo, with subdivisions in between', async ({ page, app }) => {
-  await page.getByRole('radio', { name: 'Eighth', exact: true }).click();
+  await pick(page.getByRole('radio', { name: 'Eighth', exact: true }));
   await page.getByRole('button', { name: 'Start metronome' }).click();
   await expect.poll(async () => (await app.clicks()).length).toBeGreaterThanOrEqual(5);
   await page.getByRole('button', { name: 'Stop metronome' }).click();
@@ -131,18 +134,16 @@ test('cycles each beat through accent, normal and mute', async ({ page }) => {
 test('odd meters: groupings, counting in groups, and the matching subdivisions', async ({
   page,
 }) => {
-  await page.getByRole('button', { name: '7/8', exact: true }).click();
-  await expect(page.getByRole('button', { name: '7/8', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await pick(signature(page, '7/8'));
+  await expect(signature(page, '7/8')).toBeChecked();
   await expect(page.getByRole('button', { name: /^Beat \d/ })).toHaveCount(7);
-  await page
+  const grouping = page
     .getByRole('group', { name: 'Grouping' })
-    .getByRole('button', { name: '3+2+2' })
-    .click();
+    .getByRole('radio', { name: '3+2+2' });
+  await pick(grouping);
+  await expect(grouping).toBeChecked();
 
-  await page.getByRole('radio', { name: 'Groups · 3' }).click();
+  await pick(page.getByRole('radio', { name: 'Groups · 3' }));
   await expect(page.getByRole('button', { name: /^Beat \d/ })).toHaveCount(3);
   await expect(beat(page, 1)).toHaveAccessibleName('Beat 1, dotted quarter, accent');
   await expect(page.getByRole('radio', { name: 'Beat' })).toBeVisible();
@@ -155,7 +156,7 @@ test('picks any meter from More', async ({ page }) => {
   const beats = sheet.getByRole('spinbutton', { name: 'Beats per bar' });
   await beats.focus();
   for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowUp');
-  await sheet.getByRole('radio', { name: '16' }).click();
+  await pick(sheet.getByRole('radio', { name: '16' }));
   await sheet.getByRole('button', { name: 'Use 11/16' }).click();
   await expect(sheet).toBeHidden();
   await expect(page.getByRole('button', { name: '11/16 ⋯' })).toBeVisible();
@@ -168,10 +169,7 @@ test('moves through subdivisions with the keyboard and offers swing for pairs', 
   await page.getByRole('radio', { name: 'Quarter' }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('radio', { name: 'Eighth', exact: true })).toBeFocused();
-  await expect(page.getByRole('radio', { name: 'Eighth', exact: true })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  await expect(page.getByRole('radio', { name: 'Eighth', exact: true })).toBeChecked();
 
   const swing = page.getByRole('slider', { name: 'Swing' });
   await expect(swing).toHaveAttribute('aria-valuetext', 'Straight');
@@ -179,23 +177,18 @@ test('moves through subdivisions with the keyboard and offers swing for pairs', 
   await expect(swing).toHaveAttribute('aria-valuetext', 'Triplet');
 
   await page.keyboard.press('End');
+  // Native radios: the arrows move the selection; Home and End are left to the page.
   await page.getByRole('radio', { name: 'Eighth', exact: true }).focus();
-  await page.keyboard.press('End');
-  await expect(page.getByRole('radio', { name: 'Sextuplet' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('radio', { name: 'Sextuplet' })).toBeChecked();
   await expect(swing).toBeHidden();
 });
 
 test('remembers the setup after a reload', async ({ page, wide }) => {
-  await page.getByRole('button', { name: '3/4', exact: true }).click();
+  await pick(signature(page, '3/4'));
   await page.getByRole('button', { name: 'Plus 5 BPM' }).click();
   await page.reload();
   await open(page, wide);
   await expect(tempo(page)).toHaveAttribute('aria-valuenow', '125');
-  await expect(page.getByRole('button', { name: '3/4', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(signature(page, '3/4')).toBeChecked();
 });

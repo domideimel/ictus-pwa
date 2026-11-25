@@ -1,4 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
+import { lgUniqueId } from '@domideimel/ng-liquid-glass';
+import { LgButton } from '@domideimel/ng-liquid-glass/button';
+import { LgSegment, LgSegmented } from '@domideimel/ng-liquid-glass/segmented';
 import type { Pulse } from '../music/meter';
 import {
   QUICK_PICKS,
@@ -10,13 +13,15 @@ import {
 import { MetronomeStore } from '../state/metronome.store';
 import type { PillOption } from '../ui/segmented-pills';
 import { SegmentedPills } from '../ui/segmented-pills';
-import { Surface } from '../ui/surface';
 import { TimeSignatureSheet } from './time-signature-sheet';
 
-/** Quick picks plus "More" for any meter up to 16 beats; scrolls on phones, wraps on wider screens. */
+/**
+ * Quick picks as a radio group plus "More" for any meter up to 16 beats; scrolls on phones, wraps on
+ * wider screens. Odd meters add their groupings and whether to count notes or groups.
+ */
 @Component({
   selector: 'app-time-signature-chips',
-  imports: [SegmentedPills, Surface, TimeSignatureSheet],
+  imports: [LgButton, LgSegment, LgSegmented, SegmentedPills, TimeSignatureSheet],
   templateUrl: './time-signature-chips.html',
   host: { class: 'flex flex-col gap-2' },
 })
@@ -25,6 +30,7 @@ export class TimeSignatureChips {
   readonly wraps = input(false);
 
   protected readonly quickPicks = QUICK_PICKS;
+  protected readonly name = lgUniqueId('app-time-signature');
   protected readonly showCustom = signal(false);
   protected readonly label = signatureLabel;
   protected readonly isCustom = computed(

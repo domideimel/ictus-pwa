@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pick, test } from './fixtures';
 
 const practiceButton = (page: Page) => page.getByRole('button', { name: /^Practice tools/ });
 const sheet = (page: Page) => page.getByRole('dialog', { name: 'Practice' });
@@ -13,9 +13,10 @@ test.beforeEach(async ({ page, wide }) => {
 
 test('switches tools on in the sheet and off from their chips', async ({ page }) => {
   await sheet(page).getByRole('switch', { name: 'Gap click' }).click();
-  await sheet(page).getByRole('radio', { name: '3:2' }).click();
+  await pick(sheet(page).getByRole('radio', { name: '3:2' }));
   await expect(sheet(page).getByRole('status')).toHaveText(/2 tools on/);
   await sheet(page).getByRole('button', { name: 'Close' }).click();
+  await expect(sheet(page)).toBeHidden();
 
   await expect(practiceButton(page)).toHaveAccessibleName('Practice tools, 2 on');
   await expect(chips(page)).toContainText('Gap 2 on · 2 off');
@@ -25,22 +26,16 @@ test('switches tools on in the sheet and off from their chips', async ({ page })
 
   // The chip opens the sheet again, where the settings were kept.
   await chips(page).getByRole('button', { name: /Gap/ }).click();
-  await expect(sheet(page).getByRole('switch', { name: 'Gap click' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  await expect(sheet(page).getByRole('switch', { name: 'Gap click' })).toBeChecked();
   await sheet(page).getByRole('button', { name: 'Turn all off' }).click();
-  await expect(sheet(page).getByRole('switch', { name: 'Gap click' })).toHaveAttribute(
-    'aria-checked',
-    'false',
-  );
+  await expect(sheet(page).getByRole('switch', { name: 'Gap click' })).not.toBeChecked();
 });
 
 test('steppers stay disabled until their tool is on, and keep to their range', async ({ page }) => {
   const play = sheet(page).getByRole('spinbutton', { name: 'Play bars' });
-  await expect(play).toHaveAttribute('aria-disabled', 'true');
+  await expect(play).toBeDisabled();
   await sheet(page).getByRole('switch', { name: 'Gap click' }).click();
-  await expect(play).not.toHaveAttribute('aria-disabled');
+  await expect(play).toBeEnabled();
   await play.focus();
   await page.keyboard.press('End');
   await expect(play).toHaveAttribute('aria-valuenow', '16');
@@ -52,6 +47,7 @@ test('turns every tool off at once from the chips', async ({ page }) => {
   await sheet(page).getByRole('switch', { name: 'Gap click' }).click();
   await sheet(page).getByRole('switch', { name: 'Speed trainer' }).click();
   await sheet(page).getByRole('button', { name: 'Close' }).click();
+  await expect(sheet(page)).toBeHidden();
   await chips(page).getByRole('button', { name: 'Turn all off' }).click();
   await expect(chips(page)).toBeHidden();
   await expect(practiceButton(page)).toHaveAccessibleName('Practice tools');
@@ -60,6 +56,7 @@ test('turns every tool off at once from the chips', async ({ page }) => {
 test('the speed trainer shows the live tempo while playing', async ({ page }) => {
   await sheet(page).getByRole('switch', { name: 'Speed trainer' }).click();
   await sheet(page).getByRole('button', { name: 'Close' }).click();
+  await expect(sheet(page)).toBeHidden();
   await expect(chips(page)).toContainText('+4 every 4 bars → 160');
   await page.getByRole('button', { name: 'Start metronome' }).click();
   await expect(chips(page)).toContainText('Trainer · now 120 → 160');
@@ -70,12 +67,13 @@ test('the gap click goes silent on its muted bars', async ({ page, app }) => {
   await sheet(page).getByRole('switch', { name: 'Gap click' }).click();
   for (const name of ['Play bars', 'Mute bars']) {
     const stepper = sheet(page).getByRole('spinbutton', { name });
-    await expect(stepper).not.toHaveAttribute('aria-disabled');
+    await expect(stepper).toBeEnabled();
     await stepper.focus();
     await page.keyboard.press('Home');
     await expect(stepper).toHaveAttribute('aria-valuenow', '1');
   }
   await sheet(page).getByRole('button', { name: 'Close' }).click();
+  await expect(sheet(page)).toBeHidden();
   // Play 1 bar, mute 1 bar at 300 BPM: a bar lasts 0.8 s.
   const tempo = page.getByRole('slider', { name: 'Tempo' });
   await tempo.focus();
