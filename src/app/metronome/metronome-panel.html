@@ -1,5 +1,10 @@
 @if (wide()) {
-  <section lgCard glass aria-labelledby="metronome-title" class="lg:p-7">
+  <!-- No glass: nothing sits behind the card to blur, and a full-card blur costs frames while the click plays. -->
+  <section
+    lgCard
+    aria-labelledby="metronome-title"
+    class="border border-lg-border bg-lg-surface lg:p-7"
+  >
     <div class="flex flex-col gap-6">
       <header class="flex items-center justify-between gap-4">
         <div class="flex flex-col gap-0.5">

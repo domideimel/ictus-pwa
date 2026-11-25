@@ -178,11 +178,12 @@ const SCENARIOS: readonly Scenario[] = [
   },
 ];
 
-async function expectNoViolations(page: Page): Promise<void> {
+async function expectNoViolations(page: Page, skipRules: string[] = []): Promise<void> {
   // Let transitions (needle, switches, pressed states) settle before measuring contrast.
   await page.waitForTimeout(250);
   const { violations } = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+    .disableRules(skipRules)
     .analyze();
   const found = violations.flatMap((violation) =>
     violation.nodes.map(
@@ -235,13 +236,15 @@ for (const [theme, colorScheme] of [
 }
 
 // Windows High Contrast: the system palette replaces the colours, selections must stay visible.
+// Colour contrast is the user's palette here, not the app's: the headless Linux browsers' default
+// Highlight / HighlightText pair (white on #3399ff) is itself below 4.5:1. Every other rule still runs.
 test.describe('forced colours', () => {
   test.use({ forcedColors: 'active' });
 
   for (const scenario of SCENARIOS.filter(({ name }) => SAMPLE.has(name))) {
     test(scenario.name, async ({ page, app, wide }) => {
       await scenario.setup(page, app, wide);
-      await expectNoViolations(page);
+      await expectNoViolations(page, ['color-contrast']);
     });
   }
 });
