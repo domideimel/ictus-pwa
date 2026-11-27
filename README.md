@@ -106,4 +106,45 @@ When a new version is deployed, the app offers a **Reload** button.
   (the native app keeps listening when the click goes to headphones).
 - Audio stops when the app is in the background on iOS, as with every web app.
 
+## Ideas
+
+Candidates for what comes next, with the phone or tablet on a music stand in mind. Nothing here is
+planned or promised yet.
+
+### Quick wins
+
+- **Type the tempo.** Tapping the BPM number opens a number pad, so "92, please" takes one tap instead
+  of dragging or nudging.
+- **Reference tone.** A button in the tuner that plays A = 442 (or any note) as a steady tone, for
+  tuning to a pitch.
+- **Lock the screen while playing.** Ignores touches, except a long press to unlock, so a sleeve or a
+  page turn can't change the tempo mid-rehearsal.
+- **Count-in.** An optional bar of count-in, downbeat accented, before the click starts.
+
+### Bigger features
+
+- **Visual beat flash, or a stage mode.** A large flash on every beat, the downbeat in amber, to follow
+  out of the corner of your eye in a loud rehearsal or with earplugs.
+- **Pieces with sections.** Tempo and meter changes within a piece (8 bars of 3/4 at 72, then 6/8 at
+  96), played one after another, with the setlist bar showing "Section 2 of 4".
+- **Transposing instruments in the tuner.** Show the written note for B♭, E♭ and F instruments
+  (clarinet, trumpet, saxophone, horn).
+- **Intonation over time.** A small graph of the pitch while a long note is held, to see drift and
+  wobble rather than just the current cents.
+- **Back up and share setlists.** Export and import as a file or a link, or a QR code to pass to a
+  bandmate, so a cleared browser doesn't lose them. The app could also ask the browser to keep its
+  storage (`navigator.storage.persist()`).
+
+### To check first
+
+- **Phones in landscape.** The phone layout is sized by height, so lying sideways on a stand the dial
+  probably shrinks to its minimum and the screen scrolls. Not tested yet.
+- **The iPhone lock screen.** iOS stops web audio in the background. A silent looping `<audio>` element
+  may keep the click going on a locked screen and add lock-screen controls, but it is not guaranteed
+  across iOS versions and needs testing on a real device.
+
+### Not possible on iOS
+
+Vibration and telling whether headphones are connected aren't available to web apps in Safari.
+
 Bravura font © Steinberg Media Technologies, SIL Open Font License (`public/fonts/Bravura-OFL.txt`).
